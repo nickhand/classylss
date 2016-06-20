@@ -1,0 +1,140 @@
+from numpy.distutils.core import setup, Extension
+from numpy.distutils.command.build_clib import build_clib
+from numpy.distutils.command.build_ext import build_ext
+from numpy.distutils.command.build import build
+from numpy.distutils.command.install import install
+
+from glob import glob
+import os
+import numpy
+import shutil
+
+package_basedir = os.path.abspath(os.path.dirname(__file__))
+
+def get_latest_class_version():
+    """
+    Parse the ``class_public`` github API to determine the 
+    latest version tag
+    
+    Returns
+    -------
+    name : str
+        the latest version number
+    """
+    from distutils.version import LooseVersion
+    import requests
+    import json
+    
+    url = "https://api.github.com/repos/lesgourg/class_public/tags"
+    req = requests.get(url)
+    if req.status_code == requests.codes.ok:
+        j = json.loads(req.text.encode(req.encoding))
+        
+        latest_version = LooseVersion("0.0.0")
+        for release in j:
+            version = release['name']
+            if version.startswith("v"): version = version[1:]
+            if LooseVersion(version) > latest_version:
+                latest_version = LooseVersion(version)
+        if latest_version == '0.0.0':
+            raise ValueError("cannot find latest CLASS version to download")
+        
+        return str(latest_version)
+    
+    else:
+        raise ValueError("cannot find latest CLASS version to download")
+    
+
+def build_class(prefix):
+    """
+    Download and build CLASS
+    """
+    # latest class version and download link
+    version = get_latest_class_version()            
+    args = (package_basedir, version, prefix)
+    command = 'sh %s/depends/install_class.sh %s %s' %args
+    
+    ret = os.system(command)
+    if ret != 0:
+        raise ValueError("could not build CLASS v%s" %version)
+    
+class build_external_clib(build_clib):
+    
+    def finalize_options(self):
+        
+        build_clib.finalize_options(self)    
+        
+        # create the CLASS build directory and save the include path
+        self.class_build_dir = self.build_temp
+        self.include_dirs.insert(0, os.path.join(self.class_build_dir, 'include'))
+
+    def build_libraries(self, libraries):
+
+        build_class(self.class_build_dir)
+        link_objects = ['libclass.a']
+        link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
+        
+        self.compiler.set_link_objects(link_objects)
+        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
+        
+        for (library, build_info) in libraries:
+            self.include_dirs += build_info.get('include_dirs', [])
+        
+        build_clib.build_libraries(self, libraries)
+
+class custom_build_ext(build_ext):
+    
+    def finalize_options(self):
+        build_ext.finalize_options(self)
+        self.include_dirs.append(numpy.get_include())
+
+    def run(self):
+        if self.distribution.has_c_libraries():
+            self.run_command('build_clib')
+            build_clib = self.get_finalized_command('build_clib')
+            self.include_dirs += build_clib.include_dirs
+            self.library_dirs += build_clib.compiler.library_dirs
+            
+        build_ext.run(self)
+        
+        
+class custom_install(install):
+
+    # Calls the default run command, then deletes the build area
+    # (equivalent to "setup clean --all").
+    def run(self):
+        install.run(self)
+        shutil.rmtree("build")
+  
+        
+sources = list(glob("classy_lss/_gcl/cpp/*cpp"))
+libgcl = ('gcl', {'sources': sources, 'include_dirs': ['classy_lss/_gcl/include']})
+
+sources = list(glob("classy_lss/_gcl/python/*.i")) + ['classy_lss/gcl.i']
+ext = Extension(name='classy_lss._gcl',
+                sources=['classy_lss/gcl.i'],
+                swig_opts=['-c++', '-Wall'], 
+                extra_link_args=["-g", "-fPIC"],
+                extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
+                libraries=['class', libgcl],
+                language='c++'
+                )
+
+
+setup(
+    name="classy_lss", version="0.0.1",
+    author="Nick Hand",
+    author_email="nicholas.adam.hand@gmail.com",
+    description="python binding of CLASS for LSS purposes",
+    packages= ['classy_lss'],
+    requires=['numpy'],
+    ext_modules = [ext],
+    libraries=[libgcl],
+    cmdclass = {
+        'build_clib': build_external_clib,
+        'build_ext': custom_build_ext,
+        'install': custom_install
+    },
+    py_modules = ["classy_lss.gcl"]
+)
+
