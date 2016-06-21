@@ -147,7 +147,7 @@ gcl_info = {}
 gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
 gcl_info['include_dirs'] = ['classy_lss/_gcl/include'] + fftw_info.get('include_dirs', [])
 gcl_info['library_dirs'] = fftw_info.get('library_dirs', [])
-libgcl = ('gcl', **gcl_info)
+libgcl = ('gcl', gcl_info)
 
     
 sources = list(glob("classy_lss/_gcl/python/*.i")) + ['classy_lss/gcl.i']    
