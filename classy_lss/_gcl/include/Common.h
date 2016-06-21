@@ -24,14 +24,18 @@ class ClassParams;
 class ClassEngine;
 class parray;
 class Cosmology;
-
-
+class PowerSpectrum;
 
 namespace Common {
   
   
     double SphericalBesselJ0(double x);
     double SphericalBesselJ1(double x);
+    double SphericalBesselJ2(double x);
+    double SphericalBesselJ3(double x);
+    double SphericalBesselJ4(double x);
+    double SphericalBesselJ6(double x);
+    double SphericalBesselJ8(double x);
     
     /* Convenient print functions that flush the output buffer afterwards */
     //   Print to file

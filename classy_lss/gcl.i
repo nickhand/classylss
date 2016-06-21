@@ -37,6 +37,8 @@
 %include "_gcl/python/ClassParams.i"
 %include "_gcl/python/ClassEngine.i"
 %include "_gcl/python/Cosmology.i"
+
+%include "_gcl/python/CorrelationFunction.i"
 %include "_gcl/python/LinearPS.i"
 
 
