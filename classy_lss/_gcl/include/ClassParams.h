@@ -12,12 +12,6 @@
 #include <sstream>
 #include <string>
 
-// function to ouput an option
-template<class T>
-void output_option(const boost::any* v, std::stringstream& out) {
-    out << *(boost::any_cast<T>(v));
-}
-
 /*----------------------------------------------------------------------------*/
 /* class to encapsulate CLASS parameters from any type (numerical or string)  */
 /*----------------------------------------------------------------------------*/
