@@ -134,16 +134,21 @@ class custom_install(install):
         install.run(self)
         shutil.rmtree("build")
   
-        
-sources = list(glob("classy_lss/_gcl/cpp/*cpp"))
-libgcl = ('gcl', {'sources': sources, 'include_dirs': ['classy_lss/_gcl/include']})
 
-# setup FFTW
+# setup FFTW for GCL library
 fftw_info = {}
 if 'FFTW_INC' in os.environ:
     fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
 if 'FFTW_LIB' in os.environ:
     fftw_info['library_dirs'] = [os.environ['FFTW_LIB']]
+
+# GCL extension 
+gcl_info = {}
+gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
+gcl_info['include_dirs'] = ['classy_lss/_gcl/include'] + fftw_info.get('include_dirs', [])
+gcl_info['library_dirs'] = fftw_info.get('library_dirs', [])
+libgcl = ('gcl', **gcl_info)
+
     
 sources = list(glob("classy_lss/_gcl/python/*.i")) + ['classy_lss/gcl.i']    
 ext = Extension(name='classy_lss._gcl',
@@ -152,8 +157,7 @@ ext = Extension(name='classy_lss._gcl',
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['gcl', 'class', 'gomp', 'fftw3'],
-                language='c++',
-                **fftw_info
+                language='c++'
                 )
 
 
