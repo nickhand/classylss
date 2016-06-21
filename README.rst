@@ -8,6 +8,7 @@ Installation
 
 The packaged can be cloned from github as
 
+.. code:: bash
 
     git clone https://github.com/nickhand/classy_lss.git
     cd classy_lss
