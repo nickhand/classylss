@@ -157,7 +157,7 @@ ext = Extension(name='classy_lss._gcl',
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['gcl', 'class', 'gomp', 'fftw3'],
-                library_dirs=fftw_info['library_dirs']
+                runtime_library_dirs=fftw_info['library_dirs']
                 )
 
 
