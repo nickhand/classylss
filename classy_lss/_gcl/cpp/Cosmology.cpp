@@ -11,7 +11,7 @@ using namespace Common;
 
 Cosmology::Cosmology(bool verbose) : ClassEngine(verbose), 
                           pars_(), sigma8_(0.), delta_H_(1.), 
-                          transfer_fit_(CLASS), param_file_("")
+                          transfer_fit_(TransferFit::CLASS), param_file_("")
 {
     // first compute the class transfer then initialize
     ComputeCLASSTransferFunction();
@@ -23,14 +23,15 @@ Cosmology::Cosmology(TransferFit tf, bool verbose) : ClassEngine(verbose),
                           transfer_fit_(tf), param_file_("")
 {
     // first compute the class transfer then initialize
-    if (transfer_fit_ == CLASS) ComputeCLASSTransferFunction();
+    if (transfer_fit_ == TransferFit::CLASS) 
+        ComputeCLASSTransferFunction();
     Initialize();
 }
 
 Cosmology::Cosmology(const std::string& param_file, bool verbose) : 
     ClassEngine(verbose), 
     pars_(param_file), sigma8_(0.), delta_H_(1.), 
-    transfer_fit_(CLASS), param_file_(param_file)
+    transfer_fit_(TransferFit::CLASS), param_file_(param_file)
 {
     // first compute the class transfer then initialize
     ComputeCLASSTransferFunction();
@@ -42,13 +43,14 @@ Cosmology::Cosmology(const std::string& param_file,  TransferFit tf, bool verbos
   transfer_fit_(tf), param_file_(param_file)
 {
     // first compute the class transfer then initialize
-    if (transfer_fit_ == CLASS) ComputeCLASSTransferFunction();
+    if (transfer_fit_ == TransferFit::CLASS) 
+        ComputeCLASSTransferFunction();
     Initialize();
 }
 
 Cosmology::Cosmology(const ClassParams& pars, bool verbose) : 
     ClassEngine(verbose), pars_(pars), sigma8_(0.), delta_H_(1.), 
-    transfer_fit_(CLASS), param_file_("")
+    transfer_fit_(TransferFit::CLASS), param_file_("")
 {
     // first compute the class transfer then initialize
     ComputeCLASSTransferFunction();
@@ -60,26 +62,40 @@ Cosmology::Cosmology(const ClassParams& pars,  TransferFit tf, bool verbose)
   transfer_fit_(tf), param_file_("")
 {
     // first compute the class transfer then initialize
-    if (transfer_fit_ == CLASS) ComputeCLASSTransferFunction();
+    if (transfer_fit_ == TransferFit::CLASS) 
+        ComputeCLASSTransferFunction();
     Initialize();
 }
 
-Cosmology::~Cosmology() 
+Cosmology::~Cosmology() {}
+
+Cosmology::Cosmology(const Cosmology &other) 
 {
-    Clean();
+    pars_         = other.pars_;
+    sigma8_       = other.sigma8_;
+    delta_H_      = other.delta_H_;
+    transfer_fit_ = other.transfer_fit_;
+    param_file_   = other.param_file_;
+   
+    // first compute the class transfer then initialize
+    if (transfer_fit_ == TransferFit::CLASS) 
+        ComputeCLASSTransferFunction();
+    Initialize();
 }
+
 
 double Cosmology::EvaluateTransfer(double k) const 
 {    
-    if (transfer_fit_ == CLASS) {
+    if (transfer_fit_ == TransferFit::CLASS) {
         return GetSplineTransfer(k);
-    } else if (transfer_fit_ == EH) {
+    } else if (transfer_fit_ == TransferFit::EH) {
         return GetEisensteinHuTransfer(k);
-    } else if (transfer_fit_ == EH_NoWiggle) {
+    } else if (transfer_fit_ == TransferFit::EH_NoWiggle) {
         return GetNoWiggleTransfer(k);
-    } else if (transfer_fit_ == BBKS) {
+    } else if (transfer_fit_ == TransferFit::BBKS) {
         return GetBBKSTransfer(k);
-    }
+    } else
+        throw_error("unknown TransferFit type", __FILE__, __LINE__);
     return 0.;
 }
 
@@ -179,12 +195,12 @@ void Cosmology::ComputeCLASSTransferFunction()
       
       // make sure dTk, mPk are in output
       VerifyCLASSOutput();
-      
+
       // do the calculation
       compute(pars_);
-      
+
       // compute k up to k_max
-      ki = parray::logspace(1e-5, k_max(), 500);
+      ki = parray::logspace(k_min(), k_max(), 500);
       
       // and get the transfer
       Ti = GetTk(ki, 0.);
@@ -210,7 +226,7 @@ void Cosmology::Initialize()
     SetEisensteinHuParameters();
     
     // set the spline
-    if (transfer_fit_ == CLASS) {
+    if (transfer_fit_ == TransferFit::CLASS) {
         int N = ki.size();
         
         Tk = LinearSpline(ki, Ti);
@@ -234,7 +250,7 @@ void Cosmology::SetTransferFunction(TransferFit tf)
     if (tf == transfer_fit_) return;
     
     transfer_fit_ = tf;
-    if (transfer_fit_ == CLASS)
+    if (transfer_fit_ == TransferFit::CLASS)
         ComputeCLASSTransferFunction();
     Initialize();
 }
@@ -307,7 +323,8 @@ void Cosmology::update(const ClassParams& newpars)
     // update the params
     pars_.update(newpars); 
     
-    if (transfer_fit_ == CLASS) ComputeCLASSTransferFunction();
+    if (transfer_fit_ == TransferFit::CLASS) 
+        ComputeCLASSTransferFunction();
     Initialize();
 }
 

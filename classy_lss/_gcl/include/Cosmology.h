@@ -12,10 +12,10 @@ class Cosmology : public ClassEngine
 {
 public:
 
-    enum TransferFit {CLASS=0,          /* calls CLASS to compute */ 
-                      EH,               /* Eisenstein & Hu 1998 (astro-ph/9709112) */
-                      EH_NoWiggle,        
-                      BBKS,             /* Bardeen, Bond, Kaiser, Szalay 1986 */
+    enum class TransferFit {CLASS=0,          /* calls CLASS to compute */ 
+                            EH,               /* Eisenstein & Hu 1998 (astro-ph/9709112) */
+                            EH_NoWiggle,        
+                            BBKS,             /* Bardeen, Bond, Kaiser, Szalay 1986 */
     };
     
     Cosmology(bool verbose=false);
@@ -27,6 +27,8 @@ public:
     Cosmology(const ClassParams& pars, bool verbose=false);
     Cosmology(const ClassParams& pars, TransferFit tf, bool verbose=false);
 
+
+    Cosmology(const Cosmology &other);
     ~Cosmology();
     
     void update(const ClassParams& newpars);

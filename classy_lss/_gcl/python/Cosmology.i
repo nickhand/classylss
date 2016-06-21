@@ -7,7 +7,7 @@
 class Cosmology : public ClassEngine {
 
 public:    
-    enum TransferFit {CLASS, EH, EH_NoWiggle, BBKS};
+    enum class TransferFit {CLASS, EH, EH_NoWiggle, BBKS};
     
     Cosmology(bool verbose=false);
     Cosmology(TransferFit tf, bool verbose=false);
@@ -16,6 +16,7 @@ public:
     Cosmology(const ClassParams& pars, bool verbose=false);
     Cosmology(const ClassParams& pars, TransferFit tf, bool verbose=false);
     ~Cosmology();
+    Cosmology(const Cosmology &other);
 
     void verbose(bool verbose=true);
     
@@ -55,4 +56,13 @@ public:
     %}
     
 };
+
+%pythoncode 
+%{
+    from argparse import Namespace
+    transfers = Namespace()
+    for k in Cosmology.__dict__:
+        if k.startswith("TransferFit_"):
+            setattr(transfers, k.split('TransferFit_')[1], getattr(Cosmology, k))
+%}
 
