@@ -47,6 +47,7 @@ public:
     std::vector<std::string> keys() const; 
     void print() const; 
     bool contains(const std::string& key) const;
+    std::string pop(const std::string& key); 
        
     // accesors
     inline unsigned size() const {return pars.size();}

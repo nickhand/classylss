@@ -110,4 +110,21 @@ int ClassParams::add(const string& key, const char * val) {
     return pars.size(); 
 }
 
+string ClassParams::pop(const string& key) 
+{
+    // use-remove
+    auto it = pars.find(key);
+    if (it != pars.end()) 
+    {
+      // move-remove-use
+      auto x = std::move(it->second);
+      pars.erase(it);
+      return x; 
+      
+    } else
+        Common::throw_error("no such key to pop: " + key, __FILE__, __LINE__);
+
+    return "";
+}
+
 

@@ -25,6 +25,7 @@ public:
     std::vector<std::string> keys() const;
     unsigned size() const;
     void print() const; 
+    std::string pop(const std::string& key); 
     
     const std::string& value(const std::string& key) const;
     
