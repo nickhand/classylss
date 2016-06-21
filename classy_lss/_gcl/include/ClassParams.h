@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 /*----------------------------------------------------------------------------*/
 /* class to encapsulate CLASS parameters from any type (numerical or string)  */
