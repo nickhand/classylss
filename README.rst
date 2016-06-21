@@ -62,7 +62,7 @@ To verify that the installation has succeeded, run:
 Examples
 --------
 
-To compute the linear power spectrum for the Planck 2015 release:
+To compute power spectra for the Planck 2015 cosmology:
 
 .. code-block:: python
 
@@ -85,6 +85,29 @@ To compute the linear power spectrum for the Planck 2015 release:
     # Zeldovich power spectrum in [Mpc/h]^3
     Pzel = power.zeldovich(k, z, verbose=True, cosmo=Planck15)
     
+and similarly, correlation functions can be computed: 
+
+.. code-block:: python
     
+    from classy_lss import correlation
+    
+    # desired separation (in Mpc/h)
+    r = numpy.logspace(0, numpy.log10(150), 500)
+    
+    # desired redshift 
+    z = 0
+    
+    # linear 2PCF 
+    cf_lin = correlation.linear(r, z, verbose=True, cosmo=Planck15)
+    
+    # nonlinear 2PCF
+    cf_nl = correlation.nonlinear(r, z, verbose=True, cosmo=Planck15)
+    
+    # Zeldovich power spectrum in [Mpc/h]^3
+    cf_zel = correlation.zeldovich(r, z, smoothing=1.0, verbose=True, cosmo=Planck15)
+    
+All of the above functions accept a ``class_kwargs`` keyword, which allows the user
+to pass any valid CLASS parameter to the CLASS code. The ``class_kwargs`` parameter is a dictionary 
+that will be passed to the ``ClassEngine`` instance, which is responsible for running CLASS. 
 
     
