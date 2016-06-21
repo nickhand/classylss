@@ -45,7 +45,7 @@ location using environment variables:
     export FFTW_INC=/path/to/fftw/include
     export FFTW_DIR=/path/to/fftw/lib
 
-and then the package can be installed using
+and then the ``classy_lss`` package can be installed using
 
 .. code:: bash
     
