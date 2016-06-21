@@ -100,7 +100,9 @@ class build_external_clib(build_clib):
 
         build_class(self.class_build_dir)
         link_objects = ['libclass.a']
-        self.link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
+        link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
+        
+        self.compiler.set_link_objects(link_objects)
         self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
         
         for (library, build_info) in libraries:
@@ -114,15 +116,6 @@ class custom_build_ext(build_ext):
         build_ext.finalize_options(self)
         self.include_dirs.append(numpy.get_include())
 
-
-    def build_extensions(self):
-
-        build_clib = self.get_finalized_command('build_clib')
-        print "LINK OBJECTS = ", build_clib.link_objects
-        self.compiler.set_link_objects(build_clib.link_objects)
-
-        build_ext.build_extensions(self)
-        
     def run(self):
         if self.distribution.has_c_libraries():
             self.run_command('build_clib')
@@ -151,7 +144,7 @@ ext = Extension(name='classy_lss._gcl',
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", "-fPIC"],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
-                libraries=['class', libgcl, 'gomp'],
+                libraries=['libclass', libgcl, 'gomp'],
                 language='c++'
                 )
 
