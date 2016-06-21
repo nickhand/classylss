@@ -142,7 +142,7 @@ sources = list(glob("classy_lss/_gcl/python/*.i")) + ['classy_lss/gcl.i']
 ext = Extension(name='classy_lss._gcl',
                 sources=['classy_lss/gcl.i'],
                 swig_opts=['-c++', '-Wall'], 
-                extra_link_args=["-g", "-fPIC"],
+                extra_link_args=["-g", '-Wl,-z,defs'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['class', libgcl, 'gomp'],
                 language='c++'
