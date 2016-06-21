@@ -38,11 +38,7 @@ def linear(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_kws=
         raise TypeError("cosmology should be a astropy.cosmology.FLRW subclass")
     if isinstance(k, list):
         k = numpy.array(k)
-    
-    # default CLASS parameters
-    class_kws.setdefault('P_k_max_h/Mpc',  20.)
-    class_kws.setdefault('z_max_pk', 2.0)
-    
+        
     # astropy to CLASS params
     pars = ClassParams.from_astropy(cosmo, extra=class_kws)
     
@@ -85,8 +81,6 @@ def nonlinear(k, z, cosmo=None, verbose=False, class_kws={}):
     
     # set the defaul class keywords
     class_kws.setdefault('non linear', 'halofit')
-    class_kws.setdefault('P_k_max_h/Mpc',  20.)
-    class_kws.setdefault('z_max_pk', 2.0)
     
     # astropy to CLASS params
     pars = ClassParams.from_astropy(cosmo, extra=class_kws)
@@ -138,10 +132,6 @@ def zeldovich(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_k
         raise TypeError("cosmology should be a astropy.cosmology.FLRW subclass")
     if isinstance(k, list):
         k = numpy.array(k)
-    
-    # default CLASS parameters
-    class_kws.setdefault('P_k_max_h/Mpc',  20.)
-    class_kws.setdefault('z_max_pk', 2.0)
     
     # astropy to CLASS params
     pars = ClassParams.from_astropy(cosmo, extra=class_kws)

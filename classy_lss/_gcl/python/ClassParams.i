@@ -34,6 +34,11 @@ public:
         @classmethod
         def from_dict(cls, d):
             toret = cls()
+            
+            # default CLASS parameters
+            d.setdefault('P_k_max_h/Mpc',  20.)
+            d.setdefault('z_max_pk', 2.0)
+            
             for k in d: toret.add(k, d[k])
             return toret
             
@@ -117,6 +122,10 @@ public:
                 pars['N_ur'] = cosmo.Neff
                 pars['N_ncdm'] = 0
                 pars['m_ncdm'] = 0.
+
+            # default CLASS parameters
+            extra.setdefault('P_k_max_h/Mpc',  20.)
+            extra.setdefault('z_max_pk', 2.0)
 
             # add any extra arguments
             if len(extra):
