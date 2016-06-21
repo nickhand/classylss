@@ -144,7 +144,7 @@ ext = Extension(name='classy_lss._gcl',
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", "-fPIC"],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
-                libraries=['libclass', libgcl, 'gomp'],
+                libraries=['class', libgcl, 'gomp'],
                 language='c++'
                 )
 
