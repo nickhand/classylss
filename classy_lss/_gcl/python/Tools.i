@@ -1,5 +1,5 @@
 %{
-#include "CorrelationFunction.h"
+#include "Tools.h"
 %}
 
 %nodefaultctor IntegrationMethods;
@@ -14,6 +14,7 @@ struct IntegrationMethods {
 %apply (double* INPLACE_ARRAY1, int DIM1) {(double r[], int rsize)}
 %apply (double* INPLACE_ARRAY1, int DIM1) {(double xi[], int xisize)}
 
+%rename(compute_xilm) ComputeXiLM; 
 
 parray ComputeXiLM(int l, int m, const parray& k, const parray& pk, const parray& r,
                     double smoothing=0., IntegrationMethods::Type method=IntegrationMethods::FFTLOG);
@@ -37,22 +38,4 @@ parray xi_to_pk(int ell, const parray& r, const parray& xi, const parray& k,
         ComputeXiLM_fftlog(l, m, ksize, k, pk, r, xi, smoothing);
    }
 %}
-
-class CorrelationFunction {
-public:
-
-    CorrelationFunction(const PowerSpectrum& P, double kmin = 1e-4, double kmax = 1e1);
-
-    // calls Evaluate(r)
-    double operator()(double r) const;
-
-    // calls EvaluateMany(r)
-    parray operator()(const parray& r) const;
-
-    const PowerSpectrum& GetPowerSpectrum() const;
-    double GetKmin() const;
-    void SetKmin(double kmin_);
-    double GetKmax() const;
-    void SetKmax(double kmax_);
-};
 

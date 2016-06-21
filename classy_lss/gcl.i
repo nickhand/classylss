@@ -38,10 +38,7 @@
 %include "_gcl/python/ClassEngine.i"
 %include "_gcl/python/Cosmology.i"
 
-%include "_gcl/python/CorrelationFunction.i"
+%include "_gcl/python/PowerSpectrum.i"
+%include "_gcl/python/Tools.i"
 %include "_gcl/python/LinearPS.i"
-
-
-
-
-
+%include "_gcl/python/ZeldovichPS.i"

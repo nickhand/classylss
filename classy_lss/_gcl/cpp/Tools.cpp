@@ -1,12 +1,10 @@
-#include "CorrelationFunction.h"
-
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <functional>
 
+#include "Tools.h"
 #include "PowerSpectrum.h"
-#include "Quadrature.h"
 #include "DiscreteQuad.h"
 #include "Spline.h"
 #include "MyFFTLog.h"
@@ -16,9 +14,8 @@ using std::cref;
 using namespace std::placeholders;
 using namespace Common;
 
-
 void ComputeXiLM_fftlog(int l, int m, int N, const double k[], const double pk[],
-                          double r[], double xi[], double smoothing)
+                                double r[], double xi[], double smoothing)
 {
     // complex arrays for the FFT
     dcomplex* a = new dcomplex[N];
@@ -38,7 +35,7 @@ void ComputeXiLM_fftlog(int l, int m, int N, const double k[], const double pk[]
 
 
 parray ComputeXiLM(int l, int m, const parray& k_, const parray& pk_, const parray& r, 
-                    double smoothing, IntegrationMethods::Type method) 
+                            double smoothing, IntegrationMethods::Type method) 
 {
     
     // fftlog
@@ -114,27 +111,3 @@ parray xi_to_pk(int ell, const parray& r, const parray& xi, const parray& k,
     return pow(-1, ell/2) * TwoPiCubed * ComputeXiLM(ell, 2, r, xi, k, smoothing, method);
 }
 
-
-CorrelationFunction::CorrelationFunction(const PowerSpectrum& P_, double kmin_, double kmax_)
-    : P(P_), kmin(kmin_), kmax(kmax_)
-{
-     
-}
-
-static double f(const PowerSpectrum& P, double r, double k) {
-    return k*sin(k*r)*P(k);
-}
-
-double CorrelationFunction::Evaluate(double r) const {
-    return 1/(2*M_PI*M_PI*r) * Integrate<ExpSub>(bind(f, cref(P), r, _1), kmin, kmax);
-}
-
-parray CorrelationFunction::EvaluateMany(const parray& r) const {
-    int Nr = (int) r.size();
-    parray xi(Nr);
-    #pragma omp parallel for
-    for(int i = 0; i < Nr; i++)
-        xi[i] = Evaluate(r[i]);
-
-    return xi;
-}

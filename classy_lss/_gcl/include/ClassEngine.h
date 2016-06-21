@@ -20,6 +20,9 @@ History (add to end):
 #include "parray.h"
 #include <functional>
 
+namespace Cls { 
+  enum Type {TT=0,EE,TE,BB,PP,TP}; //P stands for phi (lensing potential)
+}
 
 /*----------------------------------------------------------------------------*/
 /* class to serve as the engine for CLASS */
@@ -27,8 +30,6 @@ History (add to end):
 class ClassEngine 
 {
 public:
-    
-    enum cltype {TT=0,EE,TE,BB,PP,TP}; //P stands for phi (lensing potential)
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
@@ -45,10 +46,10 @@ public:
     inline void verbose(bool verbose=true) { verbose_=verbose; }
 
     // return the primary Cls
-    parray GetRawCls(const parray& ell, cltype t=cltype::TT);
+    parray GetRawCls(const parray& ell, Cls::Type t=Cls::TT);
     
     // return the lensing Cls
-    parray GetLensedCls(const parray& ell, cltype t=cltype::TT);
+    parray GetLensedCls(const parray& ell, Cls::Type t=Cls::TT);
     
     // linear/nonlinear matter power spectra
     parray GetPklin(const parray& k, double z);
@@ -203,8 +204,8 @@ protected:
     
     
     // check whether we computed given Cls
-    int check_sp_cls_type(cltype t); 
-    int check_le_cls_type(cltype t); 
+    int check_sp_cls_type(Cls::Type t); 
+    int check_le_cls_type(Cls::Type t); 
 
     // call once per compute() call
     void Initialize(const ClassParams& pars);
@@ -230,7 +231,7 @@ protected:
     // nonlinear vs linear P(k)
     enum Pktype {Pk_linear=0, Pk_nonlinear};
     parray GetPk(const parray& k, double z, Pktype method = Pk_linear);
-    double GetCl(cltype t, const long &l); 
+    double GetCl(Cls::Type t, const long &l); 
         
     // functions for returning cosmological quantities
     double BackgroundValue(double z, int index) const;

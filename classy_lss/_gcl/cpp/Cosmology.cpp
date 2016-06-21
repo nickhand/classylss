@@ -18,7 +18,7 @@ Cosmology::Cosmology(bool verbose) : ClassEngine(verbose),
     Initialize();
 }
 
-Cosmology::Cosmology(TransferFit tf, bool verbose) : ClassEngine(verbose), 
+Cosmology::Cosmology(TransferFit::Type tf, bool verbose) : ClassEngine(verbose), 
                           pars_(), sigma8_(0.), delta_H_(1.), 
                           transfer_fit_(tf), param_file_("")
 {
@@ -38,7 +38,7 @@ Cosmology::Cosmology(const std::string& param_file, bool verbose) :
     Initialize();
 }
 
-Cosmology::Cosmology(const std::string& param_file,  TransferFit tf, bool verbose)
+Cosmology::Cosmology(const std::string& param_file,  TransferFit::Type tf, bool verbose)
   :  ClassEngine(verbose), pars_(param_file), sigma8_(0.), delta_H_(1.), 
   transfer_fit_(tf), param_file_(param_file)
 {
@@ -57,7 +57,7 @@ Cosmology::Cosmology(const ClassParams& pars, bool verbose) :
     Initialize();
 }
 
-Cosmology::Cosmology(const ClassParams& pars,  TransferFit tf, bool verbose)
+Cosmology::Cosmology(const ClassParams& pars,  TransferFit::Type tf, bool verbose)
   : ClassEngine(verbose),  pars_(pars), sigma8_(0.), delta_H_(1.), 
   transfer_fit_(tf), param_file_("")
 {
@@ -245,7 +245,7 @@ void Cosmology::Initialize()
 }
 
 // set the transfer function
-void Cosmology::SetTransferFunction(TransferFit tf) 
+void Cosmology::SetTransferFunction(TransferFit::Type tf) 
 {
     if (tf == transfer_fit_) return;
     

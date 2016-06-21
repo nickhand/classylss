@@ -266,60 +266,60 @@ int ClassEngine::Free() {
     return _SUCCESS_;
 }
 
-int ClassEngine::check_le_cls_type(cltype t)
+int ClassEngine::check_le_cls_type(Cls::Type t)
 {
     switch(t) {
-        case cltype::TT:
+        case Cls::TT:
             if (le.has_tt==_FALSE_) 
                 throw invalid_argument("no lensed ClTT available");
             return le.index_lt_tt;
-        case cltype::TE:
+        case Cls::TE:
             if (le.has_te==_FALSE_) 
                 throw invalid_argument("no lensed ClTE available"); 
             return le.index_lt_te;
-        case cltype::EE:
+        case Cls::EE:
             if (le.has_ee==_FALSE_)
                 throw invalid_argument("no lensed ClEE available");
             return le.index_lt_ee;
-        case cltype::BB:
+        case Cls::BB:
             if (le.has_bb==_FALSE_)
                 throw invalid_argument("no lensed ClBB available");
             return le.index_lt_bb;
-        case cltype::PP:
+        case Cls::PP:
             if (le.has_pp==_FALSE_)
                 throw invalid_argument("no lensed ClPhi-Phi available");
             return le.index_lt_pp;
-        case cltype::TP:
+        case Cls::TP:
             if (le.has_tp==_TRUE_)
                 throw invalid_argument("no lensed ClT-Phi available");
             return le.index_lt_tp;
     } 
 }
 
-int ClassEngine::check_sp_cls_type(cltype t)
+int ClassEngine::check_sp_cls_type(Cls::Type t)
 {
     switch(t) {
-        case cltype::TT:
+        case Cls::TT:
             if (sp.has_tt==_FALSE_) 
                 throw invalid_argument("no ClTT available");
             return sp.index_ct_tt;
-        case cltype::TE:
+        case Cls::TE:
             if (sp.has_te==_FALSE_) 
                 throw invalid_argument("no ClTE available"); 
             return sp.index_ct_te;
-        case cltype::EE:
+        case Cls::EE:
             if (sp.has_ee==_FALSE_)
                 throw invalid_argument("no ClEE available");
             return sp.index_ct_ee;
-        case cltype::BB:
+        case Cls::BB:
             if (sp.has_bb==_FALSE_)
                 throw invalid_argument("no ClBB available");
             return sp.index_ct_bb;
-        case cltype::PP:
+        case Cls::PP:
             if (sp.has_pp==_FALSE_)
                 throw invalid_argument("no ClPhi-Phi available");
             return sp.index_ct_pp;
-        case cltype::TP:
+        case Cls::TP:
             if (sp.has_tp==_TRUE_)
                 throw invalid_argument("no ClT-Phi available");
             return sp.index_ct_tp;
@@ -341,7 +341,7 @@ int ClassEngine::lensed_lmax() const {
 /*----------------------------------------------------------------------------*/
 
 
-parray ClassEngine::GetRawCls(const parray& ell, cltype t) 
+parray ClassEngine::GetRawCls(const parray& ell, Cls::Type t) 
 {
     if (!ready) throw_error("run compute() before accessing results", __FILE__, __LINE__);    
     int index = check_sp_cls_type(t);
@@ -384,7 +384,7 @@ parray ClassEngine::GetRawCls(const parray& ell, cltype t)
     return toret;
 }
 
-parray ClassEngine::GetLensedCls(const parray& ell, cltype t)
+parray ClassEngine::GetLensedCls(const parray& ell, Cls::Type t)
 {
     if (!ready) throw_error("run compute() before accessing results", __FILE__, __LINE__);
     int index = check_le_cls_type(t);

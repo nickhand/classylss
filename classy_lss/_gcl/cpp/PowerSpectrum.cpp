@@ -74,3 +74,57 @@ double PowerSpectrum::NonlinearScale() const {
 }
 
 
+static double X_integrand(const PowerSpectrum& P, double k, double q) {
+    return P(q)*(-2*SphericalBesselJ1(k*q)/(k*q));
+}
+
+double PowerSpectrum::X_Zel(double k) const {
+    return 1/(2*M_PI*M_PI) * Integrate(bind(X_integrand, cref(*this), k, _1), 1e-5, 1e2, 1e-4, 1e-10);
+}
+
+parray PowerSpectrum::X_Zel(const parray& k) const {
+    int n = (int)k.size();
+    parray out(n);
+    #pragma omp parallel for
+    for(int i = 0; i < n; i++)
+        out[i] = X_Zel(k[i]);
+    return out;
+}
+
+static double Y_integrand(const PowerSpectrum& P, double k, double q) {
+    double x = k*q;
+    return P(q)*(-2*SphericalBesselJ0(x) + 6*SphericalBesselJ1(x)/x);
+}
+
+double PowerSpectrum::Y_Zel(double k) const {
+    return 1/(2*M_PI*M_PI) * Integrate(bind(Y_integrand, cref(*this), k, _1), 1e-5, 1e2, 1e-4, 1e-10);
+}
+
+parray PowerSpectrum::Y_Zel(const parray& k) const {
+    int n = (int)k.size();
+    parray out(n);
+    #pragma omp parallel for
+    for(int i = 0; i < n; i++)
+        out[i] = Y_Zel(k[i]);
+    return out;
+}
+
+static double Q3_integrand(const PowerSpectrum& P, double q) {
+    double Pq = P(q);
+    return Pq*Pq/q/q;
+}
+
+double PowerSpectrum::Q3_Zel(double k) const {
+    return 1/(10*M_PI*M_PI) * pow4(k) * Integrate(bind(Q3_integrand, cref(*this), _1), 1e-5, 1e2, 1e-4, 1e-10);
+}
+
+parray PowerSpectrum::Q3_Zel(const parray& k) const {
+    int n = (int)k.size();
+    parray out(n);
+    #pragma omp parallel for
+    for(int i = 0; i < n; i++)
+        out[i] = Q3_Zel(k[i]);
+    return out;
+}
+
+

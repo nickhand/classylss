@@ -5,6 +5,15 @@
 #include "parray.h"
 #include "Spline.h"
 
+namespace TransferFit { 
+  enum Type {CLASS=0,           /* calls CLASS to compute */ 
+              EH,               /* Eisenstein & Hu 1998 (astro-ph/9709112) */
+              EH_NoWiggle,      /* No wiggle version of EH */
+              BBKS,             /* Bardeen, Bond, Kaiser, Szalay 1986 */
+    };
+}
+
+
 /*----------------------------------------------------------------------------*/
 /* class to encapsulate add better Transfer functionality to ClassEngine      */
 /*----------------------------------------------------------------------------*/
@@ -12,20 +21,14 @@ class Cosmology : public ClassEngine
 {
 public:
 
-    enum TransferFit {CLASS=0,          /* calls CLASS to compute */ 
-                      EH,               /* Eisenstein & Hu 1998 (astro-ph/9709112) */
-                      EH_NoWiggle,        
-                      BBKS,             /* Bardeen, Bond, Kaiser, Szalay 1986 */
-    };
-    
     Cosmology(bool verbose=false);
-    Cosmology(TransferFit tf, bool verbose=false);
+    Cosmology(TransferFit::Type tf, bool verbose=false);
     
     Cosmology(const std::string& param_file, bool verbose=false);
-    Cosmology(const std::string& param_file, TransferFit tf, bool verbose=false);
+    Cosmology(const std::string& param_file, TransferFit::Type tf, bool verbose=false);
     
     Cosmology(const ClassParams& pars, bool verbose=false);
-    Cosmology(const ClassParams& pars, TransferFit tf, bool verbose=false);
+    Cosmology(const ClassParams& pars, TransferFit::Type tf, bool verbose=false);
 
 
     Cosmology(const Cosmology &other);
@@ -34,7 +37,7 @@ public:
     void update(const ClassParams& newpars);
     
     // functions for setting the type of transfer TransferFit to use
-    void SetTransferFunction(TransferFit tf);
+    void SetTransferFunction(TransferFit::Type tf);
     
     // normalize the transfer function
     void NormalizeTransferFunction(double sigma8);
@@ -53,7 +56,7 @@ public:
     inline double ln_1e10_A_s() const { return log(1e10*A_s()); }
     
     // accessors
-    inline TransferFit GetTransferFit() const { return transfer_fit_; }
+    inline TransferFit::Type GetTransferFit() const { return transfer_fit_; }
     inline const std::string& GetParamFile() const { return param_file_; }
     inline parray GetDiscreteK() const { return ki; }
     inline parray GetDiscreteTk() const { return Ti; }
@@ -66,7 +69,7 @@ private:
     ClassParams pars_;
     double sigma8_;      /* power spectrum variance smoothed at 8 Mpc/h */
     double delta_H_;     /* normalization of linear power spectrum at z = 0 */
-    TransferFit transfer_fit_;   /* the transfer fit method */
+    TransferFit::Type transfer_fit_;   /* the transfer fit method */
     std::string param_file_;
     
     parray ki, Ti;

@@ -15,11 +15,17 @@ namespace std {
 import contextlib
 %}
 
+%rename(cltypes) Cls;
+
+%nodefaultctor Cls;
+%nodefaultdtor Cls;
+struct Cls {
+    enum Type {TT=0,EE,TE,BB,PP,TP};
+};
+
 class ClassEngine  {
 
 public:
-
-    enum cltype {TT,EE,TE,BB,PP,TP};
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
@@ -36,8 +42,8 @@ public:
     void verbose(bool verbose=true);
     
     // Cls functions
-    parray GetRawCls(const parray& ell, ClassEngine::cltype cl=ClassEngine::cltype::TT);
-    parray GetLensedCls(const parray& ell, ClassEngine::cltype cl=ClassEngine::cltype::TT);
+    parray GetRawCls(const parray& ell, Cls::Type cl=Cls::TT);
+    parray GetLensedCls(const parray& ell, Cls::Type cl=Cls::TT);
     
     // matter density/transfer
     parray GetPklin(const parray& k, double z);
@@ -124,11 +130,3 @@ public:
                 self._clean()
     %}
 };
-
-%pythoncode 
-%{
-    from argparse import Namespace
-    cltypes = Namespace()
-    for k in ['TT','EE','TE','BB','PP','TP']:
-        setattr(cltypes, k, getattr(ClassEngine, k))
-%}

@@ -53,6 +53,24 @@ public:
     virtual double NonlinearScale() const;
     
     virtual const double& GetRedshift() const = 0;
+    
+    /* Zel'dovich approx integral X(k) = 1/2pi^2 \int dq P(q) (-2 * j_1(kq) / kq) */
+    virtual double X_Zel(double k) const;
+    
+    /* Compute X(k) for several k*/
+    virtual parray X_Zel(const parray& k) const;
+    
+    /* Zel'dovich approx integral Y(k) = 1/2pi^2  \int dq P(q) (-2 * j_0(kq) + 6 j_1(kq)/kq) */
+    virtual double Y_Zel(double k) const;
+    
+    /* Compute Y(k) for several k */
+    virtual parray Y_Zel(const parray& k) const;
+    
+    /* Zel'dovich integral Q3(k) = 1/(10pi^2) k^4 \int dq P(q)^2/q^2 */
+    virtual double Q3_Zel(double k) const;
+    
+    /* Compute Q3(k) for several k */
+    virtual parray Q3_Zel(const parray& k) const;
 };
 
 
