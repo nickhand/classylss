@@ -86,16 +86,10 @@ def build_class(prefix):
     if ret != 0:
         raise ValueError("could not build CLASS v%s" %CLASS_VERSION)
     
-
-# setup FFTW for GCL library
-fftw_info = {'include_dirs':[], 'library_dirs':[]}
-if 'FFTW_INC' in os.environ:
-    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
-if 'FFTW_LIB' in os.environ:
-    fftw_info['library_dirs'] = [os.environ['FFTW_LIB']]
-
 class build_external_clib(build_clib):
-    
+    """
+    Custom command to build CLASS first, and then GCL library
+    """
     def finalize_options(self):
         
         build_clib.finalize_options(self)    
@@ -119,7 +113,10 @@ class build_external_clib(build_clib):
         build_clib.build_libraries(self, libraries)
 
 class custom_build_ext(build_ext):
-    
+    """
+    Custom extension building to grab include directories
+    from the ``build_clib`` command
+    """
     def finalize_options(self):
         build_ext.finalize_options(self)
         self.include_dirs.append(numpy.get_include())
@@ -129,19 +126,27 @@ class custom_build_ext(build_ext):
             self.run_command('build_clib')
             build_clib = self.get_finalized_command('build_clib')
             self.include_dirs += build_clib.include_dirs
-            self.library_dirs += build_clib.compiler.library_dirs + fftw_info['library_dirs']
+            self.library_dirs += build_clib.compiler.library_dirs #+ fftw_info['library_dirs']
             
         build_ext.run(self)
         
         
 class custom_install(install):
-
-    # Calls the default run command, then deletes the build area
-    # (equivalent to "setup clean --all").
+    """
+    Custom install that deletes the ``build`` directory if successfull
+    """
     def run(self):
         install.run(self)
         shutil.rmtree("build")
   
+
+# setup FFTW for GCL library
+fftw_info = {'include_dirs':[], 'library_dirs':[]}
+if 'FFTW_INC' in os.environ:
+    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
+if 'FFTW_DIR' in os.environ:
+    fftw_info['library_dirs'] = [os.environ['FFTW_DIR']]  
+
 # GCL extension 
 gcl_info = {}
 gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
