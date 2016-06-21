@@ -136,7 +136,7 @@ class custom_install(install):
   
 
 # setup FFTW for GCL library
-fftw_info = {}
+fftw_info = {'include_dirs':[], 'library_dirs':[]}
 if 'FFTW_INC' in os.environ:
     fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
 if 'FFTW_LIB' in os.environ:
@@ -145,9 +145,8 @@ if 'FFTW_LIB' in os.environ:
 # GCL extension 
 gcl_info = {}
 gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
-gcl_info['include_dirs'] = ['classy_lss/_gcl/include'] + fftw_info.get('include_dirs', [])
-gcl_info['library_dirs'] = fftw_info.get('library_dirs', [])
-gcl_info['runtime_library_dirs'] = fftw_info.get('library_dirs', [])
+gcl_info['include_dirs'] = ['classy_lss/_gcl/include'] + fftw_info['include_dirs']
+gcl_info['library_dirs'] = fftw_info['library_dirs']
 libgcl = ('gcl', gcl_info)
 
     
@@ -158,7 +157,7 @@ ext = Extension(name='classy_lss._gcl',
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['gcl', 'class', 'gomp', 'fftw3'],
-                language='c++'
+                library_dirs=fftw_info['library_dirs']
                 )
 
 
