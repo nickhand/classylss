@@ -19,7 +19,7 @@ class ClassEngine  {
 
 public:
 
-    enum cltype {TT,EE,TE,BB,PP,TP,EP};
+    enum class cltype {TT,EE,TE,BB,PP,TP,EP};
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
@@ -66,6 +66,7 @@ public:
     double ln_1e10_A_s() const;
     double sigma8() const;
     double k_max() const;
+    double k_min() const;
     double z_drag() const;
     double rs_drag() const;
     double tau_reio() const;
@@ -123,3 +124,12 @@ public:
                 self._clean()
     %}
 };
+
+%pythoncode 
+%{
+    from argparse import Namespace
+    cltypes = Namespace()
+    for k in ClassEngine.__dict__:
+        if k.startswith("cltype_"):
+            setattr(cltypes, k.split('cltype_')[1], getattr(ClassEngine, k))
+%}

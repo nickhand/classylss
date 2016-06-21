@@ -28,7 +28,7 @@ class ClassEngine
 {
 public:
     
-    enum cltype {TT=0,EE,TE,BB,PP,TP,EP}; //P stands for phi (lensing potential)
+    enum class cltype {TT=0,EE,TE,BB,PP,TP,EP}; //P stands for phi (lensing potential)
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
@@ -102,7 +102,9 @@ public:
     // convenience function to return sigma8 at z = 0
     inline double sigma8() const { return sp.sigma8; }
     // maximum k value computed in h/Mpc
-    inline double k_max() const { return exp(sp.ln_k[sp.ln_k_size-1])/h(); }
+    inline double k_max() const { return 0.995*exp(sp.ln_k[sp.ln_k_size-1])/h(); }
+    // minim k value computed in h/Mpc
+    inline double k_min() const { return 1.005*exp(sp.ln_k[0])/h(); }
     
     // baryon drag redshift
     inline double z_drag() const { return th.z_d; }

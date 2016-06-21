@@ -269,27 +269,27 @@ int ClassEngine::Free() {
 int ClassEngine::check_le_cls_type(cltype t)
 {
     switch(t) {
-        case TT:
+        case cltype::TT:
             if (le.has_tt==_FALSE_) 
                 throw invalid_argument("no lensed ClTT available");
             return le.index_lt_tt;
-        case TE:
+        case cltype::TE:
             if (le.has_te==_FALSE_) 
                 throw invalid_argument("no lensed ClTE available"); 
             return le.index_lt_te;
-        case EE:
+        case cltype::EE:
             if (le.has_ee==_FALSE_)
                 throw invalid_argument("no lensed ClEE available");
             return le.index_lt_ee;
-        case BB:
+        case cltype::BB:
             if (le.has_bb==_FALSE_)
                 throw invalid_argument("no lensed ClBB available");
             return le.index_lt_bb;
-        case PP:
+        case cltype::PP:
             if (le.has_pp==_FALSE_)
                 throw invalid_argument("no lensed ClPhi-Phi available");
             return le.index_lt_pp;
-        case TP:
+        case cltype::TP:
             if (le.has_tp==_TRUE_)
                 throw invalid_argument("no lensed ClT-Phi available");
             return le.index_lt_tp;
@@ -299,27 +299,27 @@ int ClassEngine::check_le_cls_type(cltype t)
 int ClassEngine::check_sp_cls_type(cltype t)
 {
     switch(t) {
-        case TT:
+        case cltype::TT:
             if (sp.has_tt==_FALSE_) 
                 throw invalid_argument("no ClTT available");
             return sp.index_ct_tt;
-        case TE:
+        case cltype::TE:
             if (sp.has_te==_FALSE_) 
                 throw invalid_argument("no ClTE available"); 
             return sp.index_ct_te;
-        case EE:
+        case cltype::EE:
             if (sp.has_ee==_FALSE_)
                 throw invalid_argument("no ClEE available");
             return sp.index_ct_ee;
-        case BB:
+        case cltype::BB:
             if (sp.has_bb==_FALSE_)
                 throw invalid_argument("no ClBB available");
             return sp.index_ct_bb;
-        case PP:
+        case cltype::PP:
             if (sp.has_pp==_FALSE_)
                 throw invalid_argument("no ClPhi-Phi available");
             return sp.index_ct_pp;
-        case TP:
+        case cltype::TP:
             if (sp.has_tp==_TRUE_)
                 throw invalid_argument("no ClT-Phi available");
             return sp.index_ct_tp;
@@ -476,8 +476,12 @@ parray ClassEngine::GetTk(const parray& k, double z)
     
     int index_md = sp.index_md_scalars;
         
-    // linear power spectrum
-    parray Tk = GetPklin(k, z);
+    // power spectrum
+    parray Tk;
+    if (nl.method == nl_none)
+        Tk = GetPklin(k, z);
+    else
+        Tk = GetPknl(k, z);
     
     for (size_t i = 0; i < k.size(); i++) {
     
