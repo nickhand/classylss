@@ -9,8 +9,6 @@ import os
 import numpy
 import shutil
 
-package_basedir = os.path.abspath(os.path.dirname(__file__))
-
 def get_latest_class_version():
     """
     Parse the ``class_public`` github API to determine the 
@@ -43,20 +41,50 @@ def get_latest_class_version():
     
     else:
         raise ValueError("cannot find latest CLASS version to download")
+
+package_basedir = os.path.abspath(os.path.dirname(__file__))
+CLASS_VERSION = get_latest_class_version()
+
+MAJOR = 0
+MINOR = 0
+MICRO = 1
+ISRELEASED = False
+VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+
+DISTNAME = 'classy_lss'
+AUTHOR = 'Nick Hand'
+AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
+INSTALL_REQUIRES = ['numpy', 'astropy', 'requests']
+DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
+
+if not ISRELEASED:
+    VERSION += '.dev'
     
+def write_version_py():
+    cnt = """\
+version = '%s'
+class_version = '%s'
+"""
+    filename = os.path.join(os.path.dirname(__file__), 'classy_lss', 'version.py')
+    a = open(filename, 'w')
+    try:
+        a.write(cnt % (VERSION, CLASS_VERSION))
+    finally:
+        a.close()
+        
+write_version_py()
 
 def build_class(prefix):
     """
     Download and build CLASS
     """
-    # latest class version and download link
-    version = get_latest_class_version()            
-    args = (package_basedir, version, prefix)
+    # latest class version and download link       
+    args = (package_basedir, CLASS_VERSION, prefix)
     command = 'sh %s/depends/install_class.sh %s %s' %args
     
     ret = os.system(command)
     if ret != 0:
-        raise ValueError("could not build CLASS v%s" %version)
+        raise ValueError("could not build CLASS v%s" %CLASS_VERSION)
     
 class build_external_clib(build_clib):
     
@@ -121,20 +149,19 @@ ext = Extension(name='classy_lss._gcl',
                 )
 
 
-setup(
-    name="classy_lss", version="0.0.1",
-    author="Nick Hand",
-    author_email="nicholas.adam.hand@gmail.com",
-    description="python binding of CLASS for LSS purposes",
-    packages= ['classy_lss'],
-    requires=['numpy'],
-    ext_modules = [ext],
-    libraries=[libgcl],
-    cmdclass = {
-        'build_clib': build_external_clib,
-        'build_ext': custom_build_ext,
-        'install': custom_install
-    },
-    py_modules = ["classy_lss.gcl"]
+setup(name=DISTNAME,
+      version=VERSION,
+      author=AUTHOR,
+      author_email=AUTHOR_EMAIL,
+      description=DESCRIPTION,
+      install_requires=INSTALL_REQUIRES,
+      ext_modules = [ext],
+      libraries=[libgcl],
+      cmdclass = {
+          'build_clib': build_external_clib,
+          'build_ext': custom_build_ext,
+          'install': custom_install
+      },
+      py_modules = ["classy_lss.gcl"]
 )
 
