@@ -52,4 +52,39 @@ and then the package can be installed using
     export CFLAGS='-std=c++11 -fopenmp'; pip install .
     
 This procedure has been tested on Mac and Linux machines.
+
+To verify that the installation has succeeded, run:
+
+.. code-block:: python
+
+    from classy_lss import gcl
+    
+Examples
+--------
+
+To compute the linear power spectrum for the Planck 2015 release:
+
+.. code-block:: python
+
+    from astropy.cosmology import Planck15
+    from classy_lss import power
+    import numpy
+    
+    # desired wavenumbers (in h/Mpc)
+    k = numpy.logspace(-3, 0, 500)
+    
+    # desired redshift 
+    z = 0
+    
+    # linear power spectrum in [Mpc/h]^3
+    Plin = power.linear(k, z, verbose=True, cosmo=Planck15)
+    
+    # nonlinear power spectrum in [Mpc/h]^3
+    Pnl = power.nonlinear(k, z, verbose=True, cosmo=Planck15)
+    
+    # Zeldovich power spectrum in [Mpc/h]^3
+    Pzel = power.zeldovich(k, z, verbose=True, cosmo=Planck15)
+    
+    
+
     
