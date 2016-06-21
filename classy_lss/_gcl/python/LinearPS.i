@@ -6,16 +6,12 @@
 
 class LinearPS : public PowerSpectrum {
 public:
-    LinearPS(const Cosmology& cosmo, double z=0, double kmax=0.2);
-    ~LinearPS();
+    LinearPS(const Cosmology& cosmo, double z=0);
     
     const double& GetSigma8AtZ() const;
     const Cosmology& GetCosmology() const;
     const double& GetRedshift() const;
-    const double& GetKmax() const;
     
-/*    void SetRedshift(double z_);
-    void SetKmax(double kmax_);*/
     void SetSigma8AtZ(double sigma8_z);
     
     // translated to __call__ -> calls Evaluate(K)

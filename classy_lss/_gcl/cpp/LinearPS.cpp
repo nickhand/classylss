@@ -2,16 +2,13 @@
 
 using namespace Common;
 
-LinearPS::LinearPS(const Cosmology& C_, double z_, double kmax_)
-    : C(C_), z(z_), sigma8_z(C.Sigma8_z(z)), kmax(kmax_)
+LinearPS::LinearPS(const Cosmology& C_, double z_)
+    : C(C_), z(z_), sigma8_z(C.Sigma8_z(z))
 {
     
 }
 
-LinearPS::~LinearPS() 
-{
-    C.Clean();
-}
+LinearPS::~LinearPS() {}
 
 
 double LinearPS::Evaluate(double k) const {
