@@ -64,5 +64,6 @@ public:
     for k in Cosmology.__dict__:
         if k.startswith("TransferFit_"):
             setattr(transfers, k.split('TransferFit_')[1], getattr(Cosmology, k))
+    transfers.CLASS = 0
 %}
 
