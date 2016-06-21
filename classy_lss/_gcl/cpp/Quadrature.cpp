@@ -1,3 +1,8 @@
+/**
+ * @file Quadrature.cpp
+ * @author Jordan Carlson (jwgcarlson@gmail.com)
+ * @brief Templated routines for numerical quadrature. */
+
 #include <cassert>
 #include <cfloat>
 #include <cmath>

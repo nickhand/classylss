@@ -9,10 +9,6 @@
 #include <cmath>
 #include "parray.h"
 
-double TrapzIntegrate(const parray& x, const parray& y);
-double SimpsIntegrate(const parray& x, const parray& y);
-double basic_simps(const parray& y, int start, int stop, const parray& x);
-
 /* General notes on integration routines:
  *  - The Function f can be any callable object, i.e. any object that defines
  *    the method  double operator()(double x).  This becomes especially
@@ -65,29 +61,6 @@ struct InverseSub { \
     double u(double x) { return 1/x; } \
     double dxdu(double u) { return -1/(u*u); } \
 };
-
-
-/**
- * \brief Compute an n-dimensional definite integral.
- *
- * Compute $\int f(\vec{x}) d^nx$ using the adaptive subregion algorithm of
- * Genz and Malik.  The integration region is the rectangle defined by the
- * parrays a and b, i.e.
- *   V = [a_1,b_1] x [a_2,b_2] x ... x [a_n,b_n].
- * For n <= 6, the function f should have the signature
- *   double f(double x1, ..., double xn);
- * For n > 6 the signature should be
- *   double f(double* x);
- * The Function template parameter can be determined implicitly from f, so you
- * need not specify it.  However, the dimensionality n _is_ required, so you
- * must write e.g.
- *   double s = Integrate<n>(f, a, b);
- *
- * This implementation is based on the Fortran routine ADAPT from Genz & Malik,
- * J. Comp. & Appl. Math., 6, 295-302, 1980. */
-template<int n, typename Function>
-double Integrate(Function f, double* a, double* b, double epsrel = 1e-5, double epsabs = 1e-10, double* abserr = 0, int* neval = 0);
-
 
 #include "Quadrature.inl"
 
