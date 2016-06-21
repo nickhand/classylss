@@ -74,6 +74,14 @@ class_version = '%s'
         
 write_version_py()
 
+
+# setup FFTW for GCL library
+fftw_info = {'include_dirs':[], 'library_dirs':[]}
+if 'FFTW_INC' in os.environ:
+    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
+if 'FFTW_DIR' in os.environ:
+    fftw_info['library_dirs'] = [os.environ['FFTW_DIR']]  
+
 def build_class(prefix):
     """
     Download and build CLASS
@@ -126,7 +134,7 @@ class custom_build_ext(build_ext):
             self.run_command('build_clib')
             build_clib = self.get_finalized_command('build_clib')
             self.include_dirs += build_clib.include_dirs
-            self.library_dirs += build_clib.compiler.library_dirs #+ fftw_info['library_dirs']
+            self.library_dirs += build_clib.compiler.library_dirs + fftw_info['library_dirs']
             
         build_ext.run(self)
         
@@ -139,14 +147,6 @@ class custom_install(install):
         install.run(self)
         shutil.rmtree("build")
   
-
-# setup FFTW for GCL library
-fftw_info = {'include_dirs':[], 'library_dirs':[]}
-if 'FFTW_INC' in os.environ:
-    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
-if 'FFTW_DIR' in os.environ:
-    fftw_info['library_dirs'] = [os.environ['FFTW_DIR']]  
-
 # GCL extension 
 gcl_info = {}
 gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
