@@ -7,9 +7,9 @@ spectra and the Cls spectra.
 
 Some of the package features:
 
-    - a parameter interface with the `astropy.cosmology`_ module
-    - linear correlation function calculations using `FFTLog`_
-    - power spectra and correlations functions in the Zel'dovich approximation
+- a parameter interface with the `astropy.cosmology`_ module
+- linear correlation function calculations using `FFTLog`_
+- power spectra and correlations functions in the Zel'dovich approximation
 
 .. _`CLASS` : http://class-code.net
 .. _`astropy.cosmology` : http://docs.astropy.org/en/latest/cosmology/index.html
