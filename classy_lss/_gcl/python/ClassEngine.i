@@ -19,7 +19,7 @@ class ClassEngine  {
 
 public:
 
-    enum class cltype {TT,EE,TE,BB,PP,TP,EP};
+    enum cltype {TT,EE,TE,BB,PP,TP};
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
@@ -129,7 +129,6 @@ public:
 %{
     from argparse import Namespace
     cltypes = Namespace()
-    for k in ClassEngine.__dict__:
-        if k.startswith("cltype_"):
-            setattr(cltypes, k.split('cltype_')[1], getattr(ClassEngine, k))
+    for k in ['TT','EE','TE','BB','PP','TP']:
+        setattr(cltypes, k, getattr(ClassEngine, k))
 %}

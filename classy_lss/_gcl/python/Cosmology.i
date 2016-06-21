@@ -7,7 +7,7 @@
 class Cosmology : public ClassEngine {
 
 public:    
-    enum class TransferFit {CLASS, EH, EH_NoWiggle, BBKS};
+    enum TransferFit {CLASS, EH, EH_NoWiggle, BBKS};
     
     Cosmology(bool verbose=false);
     Cosmology(TransferFit tf, bool verbose=false);
@@ -61,9 +61,7 @@ public:
 %{
     from argparse import Namespace
     transfers = Namespace()
-    for k in Cosmology.__dict__:
-        if k.startswith("TransferFit_"):
-            setattr(transfers, k.split('TransferFit_')[1], getattr(Cosmology, k))
-    transfers.CLASS = 0
+    for k in ['CLASS', 'EH', 'EH_NoWiggle', 'BBKS']:
+        setattr(transfers, k, getattr(Cosmology, k))
 %}
 

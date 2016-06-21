@@ -28,7 +28,7 @@ class ClassEngine
 {
 public:
     
-    enum class cltype {TT=0,EE,TE,BB,PP,TP,EP}; //P stands for phi (lensing potential)
+    enum cltype {TT=0,EE,TE,BB,PP,TP}; //P stands for phi (lensing potential)
     
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
