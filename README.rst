@@ -7,6 +7,7 @@ spectra and the Cls spectra.
 
 Some of the package features:
 
+- underyling calculations done in C++, with SWIG used to produce the Python interface
 - a parameter interface with the `astropy.cosmology`_ module
 - linear correlation function calculations using `FFTLog`_
 - power spectra and correlation functions in the Zel'dovich approximation
