@@ -86,6 +86,14 @@ def build_class(prefix):
     if ret != 0:
         raise ValueError("could not build CLASS v%s" %CLASS_VERSION)
     
+
+# setup FFTW for GCL library
+fftw_info = {'include_dirs':[], 'library_dirs':[]}
+if 'FFTW_INC' in os.environ:
+    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
+if 'FFTW_LIB' in os.environ:
+    fftw_info['library_dirs'] = [os.environ['FFTW_LIB']]
+
 class build_external_clib(build_clib):
     
     def finalize_options(self):
@@ -103,7 +111,7 @@ class build_external_clib(build_clib):
         link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
         
         self.compiler.set_link_objects(link_objects)
-        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
+        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
         
         for (library, build_info) in libraries:
             self.include_dirs += build_info.get('include_dirs', [])
@@ -121,7 +129,7 @@ class custom_build_ext(build_ext):
             self.run_command('build_clib')
             build_clib = self.get_finalized_command('build_clib')
             self.include_dirs += build_clib.include_dirs
-            self.library_dirs += build_clib.compiler.library_dirs
+            self.library_dirs += build_clib.compiler.library_dirs + fftw_info['library_dirs']
             
         build_ext.run(self)
         
@@ -134,14 +142,6 @@ class custom_install(install):
         install.run(self)
         shutil.rmtree("build")
   
-
-# setup FFTW for GCL library
-fftw_info = {'include_dirs':[], 'library_dirs':[]}
-if 'FFTW_INC' in os.environ:
-    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
-if 'FFTW_LIB' in os.environ:
-    fftw_info['library_dirs'] = [os.environ['FFTW_LIB']]
-
 # GCL extension 
 gcl_info = {}
 gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
@@ -157,7 +157,6 @@ ext = Extension(name='classy_lss._gcl',
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['gcl', 'class', 'gomp', 'fftw3'],
-                runtime_library_dirs=fftw_info['library_dirs']
                 )
 
 
