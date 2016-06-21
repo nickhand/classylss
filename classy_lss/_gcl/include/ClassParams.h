@@ -6,7 +6,6 @@
 #include "output.h"
 
 #include "Common.h"
-#include "boost/any.hpp"
 #include <utility>
 #include <map>
 #include <iostream>
