@@ -9,6 +9,8 @@ import os
 import numpy
 import shutil
 
+global install_dir
+
 def get_latest_class_version():
     """
     Parse the ``class_public`` github API to determine the 
@@ -87,8 +89,8 @@ def build_class(prefix):
     Download and build CLASS
     """
     # latest class version and download link       
-    args = (package_basedir, CLASS_VERSION, prefix)
-    command = 'sh %s/depends/install_class.sh %s %s' %args
+    args = (package_basedir, CLASS_VERSION, prefix, install_dir)
+    command = 'sh %s/depends/install_class.sh %s %s %s' %args
     
     ret = os.system(command)
     if ret != 0:
@@ -144,6 +146,10 @@ class custom_install(install):
     Custom install that deletes the ``build`` directory if successfull
     """
     def run(self):
+        
+        # set the global install dir
+        global install_dir
+        install_dir = os.path.join(self.install_lib, self.config_vars['dist_name'], 'class')
         install.run(self)
         shutil.rmtree("build")
   
