@@ -63,6 +63,7 @@ public:
     double Omega0_r() const;
     double Omega0_g() const;
     double Omega0_lambda() const;
+    double Omega0_fld() const;
     double Omega0_k() const;
     double w0_fld() const;
     double wa_fld() const;

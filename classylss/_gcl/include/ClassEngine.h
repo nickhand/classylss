@@ -85,6 +85,8 @@ public:
     inline double Omega0_g() const { return ba.Omega0_g; }
     // cosmological constant density fraction
     inline double Omega0_lambda() const { return ba.Omega0_lambda; }
+    // dark energy fluid density fraction (valid if Omega0_lambda is unspecified)
+    inline double Omega0_fld() const { return ba.Omega0_fld; }
     // curvature density fraction
     inline double Omega0_k() const { return ba.Omega0_k; }
     // current fluid equation of state parameter

@@ -91,12 +91,15 @@ public:
             """
             Convert an astropy cosmology to a ``ClassParams`` instance
             """
-            from astropy import units
+            from astropy import units, cosmology
             
             pars = cls()
             pars['h'] = cosmo.h
             pars['Omega_g'] = cosmo.Ogamma0
-            pars['Omega_b'] = cosmo.Ob0
+            if cosmo.Ob0 is not None:
+                pars['Omega_b'] = cosmo.Ob0
+            else:
+                raise ValueError("please specify a value 'Ob0' ")
             pars['Omega_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
 
             # handle massive neutrinos
@@ -122,6 +125,25 @@ public:
                 pars['N_ur'] = cosmo.Neff
                 pars['N_ncdm'] = 0
                 pars['m_ncdm'] = 0.
+                
+            # handle dark energy
+            if isinstance(cosmo, cosmology.LambdaCDM):
+                pars['w0_fld'] = -1.0
+                pars['wa_fld'] = 0.
+            elif isinstance(cosmo, cosmology.wCDM):
+                pars['w0_fld'] = cosmo.w0
+                pars['wa_fld'] = 0.
+                pars['Omega_Lambda'] = 0. # use Omega_fld
+            elif isinstance(cosmo, cosmology.w0waCDM):
+                pars['w0_fld'] = cosmo.w0
+                pars['wa_fld'] = cosmo.wa
+                pars['Omega_Lambda'] = 0. # use Omega_fld
+            else:
+                cls = cosmo.__class__.__name__
+                valid = ["LambdaCDM", "wCDM", "w0waCDM"]
+                msg = "dark energy equation of state not recognized for class '%s'; " %cls
+                msg += "valid classes: %s" %str(valid)
+                raise TypeError(msg)
 
             # default CLASS parameters
             extra.setdefault('P_k_max_h/Mpc',  20.)
