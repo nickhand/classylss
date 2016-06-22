@@ -45,13 +45,17 @@ location using environment variables:
 
     export FFTW_INC=/path/to/fftw/include
     export FFTW_DIR=/path/to/fftw/lib
-
+    
 and then the ``classylss`` package can be installed using
 
 .. code:: bash
     
     export CFLAGS='-std=c++11 -fopenmp'; pip install .
     
+If ``CLASS`` is not built succesfully, the installation will crash. In this case, the user
+can edit the default configuration variables in ``depends/class.cfg``, which are used
+when building the ``CLASS`` library.
+
 This procedure has been tested on Mac and Linux machines.
 
 To verify that the installation has succeeded, run:
