@@ -1,4 +1,4 @@
-classy_lss
+classylss
 ----------
 A python binding of the CMB Boltzmann code `CLASS`_, designed for large-scale structure calculations.
 
@@ -35,8 +35,8 @@ The package can be cloned from github as
 
 .. code:: bash
 
-    git clone https://github.com/nickhand/classy_lss.git
-    cd classy_lss
+    git clone https://github.com/nickhand/classylss.git
+    cd classylss
     
 If the ``fftw3`` library is installed in a non-standard location, the user should specify the
 location using environment variables:
@@ -46,7 +46,7 @@ location using environment variables:
     export FFTW_INC=/path/to/fftw/include
     export FFTW_DIR=/path/to/fftw/lib
 
-and then the ``classy_lss`` package can be installed using
+and then the ``classylss`` package can be installed using
 
 .. code:: bash
     
@@ -58,7 +58,7 @@ To verify that the installation has succeeded, run:
 
 .. code-block:: python
 
-    from classy_lss import gcl
+    from classylss import gcl
     
 Examples
 --------
@@ -68,7 +68,7 @@ To compute power spectra for the Planck 2015 cosmology:
 .. code-block:: python
 
     from astropy.cosmology import Planck15
-    from classy_lss import power
+    from classylss import power
     import numpy
     
     # desired wavenumbers (in h/Mpc)
@@ -90,7 +90,7 @@ and similarly, correlation functions can be computed:
 
 .. code-block:: python
     
-    from classy_lss import correlation
+    from classylss import correlation
     
     # desired separation (in Mpc/h)
     r = numpy.logspace(0, numpy.log10(150), 500)

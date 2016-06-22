@@ -51,7 +51,7 @@ MICRO = 1
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
-DISTNAME = 'classy_lss'
+DISTNAME = 'classylss'
 AUTHOR = 'Nick Hand'
 AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
 INSTALL_REQUIRES = ['numpy', 'astropy', 'requests']
@@ -65,7 +65,7 @@ def write_version_py():
 version = '%s'
 class_version = '%s'
 """
-    filename = os.path.join(os.path.dirname(__file__), 'classy_lss', 'version.py')
+    filename = os.path.join(os.path.dirname(__file__), 'classylss', 'version.py')
     a = open(filename, 'w')
     try:
         a.write(cnt % (VERSION, CLASS_VERSION))
@@ -149,15 +149,15 @@ class custom_install(install):
   
 # GCL extension 
 gcl_info = {}
-gcl_info['sources'] = list(glob("classy_lss/_gcl/cpp/*cpp"))
-gcl_info['include_dirs'] = ['classy_lss/_gcl/include'] + fftw_info['include_dirs']
+gcl_info['sources'] = list(glob("classylss/_gcl/cpp/*cpp"))
+gcl_info['include_dirs'] = ['classylss/_gcl/include'] + fftw_info['include_dirs']
 gcl_info['library_dirs'] = fftw_info['library_dirs']
 libgcl = ('gcl', gcl_info)
 
     
-sources = list(glob("classy_lss/_gcl/python/*.i")) + ['classy_lss/gcl.i']    
-ext = Extension(name='classy_lss._gcl',
-                sources=['classy_lss/gcl.i'],
+sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']    
+ext = Extension(name='classylss._gcl',
+                sources=['classylss/gcl.i'],
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
@@ -178,6 +178,6 @@ setup(name=DISTNAME,
           'build_ext': custom_build_ext,
           'install': custom_install
       },
-      py_modules = ["classy_lss.gcl"]
+      py_modules = ["classylss.gcl"]
 )
 
