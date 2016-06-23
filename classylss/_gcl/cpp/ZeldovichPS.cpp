@@ -1,5 +1,6 @@
 #include "ZeldovichPS.h"
 #include "LinearPS.h"
+#include "FortranFFTLog.h"
 
 using namespace Common;
 
@@ -9,6 +10,9 @@ static const double RMAX = 1e5;
 static const int NMAX = 15;
 
 
+/*----------------------------------------------------------------------------*/
+/* Zeldovich base class */
+/*----------------------------------------------------------------------------*/
 ZeldovichPS::ZeldovichPS(const Cosmology& C_, double z_, bool approx_lowk_) 
     : C(C_), sigma8_z(C_.Sigma8_z(z_)), Plin(C_, z_), approx_lowk(approx_lowk_), k0_low(5e-3)
 {    
@@ -27,18 +31,63 @@ ZeldovichPS::ZeldovichPS(const Cosmology& C_, double z_, bool approx_lowk_)
 }
 
 
+ZeldovichPS::ZeldovichPS(const Cosmology& C_, bool approx_lowk_, double sigma8_z_, double k0_low_,
+                         double sigmasq, const parray& X0_, const parray& XX_, const parray& YY_) 
+                        : C(C_), sigma8_z(sigma8_z_), Plin(C_, 0.), approx_lowk(approx_lowk_), 
+                         k0_low(k0_low_), sigma_sq(sigmasq), X0(X0_), XX(XX_), YY(YY_)
+{
+    InitializeR();
+    Plin.SetSigma8AtZ(sigma8_z);      
+}
+
 void ZeldovichPS::InitializeR() 
 {
-    r = parray::logspace(RMIN, RMAX, NUM_PTS);
+    
+    r = parray(NUM_PTS);
+    nc = 0.5*double(NUM_PTS+1);
+    double logrmin = log10(RMIN); 
+    double logrmax = log10(RMAX);
+    logrc = 0.5*(logrmin+logrmax);
+    dlogr = (logrmax - logrmin)/NUM_PTS; 
+    
+    for (int i = 1; i <= NUM_PTS; i++)
+        r[i-1] = pow(10., (logrc+(i-nc)*dlogr));
 }
 
 
 ZeldovichPS::~ZeldovichPS() {}
 
+static void nearest_interp_1d(int nd, double *xd, double *yd, int ni, double *xi, double *yi) 
+{
+    double d, d2;
+    int i, j, k, l;
+    
+    for (i = 0; i < ni; i++) {
+        k = 0;
+        d = fabs(xi[i] - xd[k]);
+        for(j = 1; j < nd; j++) {
+            d2 = fabs(xi[i] - xd[j]);
+            if (d2 < d) {
+                k = j;
+                d = d2;
+            }
+        }
+        if (xi[i] > xd[k]) {
+            l = k+1;
+            yi[i] = yd[l] + (yd[k] - yd[l])/(xd[k] - xd[l])*(xi[i]-xd[l]);
+        } else if (xi[i] < xd[k]) {
+            l = k-1;
+            yi[i] = yd[l] + (yd[k] - yd[l] )/(xd[k] - xd[l])*(xi[i]-xd[l]);
+        } else
+            yi[i] = yd[k];
+    }
+}
+
 parray ZeldovichPS::EvaluateMany(const parray& k) const 
 {    
     int n = (int)k.size();
     parray pk(n);
+    #pragma omp parallel for
     for(int i = 0; i < n; i++) {
         pk[i] = Evaluate(k[i]);
     }
@@ -67,10 +116,8 @@ double ZeldovichPS::fftlog_compute(double k, double factor) const
     double q = 0; // unbiased
     double mu;
     
-    dcomplex* a = new dcomplex[NUM_PTS];
-    dcomplex* b = new dcomplex[NUM_PTS];
-    double* kmesh = new double[NUM_PTS];
-    double* b_real = new double[NUM_PTS];
+    parray a(NUM_PTS);
+    parray kmesh(NUM_PTS);
 
     // logspaced between RMIN and RMAX
     double this_Pk = 0.;
@@ -86,15 +133,23 @@ double ZeldovichPS::fftlog_compute(double k, double factor) const
         else
             Fsec(a, r, k, double(n));
         
-        fht(NUM_PTS, (const double*)(r), a, kmesh, b, mu, q, 1., true, NULL);
+        // do the fft
+        FortranFFTLog fftlogger(NUM_PTS, dlogr*log(10.), mu, q, 1.0, 1);
         
-        // spline it
-        for (int j = 0; j < NUM_PTS; j++)
-            b_real[j] = b[j].real();
-        Spline spl = LinearSpline(NUM_PTS, kmesh, b_real);
-     
-        toadd = factor*sqrt(0.5*M_PI)*pow(k, -1.5)*spl(k);        
-        this_Pk += toadd;
+        bool ok = fftlogger.Transform(a, 1);
+        if (!ok) error("FFTLog failed\n");
+        double kr = fftlogger.KR();
+        double logkc = log10(kr) - logrc;
+        
+        for (int j = 1; j <= NUM_PTS; j++) 
+            kmesh[j-1] = pow(10., (logkc+(j-nc)*dlogr));
+             
+        // sum it up
+        double out;
+        nearest_interp_1d(NUM_PTS, (double*)(kmesh), (double*)(a), 1, &k, &out);
+        toadd = factor*sqrt(0.5*M_PI)*pow(k, -1.5)*out; 
+        
+        this_Pk += toadd;   
         if (fabs(toadd/this_Pk) < 0.005) break;
     }
         
@@ -109,7 +164,7 @@ double ZeldovichPS::Evaluate(double k) const
         return LowKApprox(k);
 }
 
-void ZeldovichPS::Fprim(dcomplex a[], const double r[], double k) const
+void ZeldovichPS::Fprim(parray& a, const parray& r, double k) const 
 {    
     for (int i = 0; i < NUM_PTS; i++) {
         a[i] = pow(r[i], 1.5) * (exp(-0.5*pow2(k)*(XX[i] + YY[i])) - exp(-pow2(k)*sigma_sq));
@@ -117,7 +172,7 @@ void ZeldovichPS::Fprim(dcomplex a[], const double r[], double k) const
     
 }
 
-void ZeldovichPS::Fsec(dcomplex a[], const double r[], double k, double n) const
+void ZeldovichPS::Fsec(parray& a, const parray& r, double k, double n) const 
 {    
     for (int i = 0; i < NUM_PTS; i++) {
         a[i] = pow(r[i], 1.5-n)*pow(k*YY[i], n)*exp(-0.5*pow2(k)*(XX[i] + YY[i]));

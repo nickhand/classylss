@@ -12,7 +12,7 @@ namespace IntegrationMethods { enum Type {FFTLOG=0, SIMPS, TRAPZ}; }
 */
 
 // use FFTLog -- k, Pk will be interpolated onto a log-spaced grid
-parray ComputeXiLM(int l, int m, const parray& k, const parray& pk, 
+parray ComputeXiLM(int l, int m, const parray& k, const parray& pk, double dlogr, double logrc, double nc,
                     const parray& r, double smoothing, IntegrationMethods::Type method=IntegrationMethods::FFTLOG);
 
 // use FFTlog, given log-spaced input k, Pk -- fills r, xi 

@@ -7,7 +7,10 @@
 using namespace std;
 
 ClassParams::ClassParams() {}
-  
+
+// destructor
+ClassParams::~ClassParams() {}
+
 ClassParams::ClassParams(const string& param_file) {
       
       // for error messages
@@ -63,8 +66,10 @@ void ClassParams::print() const
 
 bool ClassParams::contains(const std::string& key) const
 {
-    auto v = keys();
-    return (std::find(v.begin(), v.end(), key) != v.end());
+    if (pars.size() == 0)
+        return false;
+     
+    return (pars.find(key) != pars.end());
 }
 
 int ClassParams::add(const string& key, const int& val) { 

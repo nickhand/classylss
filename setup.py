@@ -76,14 +76,6 @@ class_version = '%s'
         
 write_version_py()
 
-
-# setup FFTW for GCL library
-fftw_info = {'include_dirs':[], 'library_dirs':[]}
-if 'FFTW_INC' in os.environ:
-    fftw_info['include_dirs'] = [os.environ['FFTW_INC']]
-if 'FFTW_DIR' in os.environ:
-    fftw_info['library_dirs'] = [os.environ['FFTW_DIR']]  
-
 def build_class(prefix):
     """
     Download and build CLASS
@@ -110,12 +102,12 @@ class build_external_clib(build_clib):
 
     def build_libraries(self, libraries):
 
-        build_class(self.class_build_dir)
-        link_objects = ['libclass.a']
-        link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
+        #build_class(self.class_build_dir)
+        #link_objects = ['libclass.a']
+        #link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
         
-        self.compiler.set_link_objects(link_objects)
-        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
+        #self.compiler.set_link_objects(link_objects)
+        #self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
         
         for (library, build_info) in libraries:
             self.include_dirs += build_info.get('include_dirs', [])
@@ -136,7 +128,7 @@ class custom_build_ext(build_ext):
             self.run_command('build_clib')
             build_clib = self.get_finalized_command('build_clib')
             self.include_dirs += build_clib.include_dirs
-            self.library_dirs += build_clib.compiler.library_dirs + fftw_info['library_dirs']
+            self.library_dirs += build_clib.compiler.library_dirs
             
         build_ext.run(self)
         
@@ -153,13 +145,31 @@ class custom_install(install):
         install.run(self)
         shutil.rmtree("build")
   
+
+gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
+fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
+
+class_sources = []
+class_build_dir = 'depends/tmp-class-v2.5.0/class_public-2.5.0'
+for d in ['source', 'hyrec', 'tools']:
+    class_sources += list(glob(os.path.join(class_build_dir, d, '*.c')))
+
+class_includes = []
+for d in ['include', 'hyrec', 'tools']:
+    class_includes.append(os.path.join(class_build_dir, d))
+      
+# CLASS
+class_info = {}
+class_info['sources'] = class_sources
+class_info['include_dirs'] = class_includes
+libclass = ('class', class_info)
+
 # GCL extension 
 gcl_info = {}
-gcl_info['sources'] = list(glob("classylss/_gcl/cpp/*cpp"))
-gcl_info['include_dirs'] = ['classylss/_gcl/include'] + fftw_info['include_dirs']
-gcl_info['library_dirs'] = fftw_info['library_dirs']
+gcl_info['sources'] =  gcl_sources + fftlog_sources 
+gcl_info['include_dirs'] = ['classylss/_gcl/include'] + class_includes 
+gcl_info['language'] = 'c++'
 libgcl = ('gcl', gcl_info)
-
     
 sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']    
 ext = Extension(name='classylss._gcl',
@@ -167,7 +177,7 @@ ext = Extension(name='classylss._gcl',
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
-                libraries=['gcl', 'class', 'gomp', 'fftw3'],
+                libraries=['class', 'gcl', 'gomp', 'gfortran']
                 )
 
 
@@ -178,7 +188,7 @@ setup(name=DISTNAME,
       description=DESCRIPTION,
       install_requires=INSTALL_REQUIRES,
       ext_modules = [ext],
-      libraries=[libgcl],
+      libraries=[libclass, libgcl],
       cmdclass = {
           'build_clib': build_external_clib,
           'build_ext': custom_build_ext,

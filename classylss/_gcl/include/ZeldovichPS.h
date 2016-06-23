@@ -3,16 +3,14 @@
 
 #include "Cosmology.h"
 #include "PowerSpectrum.h"
-#include "MyFFTLog.h"
 #include "LinearPS.h"
 
 /*------------------------------------------------------------------------------
     ZeldovichPS
     ---------
-    Power spectra in the Zel'dovich approximation for P00 and P01
+    Power spectrum in the Zel'dovich approximation
 ------------------------------------------------------------------------------*/
 
-// base class for Zel'dovich PS
 class ZeldovichPS  {
 public:
        
@@ -63,16 +61,18 @@ protected:
     bool approx_lowk;
     double k0_low;
     
+    
+    double nc, dlogr, logrc;
+    
     // the integrals needed for the FFTLog integral
     double sigma_sq;
     parray r, X0, XX, YY; 
     
     void InitializeR();
     double fftlog_compute(double k, const double factor = 1) const;
-    
-    void Fprim(dcomplex a[], const double r[], double k) const;
-    void Fsec(dcomplex a[], const double r[], double k, double n) const; 
+    void Fprim(parray& a, const parray& r, double k) const;
+    void Fsec(parray& a, const parray& r, double k, double n) const; 
     
 };
- 
+
 #endif // ZELDOVICH_PS_H

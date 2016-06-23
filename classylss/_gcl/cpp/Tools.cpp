@@ -2,12 +2,13 @@
 #include <cmath>
 #include <cstdio>
 #include <functional>
+#include <complex>
 
 #include "Tools.h"
 #include "PowerSpectrum.h"
 #include "DiscreteQuad.h"
 #include "Spline.h"
-#include "MyFFTLog.h"
+#include "FortranFFTLog.h"
 
 using std::bind;
 using std::cref;
@@ -15,22 +16,25 @@ using namespace std::placeholders;
 using namespace Common;
 
 void ComputeXiLM_fftlog(int l, int m, int N, const double k[], const double pk[],
-                                double r[], double xi[], double smoothing)
+                                double dlogr, double logrc, double nc, double r[], double xi[], double smoothing)
 {
-    // complex arrays for the FFT
-    dcomplex* a = new dcomplex[N];
-    dcomplex* b = new dcomplex[N];
+    parray a(N);
+    FortranFFTLog fftlogger(N, dlogr*log(10.), l+0.5, 0, 1.0, 1);
 
     // the fftlog magic
     for(int i = 0; i < N; i++)
         a[i] = pow(k[i], m - 0.5) * pk[i] * exp(-pow2(k[i]*smoothing));
-    fht(N, &k[0], a, r, b, l + 0.5);
+    
+    bool ok = fftlogger.Transform(a, 1);
+    if (!ok) error("FFTLog failed\n");
+    double kr = fftlogger.KR();
+    double logkc = log10(kr) - logrc;
+    
+    for (int j = 1; j <= N; j++) 
+        r[j-1] = pow(10., (logkc+(j-nc)*dlogr));
+    
     for(int i = 0; i < N; i++)
-        xi[i] = std::real(pow(2*M_PI*r[i], -1.5) * b[i]);
-
-    // delete arrays
-    delete[] b;
-    delete[] a;
+        xi[i] = std::real(pow(2*M_PI*r[i], -1.5) * a[i]);
 }
 
 
@@ -45,12 +49,22 @@ parray ComputeXiLM(int l, int m, const parray& k_, const parray& pk_, const parr
         double xi_[N];
 
         // force log-spacing using a spline
-        parray k = parray::logspace(k_.min(), k_.max(), k_.size());
+        parray k(N);
+        double nc = 0.5*double(N+1);
+        double logkmin = log10(k_.min()); 
+        double logkmax = log10(k_.max());
+        double logrc = 0.5*(logkmin+logkmax);
+        double dlogr = (logkmax - logkmin)/N; 
+    
+        for (int i = 1; i <= N; i++)
+            k[i-1] = pow(10., (logrc+(i-nc)*dlogr));
+        
+        
         auto pk_spline = CubicSpline(k_, pk_);
         auto pk = pk_spline(k);
 
         // call fftlog on the double[] arrays
-        ComputeXiLM_fftlog(l, m, N, &k[0], &pk[0], r_, xi_, smoothing);
+        ComputeXiLM_fftlog(l, m, N, &k[0], &pk[0], dlogr, logrc, nc, r_, xi_, smoothing);
 
         // return the result at desired domain values using a spline
         auto spline = CubicSpline(N, r_, xi_);
