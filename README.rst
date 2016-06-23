@@ -20,6 +20,7 @@ Dependencies
 ------------
 
 The required external Python dependencies are: 
+
 - astropy
 - numpy
 - requests
@@ -52,7 +53,7 @@ To verify that the installation has succeeded, run:
 
 .. code-block:: python
 
-    from classylss import gcl
+    import classylss
     
 Examples
 --------
