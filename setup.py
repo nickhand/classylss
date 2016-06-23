@@ -162,7 +162,7 @@ ext = Extension(name='classylss._gcl',
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
-                libraries=['class', 'gcl', 'gomp', 'gfortran']
+                libraries=['gcl', 'class', 'gomp', 'gfortran']
                 )
 
 
