@@ -72,38 +72,67 @@ bool ClassParams::contains(const std::string& key) const
     return (pars.find(key) != pars.end());
 }
 
-int ClassParams::add(const string& key, const int& val) { 
-    
-    ostringstream os;
-    os << val;    
-    pars[key] = os.str(); 
-    return pars.size(); 
+int ClassParams::add(const std::string& key, const int val) 
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
 }
 
-int ClassParams::add(const string& key, const float& val) { 
-    
-    ostringstream os;
-    os << setprecision(8) << val;    
-    pars[key] = os.str(); 
-    return pars.size(); 
+int ClassParams::add(const std::string& key, const long val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
 }
 
-
-int ClassParams::add(const string& key, const double& val) { 
-    
-    ostringstream os;
-    os << setprecision(16) << val;    
-    pars[key] = os.str(); 
-    return pars.size(); 
+int ClassParams::add(const std::string& key, const long long val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
 }
 
-int ClassParams::add(const string& key, const bool& val) { 
+int ClassParams::add(const std::string& key, const unsigned val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const std::string& key, const unsigned long val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const std::string& key, const unsigned long long val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const std::string& key, const float val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const std::string& key, const double val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const std::string& key, const long double val)
+{
+    pars[key] = std::to_string(val); 
+    return pars.size();
+}
+
+int ClassParams::add(const string& key, const bool val) { 
        
     pars[key] = val ? "yes" : "no"; 
     return pars.size(); 
 }
 
-int ClassParams::add(const string& key, const string& val) { 
+int ClassParams::add(const string& key, const string val) { 
     
     pars[key] = val; 
     return pars.size(); 

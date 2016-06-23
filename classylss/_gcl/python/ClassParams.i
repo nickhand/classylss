@@ -18,11 +18,17 @@ public:
     
     void update(const ClassParams &other);
 
-    int add(const std::string& key, const int& val); 
-    int add(const std::string& key, const float& val); 
-    int add(const std::string& key, const double& val); 
-    int add(const std::string& key, const bool& val); 
-    int add(const std::string& key, const std::string& val);
+    int add(const std::string& key, const int val); 
+    int add(const std::string& key, const long val); 
+    int add(const std::string& key, const long long val); 
+    int add(const std::string& key, const unsigned val); 
+    int add(const std::string& key, const unsigned long val); 
+    int add(const std::string& key, const unsigned long long val); 
+    int add(const std::string& key, const float val); 
+    int add(const std::string& key, const double val);
+    int add(const std::string& key, const long double val); 
+    int add(const std::string& key, const bool val); 
+    int add(const std::string& key, const std::string val);
     int add(const std::string& key, const char* val); 
 
     std::vector<std::string> keys() const;
