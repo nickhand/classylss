@@ -34,10 +34,11 @@
 %include "_gcl/python/Common.i"
 %include "_gcl/python/DiscreteQuad.i"
 
+%include "_gcl/python/Tools.i"
 %include "_gcl/python/ClassParams.i"
 %include "_gcl/python/ClassEngine.i"
 %include "_gcl/python/Cosmology.i"
 
 %include "_gcl/python/PowerSpectrum.i"
 %include "_gcl/python/LinearPS.i"
-/*%include "_gcl/python/ZeldovichPS.i"*/
+%include "_gcl/python/ZeldovichPS.i"
