@@ -160,7 +160,7 @@ sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']
 ext = Extension(name='classylss._gcl',
                 sources=['classylss/gcl.i'],
                 swig_opts=['-c++', '-Wall'], 
-                extra_link_args=["-g", '-fPIC', '-Wl,-no_compact_unwind'],
+                extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['class', 'gcl', 'gomp', 'gfortran']
                 )
