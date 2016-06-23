@@ -19,9 +19,7 @@ Some of the package features:
 Dependencies
 ------------
 
-The required external dependencies are: 
-
-- FFTW
+The required external Python dependencies are: 
 - astropy
 - numpy
 - requests
@@ -38,15 +36,7 @@ The package can be cloned from github as
     git clone https://github.com/nickhand/classylss.git
     cd classylss
     
-If the ``fftw3`` library is installed in a non-standard location, the user should specify the
-location using environment variables:
-
-.. code:: bash
-
-    export FFTW_INC=/path/to/fftw/include
-    export FFTW_DIR=/path/to/fftw/lib
-    
-and then the ``classylss`` package can be installed using
+The ``classylss`` package can be installed using
 
 .. code:: bash
     
