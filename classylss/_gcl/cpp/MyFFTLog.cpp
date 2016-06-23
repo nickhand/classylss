@@ -127,28 +127,3 @@ void fht(int N, const double r[], const dcomplex a[], double k[], dcomplex b[], 
 
     delete[] ulocal;
 }
-
-void fftlog_ComputeXiLM(int l, int m, int N, const double k[], const double pk[], double r[], double xi[]) {
-    dcomplex* a = new dcomplex[N];
-    dcomplex* b = new dcomplex[N];
-
-    for(int i = 0; i < N; i++)
-        a[i] = pow(k[i], m - 0.5) * pk[i];
-    fht(N, k, a, r, b, l + 0.5);
-    for(int i = 0; i < N; i++)
-        xi[i] = std::real(pow(2*M_PI*r[i], -1.5) * b[i]);
-
-    delete[] b;
-    delete[] a;
-}
-
-void pk2xi(int N, const double k[], const double pk[], double r[], double xi[]) {
-    fftlog_ComputeXiLM(0, 2, N, k, pk, r, xi);
-}
-
-void xi2pk(int N, const double r[], const double xi[], double k[], double pk[]) {
-    static const double TwoPiCubed = 8*M_PI*M_PI*M_PI;
-    fftlog_ComputeXiLM(0, 2, N, r, xi, k, pk);
-    for(int j = 0; j < N; j++)
-        pk[j] *= TwoPiCubed;
-}
