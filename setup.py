@@ -48,9 +48,9 @@ package_basedir = os.path.abspath(os.path.dirname(__file__))
 CLASS_VERSION = get_latest_class_version()
 
 MAJOR = 0
-MINOR = 0
-MICRO = 1
-ISRELEASED = False
+MINOR = 1
+MICRO = 0
+ISRELEASED = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
