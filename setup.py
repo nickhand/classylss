@@ -57,7 +57,26 @@ def set_class_install_dir(install):
     global class_install_dir
     args = install.install_lib, install.config_vars['dist_name'], 'class'
     class_install_dir = os.path.join(*args)
-
+    
+def check_swig_version():
+    """
+    Check the version of swig, >= 3.0 is required
+    """
+    import subprocess, re
+    try:
+        output = subprocess.check_output(["swig", "-version"])
+    except OSError:
+        raise ValueError("`swig` not found on PATH -- installation cannot proceed")
+        
+    try:
+        version = re.findall("SWIG Version [0-9].[0-9].[0-9]", output)[0].split()[-1]
+    except:
+        return
+        
+    # need >= 3.0
+    if version < "3.0":
+        raise ValueError("the version of `swig` on PATH must greater or equal to 3.0")
+    
 def build_CLASS(prefix):
     """
     Download and build CLASS
@@ -98,6 +117,11 @@ class build_external_clib(build_clib):
         self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
         
         for (library, build_info) in libraries:
+            
+            # check swig version
+            if library == "gcl": check_swig_version()
+            
+            # update include dirs
             self.include_dirs += build_info.get('include_dirs', [])
         
         build_clib.build_libraries(self, libraries)
