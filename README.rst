@@ -29,6 +29,7 @@ The required external Python dependencies are:
 
 - astropy
 - numpy
+- swig
 
 The CLASS code will automatically be downloaded and compiled, and is thus, not an external dependency for the user. The version of CLASS compiled by the code is stored in the variable `1classylss.version.class_version``.
 
