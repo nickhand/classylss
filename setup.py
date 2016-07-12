@@ -1,3 +1,4 @@
+from distutils.core import Command
 from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
 from numpy.distutils.command.build_ext import build_ext
@@ -7,6 +8,10 @@ from glob import glob
 import os
 import numpy
 import shutil
+
+# use GNU compilers by default  
+os.environ.setdefault("CXX", "g++")
+os.environ.setdefault("F90", "gfortran")
 
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 CLASS_VERSION = '2.5.0'
@@ -25,7 +30,7 @@ DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
 if not ISRELEASED: VERSION += '.dev0'
-    
+
 def write_version_py():
     cnt = """\
 version = '%s'
@@ -112,7 +117,7 @@ class build_external_clib(build_clib):
         # update the link objects with CLASS library
         link_objects = ['libclass.a']
         link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
-        
+                        
         self.compiler.set_link_objects(link_objects)
         self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
         
@@ -144,6 +149,23 @@ class custom_build_ext(build_ext):
             
         build_ext.run(self)
         
+class custom_clean(Command):
+    description = "custom clean command that forcefully removes build directories"
+    user_options = []
+    def initialize_options(self):
+        self.cwd = None
+    def finalize_options(self):
+        self.cwd = os.getcwd()
+    def run(self):
+        assert os.getcwd() == self.cwd, 'Must be in package root: %s' % self.cwd
+        
+        # the build directory
+        if os.path.exists("build"):
+            shutil.rmtree("build")
+            
+        # the CLASS compilation
+        os.system("rm -rf depends/tmp*")
+        
 gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
 fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
 
@@ -160,6 +182,7 @@ ext = Extension(name='classylss._gcl',
                 sources=['classylss/gcl.i'],
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
+                extra_compile_args=['-fopenmp'],
                 libraries=['gcl', 'class', 'gomp', 'gfortran']
                 )
     
