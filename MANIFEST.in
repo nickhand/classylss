@@ -1,0 +1,8 @@
+include classylss/_gcl/python/*
+include depends/class.cfg
+include depends/install_class.sh
+include depends/set_classdir.py
+include classylss/_gcl/include/*
+include classylss/*.py
+include README.rst
+include LICENSE

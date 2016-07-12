@@ -1,4 +1,4 @@
-from numpy.distutils.core import setup, Extension
+from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
 from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.command.build import build
@@ -9,58 +9,24 @@ import os
 import numpy
 import shutil
 
-global install_dir
-
-def get_latest_class_version():
-    """
-    Parse the ``class_public`` github API to determine the 
-    latest version tag
-    
-    Returns
-    -------
-    name : str
-        the latest version number
-    """
-    from distutils.version import LooseVersion
-    import requests
-    import json
-    
-    url = "https://api.github.com/repos/lesgourg/class_public/tags"
-    req = requests.get(url)
-    if req.status_code == requests.codes.ok:
-        j = json.loads(req.text.encode(req.encoding))
-        
-        latest_version = LooseVersion("0.0.0")
-        for release in j:
-            version = release['name']
-            if version.startswith("v"): version = version[1:]
-            if LooseVersion(version) > latest_version:
-                latest_version = LooseVersion(version)
-        if latest_version == '0.0.0':
-            raise ValueError("cannot find latest CLASS version to download")
-        
-        return str(latest_version)
-    
-    else:
-        raise ValueError("cannot find latest CLASS version to download")
-
+install_dir = None
 package_basedir = os.path.abspath(os.path.dirname(__file__))
-CLASS_VERSION = get_latest_class_version()
+CLASS_VERSION = '2.5.0'
 
 MAJOR = 0
 MINOR = 1
-MICRO = 0
+MICRO = 1
 ISRELEASED = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
 AUTHOR = 'Nick Hand'
 AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
-INSTALL_REQUIRES = ['numpy', 'astropy', 'requests']
+INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
+URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED:
-    VERSION += '.dev'
+if not ISRELEASED: VERSION += '.dev0'
     
 def write_version_py():
     cnt = """\
@@ -76,7 +42,7 @@ class_version = '%s'
         
 write_version_py()
 
-def build_class(prefix):
+def build_CLASS(prefix):
     """
     Download and build CLASS
     """
@@ -102,7 +68,12 @@ class build_external_clib(build_clib):
 
     def build_libraries(self, libraries):
 
-        build_class(self.class_build_dir)
+        # this will cause bdist_wheel to fail, which forces
+        # pip to just call setup.py install, which should work
+        if install_dir is not None:
+            build_CLASS(self.class_build_dir)
+        else:
+            raise ValueError("installation directory not set yet")
         link_objects = ['libclass.a']
         link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
         
@@ -136,15 +107,16 @@ class custom_build_ext(build_ext):
 class custom_install(install):
     """
     Custom install that deletes the ``build`` directory if successfull
-    """
+    """        
     def run(self):
-        
+
         # set the global install dir
         global install_dir
         install_dir = os.path.join(self.install_lib, self.config_vars['dist_name'], 'class')
+
         install.run(self)
         shutil.rmtree("build")
-  
+
 
 gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
 fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
@@ -154,6 +126,7 @@ gcl_info = {}
 gcl_info['sources'] =  gcl_sources + fftlog_sources 
 gcl_info['include_dirs'] = ['classylss/_gcl/include']
 gcl_info['language'] = 'c++'
+gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
 libgcl = ('gcl', gcl_info)
     
 sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']    
@@ -161,24 +134,27 @@ ext = Extension(name='classylss._gcl',
                 sources=['classylss/gcl.i'],
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
-                extra_compile_args=["-fopenmp", "-O2", '-std=c++11'],
                 libraries=['gcl', 'class', 'gomp', 'gfortran']
                 )
 
 
-setup(name=DISTNAME,
-      version=VERSION,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      description=DESCRIPTION,
-      install_requires=INSTALL_REQUIRES,
-      ext_modules = [ext],
-      libraries=[libgcl],
-      cmdclass = {
-          'build_clib': build_external_clib,
-          'build_ext': custom_build_ext,
-          'install': custom_install
-      },
-      py_modules = ["classylss.gcl"]
-)
+if __name__ == '__main__':
+    
+    from numpy.distutils.core import setup
+    setup(name=DISTNAME,
+          version=VERSION,
+          author=AUTHOR,
+          author_email=AUTHOR_EMAIL,
+          description=DESCRIPTION,
+          url=URL,
+          requires=INSTALL_REQUIRES,
+          ext_modules = [ext],
+          libraries=[libgcl],
+          cmdclass = {
+              'build_clib': build_external_clib,
+              'build_ext': custom_build_ext,
+              'install': custom_install
+          },
+          py_modules = ["classylss.gcl"]
+    )
 
