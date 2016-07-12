@@ -2,14 +2,12 @@ from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
 from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.command.build import build
-from numpy.distutils.command.install import install
 
 from glob import glob
 import os
 import numpy
 import shutil
 
-install_dir = None
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 CLASS_VERSION = '2.5.0'
 
@@ -42,12 +40,30 @@ class_version = '%s'
         
 write_version_py()
 
+class_install_dir = None
+def set_class_install_dir(install):
+    """
+    Set the install directory for CLASS, which is needed when 
+    compiling the CLASS code (so it can find the relevant data).
+    
+    It is passed to the CLASS code via the ``CLASSDIR`` macro
+    
+    Parameters
+    ----------
+    install : Command
+        the install command, from which we determine where the 
+        package is being installed
+    """
+    global class_install_dir
+    args = install.install_lib, install.config_vars['dist_name'], 'class'
+    class_install_dir = os.path.join(*args)
+
 def build_CLASS(prefix):
     """
     Download and build CLASS
     """
     # latest class version and download link       
-    args = (package_basedir, CLASS_VERSION, prefix, install_dir)
+    args = (package_basedir, CLASS_VERSION, prefix, class_install_dir)
     command = 'sh %s/depends/install_class.sh %s %s %s' %args
     
     ret = os.system(command)
@@ -68,12 +84,13 @@ class build_external_clib(build_clib):
 
     def build_libraries(self, libraries):
 
-        # this will cause bdist_wheel to fail, which forces
-        # pip to just call setup.py install, which should work
-        if install_dir is not None:
-            build_CLASS(self.class_build_dir)
-        else:
-            raise ValueError("installation directory not set yet")
+        # build CLASS first
+        if class_install_dir is None:
+            install = self.get_finalized_command('install')
+            set_class_install_dir(install)
+        build_CLASS(self.class_build_dir)
+
+        # update the link objects with CLASS library
         link_objects = ['libclass.a']
         link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
         
@@ -103,21 +120,6 @@ class custom_build_ext(build_ext):
             
         build_ext.run(self)
         
-        
-class custom_install(install):
-    """
-    Custom install that deletes the ``build`` directory if successfull
-    """        
-    def run(self):
-
-        # set the global install dir
-        global install_dir
-        install_dir = os.path.join(self.install_lib, self.config_vars['dist_name'], 'class')
-
-        install.run(self)
-        shutil.rmtree("build")
-
-
 gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
 fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
 
@@ -136,8 +138,7 @@ ext = Extension(name='classylss._gcl',
                 extra_link_args=["-g", '-fPIC'],
                 libraries=['gcl', 'class', 'gomp', 'gfortran']
                 )
-
-
+    
 if __name__ == '__main__':
     
     from numpy.distutils.core import setup
@@ -153,8 +154,6 @@ if __name__ == '__main__':
           cmdclass = {
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
-              'install': custom_install
           },
           py_modules = ["classylss.gcl"]
     )
-
