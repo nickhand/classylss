@@ -25,15 +25,14 @@ if ! [ -d $INSTALLDIR ]; then
     mkdir -p $INSTALLDIR
 fi
 
-# edit the Makefile
-python set_classdir.py $TMP/class_public-$CLASS_VERSION $INSTALLDIR
-
+# copy the Makefile
+cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
 
 # copy all *.dat files to install dir
 find . -type f -name "*.dat" -print0 |  xargs -0  tar cf - | tar xvf - -C $INSTALLDIR
 
-make libclass.a
+make CLASSDIR=$INSTALLDIR CLASSCFG=$ROOT/depends/class.cfg libclass.a
 cp -r include $START/$PREFIX/
 mkdir -p $START/$PREFIX/lib
 cp libclass.a $START/$PREFIX/lib
