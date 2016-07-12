@@ -1,5 +1,11 @@
 classylss
 ----------
+
+.. image:: https://img.shields.io/pypi/v/classylss.svg
+   :alt: PyPi
+   :target: https://pypi.python.org/pypi/classylss/
+
+
 A python binding of the CMB Boltzmann code `CLASS`_, designed for large-scale structure calculations.
 
 The package mainly uses CLASS in order to compute linear power spectra, but the python binding also supports computing nonlinear power 
@@ -23,12 +29,21 @@ The required external Python dependencies are:
 
 - astropy
 - numpy
-- requests
 
-The latest version of CLASS will automatically be downloaded and compiled, and is thus, not an external dependency for the user.
+The CLASS code will automatically be downloaded and compiled, and is thus, not an external dependency for the user. The version of CLASS compiled by the code is stored in the variable `1classylss.version.class_version``.
 
 Installation
 ------------
+
+The package can be installed via the `pip` command
+
+.. code:: bash
+
+    pip install classylss
+    
+The above procedure has been tested successfully on Mac and Linux machines. However, if the above command fails, 
+it is likely due to a failure to compile CLASS or the underlying C++ library. In this case, the package must be 
+installed from source and the compilation procedure customized. 
 
 The package can be cloned from github as
 
@@ -36,18 +51,10 @@ The package can be cloned from github as
 
     git clone https://github.com/nickhand/classylss.git
     cd classylss
-    
-The ``classylss`` package can be installed using
 
-.. code:: bash
-    
-    export CFLAGS='-std=c++11 -fopenmp'; pip install .
-    
 If ``CLASS`` is not built succesfully, the installation will crash. In this case, the user
 can edit the default configuration variables in ``depends/class.cfg``, which are used
 when building the ``CLASS`` library.
-
-This procedure has been tested on Mac and Linux machines.
 
 To verify that the installation has succeeded, run:
 
