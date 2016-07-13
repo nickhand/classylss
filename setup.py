@@ -13,13 +13,16 @@ import shutil
 os.environ.setdefault("CXX", "g++")
 os.environ.setdefault("F90", "gfortran")
 
+# base directory of package
 package_basedir = os.path.abspath(os.path.dirname(__file__))
+
+# the CLASS version to install
 CLASS_VERSION = '2.5.0'
 
 MAJOR = 0
 MINOR = 1
 MICRO = 4
-ISRELEASED = False
+ISRELEASED = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
