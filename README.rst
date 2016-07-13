@@ -29,31 +29,50 @@ The required external Python dependencies are:
 
 - astropy
 - numpy
-- swig
 
-The CLASS code will automatically be downloaded and compiled, and is thus, not an external dependency for the user. The version of CLASS compiled by the code is stored in the variable `1classylss.version.class_version``.
+And the necessary compilation tools are: 
+
+- gfortran
+- g++ (>= 4.8, for c++11 support)
+- swig (>= 3.0)
+
+Note that swig can be installed using the anaconda package manager:
+
+.. code:: bash
+
+   conda install "swig>=3.0"
+
+The CLASS code will automatically be downloaded and compiled, and is thus, not an external dependency for the user. 
+The version of CLASS compiled by the code is stored in the variable ``classylss.version.class_version``.
 
 Installation
 ------------
 
-The package can be installed via the `pip` command
+The package should be compiled using the GNU compilers for C++ and fortran, ``g++`` and ``gfortran``. 
+If these are not the default compilers on your system (or if a specific version should be used), they should be 
+explicitly set via environment variables. Then, the package can be installed via the `pip` command
 
 .. code:: bash
 
-    pip install classylss
-    
-The above procedure has been tested successfully on Mac and Linux machines. However, if the above command fails, 
-it is likely due to a failure to compile CLASS or the underlying C++ library. In this case, the package must be 
-installed from source and the compilation procedure customized. 
+   # set compilers explicitly, if they are not the default compilers
+   export CXX=g++
+   export F90=gfortran
 
-The package can be cloned from github as
+   # install the package
+   pip install classylss
+   
+The above procedure has been tested successfully on Mac and Linux machines. However, if installation fails,
+it is likely due to a failure while compiling either CLASS or the underlying C++ library. In this case, 
+the package should be installed from source and the compilation procedure customized. 
+
+The package can be downloaded from github as
 
 .. code:: bash
 
     git clone https://github.com/nickhand/classylss.git
     cd classylss
 
-If ``CLASS`` is not built succesfully, the installation will crash. In this case, the user
+If ``CLASS`` is not built succesfully, the user
 can edit the default configuration variables in ``depends/class.cfg``, which are used
 when building the ``CLASS`` library.
 
