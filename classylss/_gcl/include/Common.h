@@ -38,8 +38,6 @@ namespace Common {
     double SphericalBesselJ8(double x);
     
     /* Convenient print functions that flush the output buffer afterwards */
-    //   Print to file
-    void write(FILE * stream, const char* format, ...);
     //   Print to stdout
     void info(const char* format, ...);
     //   Print to stdout if VERBOSE is defined.

@@ -54,17 +54,6 @@ double Common::SphericalBesselJ8(double x) {
         return ((Common::pow8(x) - 630*Common::pow6(x) + 51975*Common::pow4(x) - 945945*Common::pow2(x) + 2027025)*sin(x) + (9*x*(4*Common::pow6(x) - 770*Common::pow4(x) + 30030*Common::pow2(x) - 225225))*cos(x))/Common::pow9(x);
 }
 
-
-void Common::write(FILE* stream, const char* format, ...) {
-    va_list args;
-    char dest[6000];
-    va_start(args, format);
-    vsnprintf(dest, 2048, format, args);
-    va_end(args);
-    fprintf(stream, dest);
-}
-
-
 void Common::info(const char* format, ...) {
     va_list ap;
     va_start(ap, format);
