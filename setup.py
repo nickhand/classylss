@@ -114,6 +114,7 @@ class build_external_clib(build_clib):
         # build CLASS first
         if class_install_dir is None:
             install = self.get_finalized_command('install')
+            print("install_dict = ", install.__dict__)
             set_class_install_dir(install)
         build_CLASS(self.class_build_dir)
 
@@ -204,6 +205,7 @@ if __name__ == '__main__':
           cmdclass = {
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
+              'clean': custom_clean,
           },
           py_modules = ["classylss.gcl"]
     )
