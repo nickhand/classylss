@@ -22,7 +22,7 @@ CLASS_VERSION = '2.5.0'
 MAJOR = 0
 MINOR = 1
 MICRO = 7
-ISRELEASED = False
+ISRELEASED = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
@@ -32,7 +32,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev0'
+if not ISRELEASED: VERSION += '.dev2'
 
 def write_version_py():
     cnt = """\
@@ -154,8 +154,9 @@ class custom_build_ext(build_ext):
         
 class custom_clean(Command):
     description = "custom clean command that forcefully removes build directories"
-    user_options = []
+    user_options = [('all', None, '(Compatibility with original clean command)')]
     def initialize_options(self):
+        self.all = False
         self.cwd = None
     def finalize_options(self):
         self.cwd = os.getcwd()
