@@ -1,4 +1,3 @@
-from setuptools import setup
 from distutils.core import Command
 from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
@@ -22,7 +21,7 @@ CLASS_VERSION = '2.5.0'
 
 MAJOR = 0
 MINOR = 1
-MICRO = 6
+MICRO = 7
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
@@ -33,7 +32,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev1'
+if not ISRELEASED: VERSION += '.dev0'
 
 def write_version_py():
     cnt = """\
@@ -115,7 +114,6 @@ class build_external_clib(build_clib):
         # build CLASS first
         if class_install_dir is None:
             install = self.get_finalized_command('install')
-            print("install_dict = ", install.__dict__)
             set_class_install_dir(install)
         build_CLASS(self.class_build_dir)
 
@@ -164,8 +162,6 @@ class custom_clean(Command):
     def run(self):
         assert os.getcwd() == self.cwd, 'Must be in package root: %s' % self.cwd
         
-        print("CWD = ", self.cwd)
-        print("RUNNING CLEAN")
         # the build directory
         if os.path.exists("build"):
             shutil.rmtree("build")
