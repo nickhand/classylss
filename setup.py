@@ -32,7 +32,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev0'
+if not ISRELEASED: VERSION += '.dev1'
 
 def write_version_py():
     cnt = """\
@@ -163,6 +163,8 @@ class custom_clean(Command):
     def run(self):
         assert os.getcwd() == self.cwd, 'Must be in package root: %s' % self.cwd
         
+        print("CWD = ", self.cwd)
+        print("RUNNING CLEAN")
         # the build directory
         if os.path.exists("build"):
             shutil.rmtree("build")
