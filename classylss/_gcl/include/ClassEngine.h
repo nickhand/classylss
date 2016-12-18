@@ -31,6 +31,12 @@ class ClassEngine
 {
 public:
     
+    /* default path of data files */
+    static std::string Alpha_inf_hyrec_file;
+    static std::string R_inf_hyrec_file;
+    static std::string two_photon_tables_hyrec_file;
+    static std::string sBBN_file;
+    
     ClassEngine(bool verbose=false);  
     ~ClassEngine();
     

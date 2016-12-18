@@ -10,6 +10,10 @@
 using namespace std;
 using namespace Common;
 
+std::string ClassEngine::Alpha_inf_hyrec_file;
+std::string ClassEngine::R_inf_hyrec_file;
+std::string ClassEngine::two_photon_tables_hyrec_file;
+std::string ClassEngine::sBBN_file;
 
 ClassEngine::ClassEngine(bool verbose) : ready(false), verbose_(verbose) {}
 
@@ -74,6 +78,15 @@ void ClassEngine::Initialize(const ClassParams& pars)
         pars_.add("nonlinear_verbose", "1");
         pars_.add("lensing_verbose", "1");
     }
+    
+    if (!pars_.contains("Alpha_inf hyrec file"))
+      pars_.add("Alpha_inf hyrec file", ClassEngine::Alpha_inf_hyrec_file);
+    if (!pars_.contains("a_inf hyrec file"))
+      pars_.add("R_inf hyrec file", ClassEngine::R_inf_hyrec_file);
+    if (!pars_.contains("two_photon hyrec file"))
+      pars_.add("two_photon_tables hyrec file", ClassEngine::two_photon_tables_hyrec_file);
+    if (!pars_.contains("sBBN file"))
+      pars_.add("sBBN file", ClassEngine::sBBN_file);
     
     // initialize the file content
     fc.size = 0;

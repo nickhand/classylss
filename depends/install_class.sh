@@ -20,19 +20,17 @@ if ! [ -d $TMP/class_public-$CLASS_VERSION ]; then
     gzip -dc $ROOT/depends/class-v$CLASS_VERSION.tar.gz | tar xf - -C $TMP
 fi
 
-# make sure install directory is there
-if ! [ -d $INSTALLDIR ]; then
-    mkdir -p $INSTALLDIR
-fi
-
 # copy the Makefile
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
 
-# copy all *.dat files to install dir
-find . -type f -name "*.dat" -print0 |  xargs -0  tar cf - | tar xvf - -C $INSTALLDIR
+echo $ROOT/$PREFIX/data
+mkdir -p $ROOT/$PREFIX/data
 
-make CLASSDIR=$INSTALLDIR CLASSCFG=$ROOT/depends/class.cfg libclass.a
+# copy all *.dat files to install dir
+find . -type f -name "*.dat" -print0 |  xargs -0  tar cf - | tar xvf - -C $ROOT/$PREFIX/data
+
+make CLASSCFG=$ROOT/depends/class.cfg libclass.a
 cp -r include $START/$PREFIX/
 mkdir -p $START/$PREFIX/lib
 cp libclass.a $START/$PREFIX/lib
