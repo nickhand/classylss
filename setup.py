@@ -47,24 +47,6 @@ class_version = '%s'
         a.close()
         
 write_version_py()
-
-class_install_dir = None
-def set_class_install_dir(install):
-    """
-    Set the install directory for CLASS, which is needed when 
-    compiling the CLASS code (so it can find the relevant data).
-    
-    It is passed to the CLASS code via the ``CLASSDIR`` macro
-    
-    Parameters
-    ----------
-    install : Command
-        the install command, from which we determine where the 
-        package is being installed
-    """
-    global class_install_dir
-    args = install.install_lib, install.config_vars['dist_name'], 'class'
-    class_install_dir = os.path.join(*args)
     
 def check_swig_version():
     """
@@ -90,7 +72,7 @@ def build_CLASS(prefix):
     Download and build CLASS
     """
     # latest class version and download link       
-    args = (package_basedir, CLASS_VERSION, prefix, class_install_dir)
+    args = (package_basedir, CLASS_VERSION, prefix, "/opt/class/willfail")
     command = 'sh %s/depends/install_class.sh %s %s %s' %args
     
     ret = os.system(command)
@@ -112,9 +94,6 @@ class build_external_clib(build_clib):
     def build_libraries(self, libraries):
 
         # build CLASS first
-        if class_install_dir is None:
-            install = self.get_finalized_command('install')
-            set_class_install_dir(install)
         build_CLASS(self.class_build_dir)
 
         # update the link objects with CLASS library
@@ -150,6 +129,10 @@ class custom_build_ext(build_ext):
             self.include_dirs += build_clib.include_dirs
             self.library_dirs += build_clib.compiler.library_dirs
             
+        # copy data files from temp to classlssy package directory
+        shutil.rmtree(os.path.join(self.build_lib, 'classylss', 'data'), ignore_errors=True)
+        shutil.copytree(os.path.join(self.build_temp, 'data'), os.path.join(self.build_lib, 'classylss', 'data'))
+            
         build_ext.run(self)
         
 class custom_clean(Command):
@@ -184,6 +167,7 @@ libgcl = ('gcl', gcl_info)
 sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']    
 ext = Extension(name='classylss._gcl',
                 sources=['classylss/gcl.i'],
+                depends=['classylss/_gcl/python/*.i'],
                 swig_opts=['-c++', '-Wall'], 
                 extra_link_args=["-g", '-fPIC'],
                 extra_compile_args=['-fopenmp'],
