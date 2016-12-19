@@ -40,7 +40,7 @@ def linear(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
     k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
     Pk = power.linear(k, z, **power_kws)
     
-    return tools.pk_to_xi(0, k, Pk, r, smoothing);
+    return tools.pk_to_xi(0, k, Pk, r, smoothing)
     
 def nonlinear(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
     """
@@ -75,7 +75,7 @@ def nonlinear(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
     k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
     Pk = power.nonlinear(k, z, **power_kws)
     
-    return tools.pk_to_xi(0, k, Pk, r, smoothing);
+    return tools.pk_to_xi(0, k, Pk, r, smoothing)
 
 def zeldovich(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
     """
@@ -114,4 +114,4 @@ def zeldovich(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
     k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
     Pk = power.zeldovich(k, z, **power_kws)
     
-    return tools.pk_to_xi(0, k, Pk, r, smoothing);
+    return tools.pk_to_xi(0, k, Pk, r, smoothing)
