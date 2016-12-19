@@ -88,6 +88,11 @@ void ClassEngine::Initialize(const ClassParams& pars)
     if (!pars_.contains("sBBN file"))
       pars_.add("sBBN file", ClassEngine::sBBN_file);
     
+    if (verbose_) {
+        info("initializing CLASS with parameters:\n==================================\n");
+        pars_.print();
+    }
+    
     // initialize the file content
     fc.size = 0;
     auto pfc_input = &fc;
