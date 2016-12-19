@@ -7,6 +7,7 @@ namespace std {
 };
 %rename(_update) update(const ClassParams &other);
 %rename(_contains) contains(const std::string& key) const;
+%rename(_value) value(const std::string& key) const;
 
 class ClassParams {
 public:    
@@ -73,6 +74,14 @@ public:
             return self.value(key)
         except:
             raise KeyError("no such key: '%s'" %key)
+    
+    def value(self, key):
+        value = self._value(key)
+        try:
+            value = float(value)
+        except ValueError:
+            pass
+        return value
     
     def __setitem__(self, key, value):
         return self.add(key, value)
