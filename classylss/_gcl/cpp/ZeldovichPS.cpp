@@ -121,7 +121,6 @@ double ZeldovichPS::fftlog_compute(double k, double factor) const
 
     // logspaced between RMIN and RMAX
     double this_Pk = 0.;
-    double toadd;   
     for (int n = 0; n <= NMAX; n++) {
         
         // the order of the Bessel function
@@ -147,10 +146,7 @@ double ZeldovichPS::fftlog_compute(double k, double factor) const
         // sum it up
         double out;
         nearest_interp_1d(NUM_PTS, (double*)(kmesh), (double*)(a), 1, &k, &out);
-        toadd = factor*sqrt(0.5*M_PI)*pow(k, -1.5)*out; 
-        
-        this_Pk += toadd;   
-        if (fabs(toadd/this_Pk) < 0.005) break;
+        this_Pk += factor*sqrt(0.5*M_PI)*pow(k, -1.5)*out; 
     }
         
     return this_Pk;
