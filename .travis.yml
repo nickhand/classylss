@@ -38,7 +38,7 @@ install:
     
 script:
     - (cd tests; python runtests.py)
-    - (cd ..; bash check_tag.sh classylss/version.py)
+    - (cd ..; pwd; ls .; bash check_tag.sh classylss/version.py)
     
 deploy:
     - provider: pypi
