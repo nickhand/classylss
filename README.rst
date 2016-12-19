@@ -5,6 +5,9 @@ classylss
    :alt: PyPi
    :target: https://pypi.python.org/pypi/classylss/
 
+.. image:: https://api.travis-ci.org/nickhand/classylss.svg
+    :alt: Build Status
+    :target: https://travis-ci.org/nickhand/classylss/
 
 A python binding of the CMB Boltzmann code `CLASS`_, designed for large-scale structure calculations.
 
