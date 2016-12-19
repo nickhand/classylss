@@ -3,6 +3,7 @@ from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
 from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.command.build import build
+from distutils.command.clean import clean
 
 from glob import glob
 import os
@@ -135,22 +136,14 @@ class custom_build_ext(build_ext):
             
         build_ext.run(self)
         
-class custom_clean(Command):
-    description = "custom clean command that forcefully removes build directories"
-    user_options = [('all', None, '(Compatibility with original clean command)')]
-    def initialize_options(self):
-        self.all = False
-        self.cwd = None
-    def finalize_options(self):
-        self.cwd = os.getcwd()
+class custom_clean(clean):
+
     def run(self):
-        assert os.getcwd() == self.cwd, 'Must be in package root: %s' % self.cwd
-        
-        # the build directory
-        if os.path.exists("build"):
-            shutil.rmtree("build")
+
+        # run the built-in clean
+        clean.run(self)
             
-        # the CLASS compilation
+        # remove the CLASS tmp directories
         os.system("rm -rf depends/tmp*")
         
 gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
