@@ -167,14 +167,15 @@ double Cosmology::GetEisensteinHuTransfer(double k) const
 double Cosmology::GetNoWiggleTransfer(double k) const 
 {            
     k *= h();
-    double omh2 = Omega0_m();
-    double q = k/13.41/k_equality;
-    double gamma_eff = omh2*(alpha_gamma + (1 - alpha_gamma)/(1 + pow4(0.43*k*s)));
+    double omh2 = Omega0_m()*pow2(h());
+    double ks = k*s / h();
+    double q = k/(13.41*k_equality);
+    double gamma_eff = omh2*(alpha_gamma + (1 - alpha_gamma)/(1 + pow4(0.43*ks)));
     double q_eff = q*omh2/gamma_eff;
-    double T_nowiggles_L0 = log(2*M_E + 1.8*q_eff);
-    double T_nowiggles_C0 = 14.2 + 731.0/(1 + 62.5*q_eff);
+    double L0 = log(2*M_E + 1.8*q_eff);
+    double C0 = 14.2 + 731.0/(1 + 62.5*q_eff);
     
-    return T_nowiggles_L0/(T_nowiggles_L0+T_nowiggles_C0*pow2(q_eff));
+    return L0/(L0 + C0*pow2(q_eff));
 }
 
 // return T(k) from BBKS fit
@@ -259,7 +260,6 @@ void Cosmology::SetEisensteinHuParameters()
 {
     
     double h2 = pow2(h());
-    double om = Omega0_m();
     double omh2 = Omega0_m()*h2;
     double obh2 = Omega0_b()*h2;
     double theta_cmb = Tcmb()/2.7;
@@ -268,7 +268,7 @@ void Cosmology::SetEisensteinHuParameters()
     f_baryon = obh2 / omh2;
 
     // wavenumber of equality
-    double z_equality = 2.5e4*omh2/pow3(theta_cmb);
+    double z_equality = 2.5e4*omh2/pow4(theta_cmb);
     k_equality = 0.0746*omh2/pow2(theta_cmb);
     
     // sound horizon and k_silk
@@ -297,7 +297,7 @@ void Cosmology::SetEisensteinHuParameters()
     beta_b = 0.5+f_baryon+(3.-2.*f_baryon)*sqrt(pow(17.2*omh2,2.0)+1);
     
     // no wiggle params
-    s = 44.5*log(9.83/om)/sqrt(1 + 10*pow(om*f_baryon, 0.75));
+    s = h() * 44.5*log(9.83/omh2)/sqrt(1 + 10*pow(obh2, 0.75));
     alpha_gamma = 1 - 0.328*log(431*omh2)*f_baryon + 0.38*log(22.3*omh2)*pow2(f_baryon);
 
 }
