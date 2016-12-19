@@ -16,8 +16,8 @@ parray ComputeXiLM(int l, int m, const parray& k, const parray& pk, double dlogr
                     const parray& r, double smoothing, IntegrationMethods::Type method=IntegrationMethods::FFTLOG);
 
 // use FFTlog, given log-spaced input k, Pk -- fills r, xi 
-void ComputeXiLM_fftlog(int l, int m, int N, const double k[], const double pk[], 
-                        double r[], double xi[], double smoothing=0.);
+void ComputeXiLM_fftlog(int l, int m, const parray& k, const parray& pk, 
+                         double r[], double xi[], double q=0, double smoothing=0.);
 
 /*  Compute the correlation function xi(r) from a power spectrum P(k), this is 
   just Xi_0^2 in the notation above*/

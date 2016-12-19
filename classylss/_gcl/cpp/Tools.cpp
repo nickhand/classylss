@@ -15,18 +15,29 @@ using std::cref;
 using namespace std::placeholders;
 using namespace Common;
 
-void ComputeXiLM_fftlog(int l, int m, int N, const double k[], const double pk[],
-                                double dlogr, double logrc, double nc, double r[], double xi[], double smoothing)
+void ComputeXiLM_fftlog(int l, int m, const parray& k, const parray& pk,
+                            double r[], double xi[], double q, double smoothing)
 {
+    int N(k.size());
     parray a(N);
-    FortranFFTLog fftlogger(N, dlogr*log(10.), l+0.5, 0, 1.0, 1);
-
+  
+    // spacing quantities
+    double nc = 0.5*double(N+1);
+    double logkmin = log10(k[0]);
+    double logkmax = log10(k[-1]);
+    double dlogr = (logkmax-logkmin)/(N-1);
+    double logrc = 0.5*(logkmin+logkmax);
+    
+    FortranFFTLog fftlogger(N, dlogr*log(10.), l+0.5, q, 1.0, 1);
+    
     // the fftlog magic
     for(int i = 0; i < N; i++)
         a[i] = pow(k[i], m - 0.5) * pk[i] * exp(-pow2(k[i]*smoothing));
     
     bool ok = fftlogger.Transform(a, 1);
-    if (!ok) error("FFTLog failed\n");
+    if (!ok) 
+        error("FFTLog failed in ComputeXiLM_fftlog (`ok` flag False)\n");
+    
     double kr = fftlogger.KR();
     double logkc = log10(kr) - logrc;
     
@@ -59,12 +70,11 @@ parray ComputeXiLM(int l, int m, const parray& k_, const parray& pk_, const parr
         for (int i = 1; i <= N; i++)
             k[i-1] = pow(10., (logrc+(i-nc)*dlogr));
         
-        
         auto pk_spline = CubicSpline(k_, pk_);
         auto pk = pk_spline(k);
 
         // call fftlog on the double[] arrays
-        ComputeXiLM_fftlog(l, m, N, &k[0], &pk[0], dlogr, logrc, nc, r_, xi_, smoothing);
+        ComputeXiLM_fftlog(l, m, k, pk, r_, xi_, 0., smoothing);
 
         // return the result at desired domain values using a spline
         auto spline = CubicSpline(N, r_, xi_);
