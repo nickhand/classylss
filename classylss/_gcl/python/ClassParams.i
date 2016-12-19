@@ -14,8 +14,6 @@ public:
     
     ClassParams();
     ClassParams(const std::string& param_file);
-    //ClassParams(const ClassParams &other);
-    //~ClassParams();
     
     void update(const ClassParams &other);
 
