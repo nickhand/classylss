@@ -65,7 +65,7 @@ parray ComputeXiLM(int l, int m, const parray& k_, const parray& pk_, const parr
         double logkmin = log10(k_.min()); 
         double logkmax = log10(k_.max());
         double logrc = 0.5*(logkmin+logkmax);
-        double dlogr = (logkmax - logkmin)/N; 
+        double dlogr = (logkmax - logkmin)/(N-1); 
     
         for (int i = 1; i <= N; i++)
             k[i-1] = pow(10., (logrc+(i-nc)*dlogr));
