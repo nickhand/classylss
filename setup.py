@@ -164,9 +164,9 @@ class custom_clean(clean):
             shutil.rmtree('build')
             
         # remove swig-generated GCL files
-        for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp']:
-            if os.path.exists(f):
-                os.remove(f)
+        #for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp']:
+        #    if os.path.exists(f):
+        #        os.remove(f)
             
 
 def libgcl_config():
