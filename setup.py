@@ -25,8 +25,8 @@ CLASS_VERSION = '2.5.0'
 
 MAJOR = 0
 MINOR = 1
-MICRO = 11
-ISRELEASED = True
+MICRO = 12
+ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
