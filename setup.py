@@ -36,7 +36,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev0'
+if not ISRELEASED: VERSION += '.dev1'
 
 def write_version_py():
     cnt = """\
