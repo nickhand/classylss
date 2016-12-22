@@ -40,6 +40,9 @@ script:
     - (cd tests; python runtests.py)
     - bash check_tag.sh classylss/version.py
     
+    
+before_deploy: "python setup.py build_src --inplace"
+
 deploy:
     - provider: pypi
       distributions: sdist
