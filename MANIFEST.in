@@ -1,8 +1,9 @@
-include classylss/_gcl/python/*
+include classylss/gcl_wrap.cpp
+include classylss/gcl.py
+include classylss/_gcl/include/*
+
 include depends/class.cfg
 include depends/install_class.sh
 include depends/Makefile
-include classylss/_gcl/include/*
-include classylss/*.py
 include README.rst
 include LICENSE

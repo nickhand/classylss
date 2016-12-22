@@ -10,6 +10,9 @@ import os
 import numpy
 import shutil
 
+# determine if swig will need to be called on GCL extension
+swig_needed = not all(os.path.isfile(f) for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp'])
+
 # use GNU compilers by default  
 os.environ.setdefault("CXX", "g++")
 os.environ.setdefault("F90", "gfortran")
@@ -52,12 +55,20 @@ write_version_py()
 def check_swig_version():
     """
     Check the version of swig, >= 3.0 is required
+    
+    Notes
+    -----
+    *   swig is only needed for developers installing from the source directory, 
+        with ``python setup.py install``
+    *   the swig-generated files are included by default in the pypi distribution,
+        so the swig dependency is not needed
     """
     import subprocess, re
     try:
         output = subprocess.check_output(["swig", "-version"])
     except OSError:
-        raise ValueError("`swig` not found on PATH -- installation cannot proceed")
+        raise ValueError(("`swig` not found on PATH -- either install `swig` or use "
+                            "``pip install classylss`` (recommended)"))
         
     try:
         version = re.findall("SWIG Version [0-9].[0-9].[0-9]", output)[0].split()[-1]
@@ -66,11 +77,12 @@ def check_swig_version():
         
     # need >= 3.0
     if version < "3.0":
-        raise ValueError("the version of `swig` on PATH must greater or equal to 3.0")
+        raise ValueError(("the version of `swig` on PATH must greater or equal to 3.0; "
+                         "recommended installation without swig is ``pip install classylss``"))
     
 def build_CLASS(prefix):
     """
-    Download and build CLASS
+    Function to dowwnload CLASS from github and and build the library
     """
     # latest class version and download link       
     args = (package_basedir, CLASS_VERSION, prefix, "/opt/class/willfail")
@@ -107,7 +119,8 @@ class build_external_clib(build_clib):
         for (library, build_info) in libraries:
             
             # check swig version
-            if library == "gcl": check_swig_version()
+            if library == "gcl" and swig_needed: 
+                check_swig_version()
             
             # update include dirs
             self.include_dirs += build_info.get('include_dirs', [])
@@ -146,30 +159,52 @@ class custom_clean(clean):
         # remove the CLASS tmp directories
         os.system("rm -rf depends/tmp*")
         
-gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
-fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
+        # remove build directory
+        if os.path.exists('build'):
+            shutil.rmtree('build')
+            
+        # remove swig-generated GCL files
+        for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp']:
+            if os.path.exists(f):
+                os.remove(f)
+            
 
-# GCL extension 
-gcl_info = {}
-gcl_info['sources'] =  gcl_sources + fftlog_sources 
-gcl_info['include_dirs'] = ['classylss/_gcl/include']
-gcl_info['language'] = 'c++'
-gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
-libgcl = ('gcl', gcl_info)
+def libgcl_config():
     
-sources = list(glob("classylss/_gcl/python/*.i")) + ['classylss/gcl.i']    
-ext = Extension(name='classylss._gcl',
-                sources=['classylss/gcl.i'],
-                depends=['classylss/_gcl/python/*.i'],
-                swig_opts=['-c++', '-Wall'], 
-                extra_link_args=["-g", '-fPIC'],
-                extra_compile_args=['-fopenmp'],
-                libraries=['gcl', 'class', 'gomp', 'gfortran']
-                )
+    # c++ GCL sources and fortran FFTLog sources        
+    gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
+    fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
+    
+    # GCL library extension 
+    gcl_info = {}
+    gcl_info['sources'] =  gcl_sources + fftlog_sources 
+    gcl_info['include_dirs'] = ['classylss/_gcl/include']
+    gcl_info['language'] = 'c++'
+    gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
+    return ('gcl', gcl_info)
+
+def gcl_extension_config():
+
+    # the configuration for GCL python extension
+    config = {}
+    config['name'] = 'classylss._gcl'
+    config['extra_link_args'] = ['-g', '-fPIC']
+    config['extra_compile_args'] = ['-fopenmp']
+    config['libraries'] = ['gcl', 'class', 'gomp', 'gfortran']
+
+    # determine if swig needs to be called
+    if not swig_needed:
+        config['sources'] = ['classylss/gcl_wrap.cpp']
+    else:
+        config['sources'] = ['classylss/gcl.i']
+        config['depends'] = ['classylss/_gcl/python/*.i']
+        config['swig_opts'] = ['-c++', '-Wall']
+        
+    return config
     
 if __name__ == '__main__':
     
-    from numpy.distutils.core import setup
+    from numpy.distutils.core import setup    
     setup(name=DISTNAME,
           version=VERSION,
           author=AUTHOR,
@@ -177,8 +212,8 @@ if __name__ == '__main__':
           description=DESCRIPTION,
           url=URL,
           requires=INSTALL_REQUIRES,
-          ext_modules = [ext],
-          libraries=[libgcl],
+          ext_modules = [Extension(**gcl_extension_config())],
+          libraries=[libgcl_config()],
           cmdclass = {
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
