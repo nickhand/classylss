@@ -26,7 +26,7 @@ CLASS_VERSION = '2.5.0'
 MAJOR = 0
 MINOR = 1
 MICRO = 9
-ISRELEASED = True
+ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 DISTNAME = 'classylss'
@@ -36,7 +36,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev2'
+if not ISRELEASED: VERSION += '.dev0'
 
 def write_version_py():
     cnt = """\
