@@ -37,13 +37,6 @@ And the necessary compilation tools are:
 
 - gfortran
 - g++ (>= 4.8, for c++11 support)
-- swig (>= 3.0)
-
-Note that swig can be installed using the anaconda package manager:
-
-.. code:: bash
-
-   conda install "swig>=3.0"
 
 The CLASS code will automatically be downloaded and compiled, and is thus, not an external dependency for the user. 
 The version of CLASS compiled by the code is stored in the variable ``classylss.version.class_version``.
