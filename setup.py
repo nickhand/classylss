@@ -36,7 +36,7 @@ INSTALL_REQUIRES = ['numpy', 'astropy']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
-if not ISRELEASED: VERSION += '.dev1'
+if not ISRELEASED: VERSION += '.dev2'
 
 def write_version_py():
     cnt = """\
@@ -162,13 +162,7 @@ class custom_clean(clean):
         # remove build directory
         if os.path.exists('build'):
             shutil.rmtree('build')
-            
-        # remove swig-generated GCL files
-        #for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp']:
-        #    if os.path.exists(f):
-        #        os.remove(f)
-            
-
+                        
 def libgcl_config():
     
     # c++ GCL sources and fortran FFTLog sources        
