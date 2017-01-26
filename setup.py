@@ -205,7 +205,7 @@ if __name__ == '__main__':
           author_email=AUTHOR_EMAIL,
           description=DESCRIPTION,
           url=URL,
-          requires=INSTALL_REQUIRES,
+          install_requires=INSTALL_REQUIRES,
           ext_modules = [Extension(**gcl_extension_config())],
           libraries=[libgcl_config()],
           cmdclass = {
