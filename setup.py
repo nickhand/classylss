@@ -204,6 +204,7 @@ if __name__ == '__main__':
           author=AUTHOR,
           author_email=AUTHOR_EMAIL,
           description=DESCRIPTION,
+          license='GPL3',
           url=URL,
           install_requires=INSTALL_REQUIRES,
           ext_modules = [Extension(**gcl_extension_config())],
