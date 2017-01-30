@@ -2,6 +2,7 @@ include classylss/gcl_wrap.cpp
 include classylss/gcl.py
 include classylss/_gcl/include/*
 include classylss/*py
+include classylss/_gcl/python/*
 
 include depends/class.cfg
 include depends/install_class.sh
