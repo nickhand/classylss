@@ -19,7 +19,9 @@ cache:
       - $HOME/.cache/pip
       
 env:
-    - NUMPY_VERSION=1.11.1 OMP_NUM_THREADS=2
+    - NUMPY_VERSION=1.11 OMP_NUM_THREADS=2
+    - WITH_SWIG=true
+    - WITH_SWIG=false
   
 before_install:
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -33,7 +35,8 @@ before_install:
 install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
-    - conda install --yes numpy=$NUMPY_VERSION nose astropy "swig>=3.0"
+    - conda install --yes numpy=$NUMPY_VERSION nose astropy 
+    - if [[ "$WITH_SWIG" == "true" ]]; then conda install --yes "swig>=3.0"; fi
     - python setup.py install
     
 script:
