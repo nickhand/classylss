@@ -230,7 +230,7 @@ void Cosmology::Initialize()
     if (transfer_fit_ == TransferFit::CLASS) {
         int N = ki.size();
         
-        Tk = LinearSpline(ki, Ti);
+        Tk = CubicSpline(ki, Ti);
         k0 = ki[0];
         k1 = ki[N-1];
         T0 = Ti[0];
