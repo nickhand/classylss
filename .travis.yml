@@ -40,7 +40,10 @@ install:
     - source activate test
     - conda install --yes numpy=$NUMPY_VERSION nose astropy 
     - if [[ "$WITH_SWIG" == "true" ]]; then conda install --yes "swig>=3.0"; fi
-    - python setup.py install
+    - python setup.py sdist
+    - cd dist
+    - pip install classylss*
+    - cd ..
     
 script:
     - (cd tests; python runtests.py)
