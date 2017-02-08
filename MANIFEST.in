@@ -7,5 +7,6 @@ include classylss/_gcl/python/*
 include depends/class.cfg
 include depends/install_class.sh
 include depends/Makefile
+include depends/class-v2.5.0.tar.gz
 include README.rst
 include LICENSE
