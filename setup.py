@@ -4,6 +4,7 @@ from distutils.core import Command
 from numpy.distutils.core import Extension
 from numpy.distutils.command.build_clib import build_clib
 from numpy.distutils.command.build_ext import build_ext
+from numpy.distutils.command.sdist import sdist
 from numpy.distutils.command.build import build
 from distutils.command.clean import clean
 
@@ -34,7 +35,7 @@ VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 DISTNAME = 'classylss'
 AUTHOR = 'Nick Hand'
 AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
-INSTALL_REQUIRES = ['numpy', 'astropy']
+INSTALL_REQUIRES = ['numpy', 'astropy', 'six']
 DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
 URL = "http://github.com/nickhand/classylss"
 
@@ -151,6 +152,19 @@ class custom_build_ext(build_ext):
             
         build_ext.run(self)
         
+class custom_sdist(sdist):
+    
+    def run(self):
+        from six.moves.urllib import request
+        
+        # download CLASS
+        tarball_link = "https://github.com/lesgourg/class_public/archive/v%s.tar.gz" %CLASS_VERSION
+        tarball_local = os.path.join('depends', 'class-v%s.tar.gz' %CLASS_VERSION)
+        request.urlretrieve(tarball_link, tarball_local)
+        
+        # run the default
+        sdist.run(self)
+        
 class custom_clean(clean):
 
     def run(self):
@@ -212,9 +226,10 @@ if __name__ == '__main__':
           ext_modules = [Extension(**gcl_extension_config())],
           libraries=[libgcl_config()],
           cmdclass = {
+              'sdist': custom_sdist,
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
-              'clean': custom_clean,
+              'clean': custom_clean
           },
           py_modules = ["classylss.gcl"]
     )
