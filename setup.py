@@ -7,6 +7,7 @@ from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.command.sdist import sdist
 from numpy.distutils.command.build import build
 from distutils.command.clean import clean
+from Cython.Build import cythonize
 
 from glob import glob
 import os
@@ -211,7 +212,22 @@ def gcl_extension_config():
         config['swig_opts'] = ['-c++', '-Wall']
         
     return config
-    
+
+def classy_extension_config():
+
+    # the configuration for GCL python extension
+    config = {}
+    config['name'] = 'classylss.classy'
+    config['extra_link_args'] = ['-g', '-fPIC']
+    config['extra_compile_args'] = ['-fopenmp']
+    config['language'] = 'c++' 
+    config['libraries'] = ['class', 'gomp', 'gfortran']
+
+    # determine if swig needs to be called
+    config['sources'] = ['classylss/classy.pyx']
+
+    return config
+
 if __name__ == '__main__':
     
     from numpy.distutils.core import setup    
@@ -223,7 +239,10 @@ if __name__ == '__main__':
           license='GPL3',
           url=URL,
           install_requires=INSTALL_REQUIRES,
-          ext_modules = [Extension(**gcl_extension_config())],
+          ext_modules = cythonize([
+                        Extension(**classy_extension_config()),
+                        Extension(**gcl_extension_config()),
+          ]),
           libraries=[libgcl_config()],
           cmdclass = {
               'sdist': custom_sdist,
