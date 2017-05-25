@@ -83,7 +83,7 @@ void ClassEngine::Initialize(const ClassParams& pars)
       pars_.add("Alpha_inf hyrec file", ClassEngine::Alpha_inf_hyrec_file);
     if (!pars_.contains("a_inf hyrec file"))
       pars_.add("R_inf hyrec file", ClassEngine::R_inf_hyrec_file);
-    if (!pars_.contains("two_photon hyrec file"))
+    if (!pars_.contains("two_photon_tables hyrec file"))
       pars_.add("two_photon_tables hyrec file", ClassEngine::two_photon_tables_hyrec_file);
     if (!pars_.contains("sBBN file"))
       pars_.add("sBBN file", ClassEngine::sBBN_file);
