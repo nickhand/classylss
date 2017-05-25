@@ -220,7 +220,9 @@ def classy_extension_config():
     config['name'] = 'classylss.classy'
     config['extra_link_args'] = ['-g', '-fPIC']
     config['extra_compile_args'] = ['-fopenmp']
-    config['language'] = 'c++' 
+    # important or get a symbol not found error, because class is
+    # compiled with c++?
+    config['language'] = 'c++'
     config['libraries'] = ['class', 'gomp', 'gfortran']
 
     # determine if swig needs to be called
