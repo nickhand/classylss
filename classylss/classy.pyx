@@ -1,3 +1,5 @@
+#cython: embedsignature=True
+
 """
 .. module:: classy
     :synopsis: Python wrapper around CLASS
@@ -110,7 +112,11 @@ cdef class Class:
 
     def set_default(self):
         _pars = {
-            "output":"tCl mPk",}
+            "output": "dTk mPk",
+            "P_k_max_h/Mpc":  20.,
+            "z_max_pk": 100.0,
+            }
+
         self.set(**_pars)
 
     def __cinit__(self, default=False):
@@ -124,12 +130,6 @@ cdef class Class:
         sprintf(self.fc.filename,"%s",dumc)
         self.ncp = set()
         if default: self.set_default()
-        self._pars.update( {
-            "Alpha_inf hyrec file": _DATA_FILES['Alpha_inf_hyrec_file'],
-            "R_inf hyrec file" : _DATA_FILES['R_inf_hyrec_file'],
-            "two_photon_tables hyrec file" : _DATA_FILES['two_photon_tables_hyrec_file'],
-            "sBBN file": _DATA_FILES['sBBN_file'],
-            } )
 
     # Set up the dictionary
     def set(self,*pars,**kars):
@@ -145,33 +145,109 @@ cdef class Class:
         self._pars = {}
         self.ready = False
 
+    @classmethod
+    def from_astropy(cls, cosmo, extra={}):
+        """
+        Convert an astropy cosmology to a ``ClassParams`` instance
+        """
+        from astropy import units, cosmology
+
+        pars = {}
+        pars['h'] = cosmo.h
+        pars['Omega_g'] = cosmo.Ogamma0
+        if cosmo.Ob0 is not None:
+            pars['Omega_b'] = cosmo.Ob0
+        else:
+            raise ValueError("please specify a value 'Ob0' ")
+        pars['Omega_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
+
+        # handle massive neutrinos
+        if cosmo.has_massive_nu: 
+
+            # convert to eV
+            m_nu = cosmo.m_nu
+            if m_nu.unit != units.eV:
+                m_nu = m_nu.to(units.eV)
+
+            # from CLASS notes:
+            # one more remark: if you have respectively 1,2,3 massive neutrinos, 
+            # if you stick to the default value pm equal to 0.71611, designed to give m/omega of 
+            # 93.14 eV, and if you want to use N_ur to get N_eff equal to 3.046 in the early universe, 
+            # then you should pass here respectively 2.0328,1.0196,0.00641
+            N_ur = [2.0328, 1.0196, 0.00641]
+            N_massive = (m_nu > 0.).sum()
+            pars['N_ur'] = (cosmo.Neff/3.046) * N_ur[N_massive-1]
+
+            pars['N_ncdm'] = N_massive
+            pars['m_ncdm'] = ", ".join([str(k.value) for k in sorted(m_nu[m_nu > 0.], reverse=True)])
+        else:
+            pars['N_ur'] = cosmo.Neff
+            pars['N_ncdm'] = 0
+            pars['m_ncdm'] = 0.
+        
+        # handle dark energy
+        if isinstance(cosmo, cosmology.LambdaCDM):
+            pars['w0_fld'] = -1.0
+            pars['wa_fld'] = 0.
+        elif isinstance(cosmo, cosmology.wCDM):
+            pars['w0_fld'] = cosmo.w0
+            pars['wa_fld'] = 0.
+            pars['Omega_Lambda'] = 0. # use Omega_fld
+        elif isinstance(cosmo, cosmology.w0waCDM):
+            pars['w0_fld'] = cosmo.w0
+            pars['wa_fld'] = cosmo.wa
+            pars['Omega_Lambda'] = 0. # use Omega_fld
+        else:
+            cls = cosmo.__class__.__name__
+            valid = ["LambdaCDM", "wCDM", "w0waCDM"]
+            msg = "dark energy equation of state not recognized for class '%s'; " %cls
+            msg += "valid classes: %s" %str(valid)
+            raise TypeError(msg)
+
+        # add any extra arguments
+        if len(extra):
+            pars.update(extra)
+
+        self = cls(default=True)
+        self.set(pars)
+        return self
+
     # Create an equivalent of the parameter file. Non specified values will be
     # taken at their default (in Class)
     def _fillparfile(self):
         cdef char* dumc
 
+        pars = {
+            "Alpha_inf hyrec file": _DATA_FILES['Alpha_inf_hyrec_file'],
+            "R_inf hyrec file" : _DATA_FILES['R_inf_hyrec_file'],
+            "two_photon_tables hyrec file" : _DATA_FILES['two_photon_tables_hyrec_file'],
+            "sBBN file": _DATA_FILES['sBBN_file'],
+            }
+
+        pars.update(self._pars)
+
         if self.fc.size!=0:
             free(self.fc.name)
             free(self.fc.value)
             free(self.fc.read)
-        self.fc.size = len(self._pars)
-        self.fc.name = <FileArg*> malloc(sizeof(FileArg)*len(self._pars))
+        self.fc.size = len(pars)
+        self.fc.name = <FileArg*> malloc(sizeof(FileArg)*len(pars))
         assert(self.fc.name!=NULL)
 
-        self.fc.value = <FileArg*> malloc(sizeof(FileArg)*len(self._pars))
+        self.fc.value = <FileArg*> malloc(sizeof(FileArg)*len(pars))
         assert(self.fc.value!=NULL)
 
-        self.fc.read = <short*> malloc(sizeof(short)*len(self._pars))
+        self.fc.read = <short*> malloc(sizeof(short)*len(pars))
         assert(self.fc.read!=NULL)
 
         # fill parameter file
         i = 0
-        for kk in self._pars:
+        for kk in pars:
 
             dumcp = kk.encode()
             dumc = dumcp
             sprintf(self.fc.name[i],"%s",dumc)
-            dumcp = str(self._pars[kk]).encode()
+            dumcp = str(pars[kk]).encode()
             dumc = dumcp
             sprintf(self.fc.value[i],"%s",dumc)
             self.fc.read[i] = _FALSE_
