@@ -28,6 +28,10 @@ cdef extern from "class.h":
          camb_format
 
     cdef struct precision:
+        FileName hyrec_Alpha_inf_file;
+        FileName hyrec_R_inf_file;
+        FileName hyrec_two_photon_tables_file;
+        FileName sBBN_file;
         ErrorMsg error_message
 
     cdef struct background:

@@ -20,6 +20,10 @@ cimport cython
 ctypedef np.float_t DTYPE_t
 ctypedef np.int_t DTYPE_i
 
+from classylss import get_data_files
+
+_DATA_FILES = get_data_files()
+
 # Import the .pxd containing definitions
 from cclassy cimport *
 
@@ -120,6 +124,12 @@ cdef class Class:
         sprintf(self.fc.filename,"%s",dumc)
         self.ncp = set()
         if default: self.set_default()
+        self._pars.update( {
+            "Alpha_inf hyrec file": _DATA_FILES['Alpha_inf_hyrec_file'],
+            "R_inf hyrec file" : _DATA_FILES['R_inf_hyrec_file'],
+            "two_photon_tables hyrec file" : _DATA_FILES['two_photon_tables_hyrec_file'],
+            "sBBN file": _DATA_FILES['sBBN_file'],
+            } )
 
     # Set up the dictionary
     def set(self,*pars,**kars):
