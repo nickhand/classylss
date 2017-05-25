@@ -231,5 +231,6 @@ if __name__ == '__main__':
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-          py_modules = ["classylss.gcl"]
+          py_modules = ["classylss.gcl"],
+          packages=['classylss', 'classylss.tests']
     )
