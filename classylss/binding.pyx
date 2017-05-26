@@ -71,6 +71,18 @@ cdef int _build_file_content(pars, file_content * fc) except -1:
 
     return 0
 
+cdef np.dtype _titles_to_dtype(char * titles, int remove_units=False):
+    tmp = (<bytes>titles).decode()
+    names = tmp.split("\t")[:-1]
+    number_of_titles = len(names)
+    if remove_units:
+        dtype = np.dtype([(name.split()[0], 'f8') for name in names])
+    else:
+        dtype = np.dtype([(name, 'f8') for name in names])
+    return dtype
+
+
+
 def _build_task_dependency(tasks):
     """
     Fill the tasks list with all the needed modules
@@ -322,7 +334,7 @@ cdef class ClassEngine:
 
         _pars = {
             "output": "vTk dTk mPk",
-            "P_k_max_h/Mpc":  20.,
+            "P_k_max_h/Mpc":  100.,
             "z_max_pk": 100.0,
             }
 
@@ -470,6 +482,91 @@ cdef class Background:
         """
         return self.compute_for_z(z, self.ba.index_bg_f)
 
+cdef class Primorial:
+    cdef ClassEngine engine
+    cdef perturbs * pt
+    cdef primordial * pm
+    cdef background * ba
+
+    def __init__(self, ClassEngine engine):
+        self.engine = engine
+        self.engine.compute("primordial")
+        self.pt = &self.engine.pt
+        self.ba = &self.engine.ba
+        self.pm = &self.engine.pm
+
+    def get_pk(self, k, mode='linear'):
+        """ get primoridal spectrum at k.
+
+            Parameters
+            ----------
+            k : array_like,  h/Mpc units.
+
+            Results
+            -------
+            primordial_k : array_like
+
+                Unit unclear. Tf_k ** 2 * primordial_k is dimensionless.
+
+        """
+
+        #generate a new output array of the correct shape by broadcasting input arrays together
+        k = np.float64(k) * self.ba.h
+        out = np.empty(np.broadcast(k).shape, np.float64)
+
+        #generate the iterator over the input and output arrays, does the same thing as
+        cdef np.broadcast it = np.broadcast(k,  out)
+        cdef int index_md = 0
+        cdef linear_or_logarithmic modeval
+
+        if mode.startswith('lin'):
+            modeval = linear
+        elif mode.startswith('log'):
+            modval = logarithmic
+        else:
+            raise ValueError("mode can only be log or lin")
+
+        while np.PyArray_MultiIter_NOTDONE(it):
+
+                #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
+                aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+
+                if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
+                    <double*>(np.PyArray_MultiIter_DATA(it, 1))):
+                    raise ClassRuntimeError(self.pm.error_message.decode())
+
+                #PyArray_MultiIter_NEXT is used to advance the iterator
+                np.PyArray_MultiIter_NEXT(it)
+
+        # Watch out: no transformation here
+        return out
+
+    def get_primordial(self):
+        """
+        Return the primordial scalar and/or tensor spectrum depending on 'modes'.
+        'output' must be set to something, e.g. 'tCl'.
+
+        Returns
+        -------
+        primordial : dictionary containing k-vector and primordial scalar and tensor P(k).
+        """
+
+        primordial = {}
+        cdef char titles[_MAXTITLESTRINGLENGTH_]
+        memset(titles, 0, _MAXTITLESTRINGLENGTH_)
+
+        if primordial_output_titles(self.pt, self.pm, titles)==_FAILURE_:
+            raise ClassRuntimeError(self.pm.error_message.decode())
+
+        dtype = _titles_to_dtype(titles)
+
+        cdef np.ndarray data = np.zeros(self.pm.lnk_size, dtype=dtype)
+
+        if primordial_output_data(self.pt, self.pm, len(dtype.fields), <double*>data.data)==_FAILURE_:
+            raise ClassRuntimeError(self.pm.error_message.decode())
+
+        return data
+
 cdef class Spectra:
     cdef ClassEngine engine
     cdef spectra * sp
@@ -504,7 +601,7 @@ cdef class Spectra:
 
         Returns
         -------
-        tk : dictionary containing transfer functions.
+        tk : array_like, containing transfer functions, k
         """
 
         if (not self.pt.has_density_transfers) and (not self.pt.has_velocity_transfers):
@@ -513,30 +610,27 @@ cdef class Spectra:
         cdef FileName ic_suffix
         cdef file_format_outf
         cdef char ic_info[1024]
+
         cdef char titles[_MAXTITLESTRINGLENGTH_]
+        memset(titles, 0, _MAXTITLESTRINGLENGTH_)
 
         if output_format == 'camb':
             outf = camb_format
         else:
             outf = class_format
 
-        memset(titles, 0, _MAXTITLESTRINGLENGTH_)
-
         if spectra_output_tk_titles(self.ba, self.pt, outf, titles)==_FAILURE_:
             raise ClassRuntimeError(self.op.error_message.decode())
 
-        tmp = (<bytes>titles).decode()
-        names = tmp.split("\t")[:-1]
-        number_of_titles = len(names)
+        # k is in h/Mpc. Other functions unit is unclear.
+        dtype = _titles_to_dtype(titles, remove_units=True)
 
         index_md = 0
         ic_num = self.sp.ic_size[index_md]
 
-        dtype = [(name.split()[0], 'f8') for name in names]
-
         cdef np.ndarray data = np.zeros((ic_num, self.sp.ln_k_size), dtype=dtype)
 
-        if spectra_output_tk_data(self.ba, self.pt, self.sp, outf, <double> z, number_of_titles, <double*> data.data)==_FAILURE_:
+        if spectra_output_tk_data(self.ba, self.pt, self.sp, outf, <double> z, len(dtype.fields), <double*> data.data)==_FAILURE_:
             raise ClassRuntimeError(self.sp.error_message.decode())
 
         ic_keys = []
@@ -568,10 +662,6 @@ cdef class Spectra:
             because otherwise a segfault will occur
 
         """
-        cdef double pk_velo
-        cdef double pk_cross
-        cdef int dummy
-
         if lin or self.nl.method == 0:
             if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic) == _FAILURE_:
                  raise ClassRuntimeError(self.sp.error_message.decode())
@@ -581,14 +671,12 @@ cdef class Spectra:
         return 0
 
     def get_pk(self, k, z):
-        """ Fast function to get the power spectrum on a k and z array """
-        k1, z1 = np.float64(k), np.float64(z)
-        return self._get_pk(k1, z1, 0)
+        """ Fast function to get the power spectrum on a k and z array. K in h/Mpc units """
+        return self._get_pk(k, z, 0)
 
     def get_pklin(self, k, z):
-        """ Fast function to get the power spectrum on a k and z array """
-        k1, z1 = np.float64(k), np.float64(z)
-        return self._get_pk(k1, z1, 1)
+        """ Fast function to get the power spectrum on a k and z array. K in h/Mpc units """
+        return self._get_pk(k, z, 1)
 
     def _get_pk(self, k, z, int linear):
 
@@ -596,6 +684,10 @@ cdef class Spectra:
             raise ClassRuntimeError(
                 "No power spectrum computed. You must add mPk to the list of outputs."
                 )
+
+        # internally class uses 1 / Mpc
+        k = np.float64(k) * self.ba.h
+        z = np.float64(z)
 
         # Quantities for the isocurvature modes
         cdef np.ndarray pk_ic = np.zeros(self.sp.ic_ic_size[self.sp.index_md_scalars], dtype='f8')
@@ -619,5 +711,7 @@ cdef class Spectra:
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
 
-        return out
+        # internally class uses Mpc ** 3
+        out[...] *= self.ba.h**3
 
+        return out
