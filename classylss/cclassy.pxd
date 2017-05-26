@@ -287,6 +287,7 @@ cdef extern from "class.h":
 
     int primordial_output_titles(void * ppt, void *ppm, char titles[_MAXTITLESTRINGLENGTH_])
     int primordial_output_data(void *ppt, void *ppm, int number_of_titles, double *data)
+    int primordial_spectrum_at_k(void * ppm, int index_md, linear_or_logarithmic mode, double k, double * pk)
 
     int spectra_output_tk_titles(void *pba, void *ppt,  file_format output_format, char titles[_MAXTITLESTRINGLENGTH_])
     int spectra_output_tk_data(void *pba,void *ppt,void *psp,  file_format output_format, double z, int number_of_titles, double *data)
