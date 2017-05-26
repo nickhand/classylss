@@ -364,33 +364,6 @@ cdef class Background:
         self.engine = engine
         assert engine.ready.ba
         self.ba = &self.engine.ba
-        self.data = self._get_background()
-
-    def Hubble(self, z):
-        """
-        Hubble(z)
-
-        Return the Hubble rate (exactly, the quantity defined by Class as index_bg_H
-        in the background module)
-
-        Parameters
-        ----------
-        z : float
-                Desired redshift
-        """
-        cdef double tau
-        cdef int last_index #junk
-        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
-
-        if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        H = pvecback[self.ba.index_bg_H]
-
-        return H
 
     property Omega_m:
         def __get__(self):
@@ -434,47 +407,49 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
 
+    def compute_for_z(self, z, int column):
+        cdef double tau
+        cdef int last_index #junk
 
-    def z_of_r (self, z_array):
-        cdef double tau=0.0
-        cdef int last_index=0 #junk
+        #generate a new output array of the correct shape by broadcasting input arrays together
+        out = np.empty(np.broadcast(z).shape, np.float64)
+
+        #generate the iterator over the input and output arrays, does the same thing as
+        # PyArray_MultiIterNew
+
+        cdef np.broadcast it = np.broadcast(z, out)
+
         cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
-        r = np.zeros(len(z_array),'float64')
-        dzdr = np.zeros(len(z_array),'float64')
 
-        i = 0
-        for redshift in z_array:
-            if background_tau_of_z(self.ba,redshift,&tau)==_FAILURE_:
+        while np.PyArray_MultiIter_NOTDONE(it):
+
+            #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
+            aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+
+            if background_tau_of_z(self.ba,aval, &tau)==_FAILURE_:
                 raise CosmoSevereError(self.ba.error_message)
 
-            if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
+            if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
                 raise CosmoSevereError(self.ba.error_message)
 
-            # store r
-            r[i] = pvecback[self.ba.index_bg_conf_distance]
-            # store dz/dr = H
-            dzdr[i] = pvecback[self.ba.index_bg_H]
+            (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = pvecback[column]
 
-            i += 1
+            #PyArray_MultiIter_NEXT is used to advance the iterator
+            np.PyArray_MultiIter_NEXT(it)
 
-        return r[:],dzdr[:]
+        return out
+
+    def conformal_distance(self, z):
+        return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+
+    def hubble_function(self, z):
+        return self.compute_for_z(z, self.ba.index_bg_H)
 
     def luminosity_distance(self, z):
         """
         luminosity_distance(z)
         """
-        cdef double tau=0.0
-        cdef int last_index = 0  # junk
-        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
-
-        if background_tau_of_z(self.ba, z, &tau)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        if background_at_tau(self.ba, tau, self.ba.long_info,
-                self.ba.inter_normal, &last_index, &pvecback[0])==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-        lum_distance = pvecback[self.ba.index_bg_lum_distance]
-        return lum_distance
+        return self.compute_for_z(z, self.ba.index_bg_lum_distance)
 
     def angular_distance(self, z):
         """
@@ -488,19 +463,7 @@ cdef class Background:
         z : float
                 Desired redshift
         """
-        cdef double tau
-        cdef int last_index #junk
-        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
-
-        if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        D_A = pvecback[self.ba.index_bg_ang_distance]
-
-        return D_A
+        return self.compute_for_z(z, self.ba.index_bg_ang_distance)
 
     def scale_independent_growth_factor(self, z):
         """
@@ -514,19 +477,7 @@ cdef class Background:
         z : float
                 Desired redshift
         """
-        cdef double tau
-        cdef int last_index #junk
-        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
-
-        if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        D = pvecback[self.ba.index_bg_D]
-
-        return D
+        return self.compute_for_z(z, self.ba.index_bg_D)
 
 cdef class Spectra:
     cdef ClassEngine engine
@@ -650,13 +601,11 @@ cdef class Spectra:
 
     def get_pk(self, k, z):
         """ Fast function to get the power spectrum on a k and z array """
-        from numpy.lib.stride_tricks import broadcast_arrays
         k1, z1 = np.float64(k), np.float64(z)
         return self._get_pk(k1, z1, 0)
 
     def get_pklin(self, k, z):
         """ Fast function to get the power spectrum on a k and z array """
-        from numpy.lib.stride_tricks import broadcast_arrays
         k1, z1 = np.float64(k), np.float64(z)
         return self._get_pk(k1, z1, 1)
 
