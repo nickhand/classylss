@@ -316,7 +316,6 @@ cdef class ClassEngine:
         else:
             pars['N_ur'] = cosmo.Neff
             pars['N_ncdm'] = 0
-            pars['m_ncdm'] = 0.
         
         # handle dark energy
         if isinstance(cosmo, cosmology.FlatLambdaCDM):
