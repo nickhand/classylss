@@ -13,23 +13,22 @@ from cclassy cimport *
 
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 
-class CosmoError(Exception):
+class ClassRuntimeError(RuntimeError):
     def __init__(self, message=""):
-        self.message = message.decode() if isinstance(message,bytes) else message
+        self.message = message
 
     def __str__(self):
-        return '\n\nError in Class: ' + self.message
+        return 'Class Error in Class: ' + self.message
 
-
-class CosmoSevereError(CosmoError):
+class ClassBadValueError(ValueError):
     """
-    Raised when Class failed to understand one or more input parameters.
+    Raised when Class could not compute the cosmology at this point.
 
-    This case would not raise any problem in Class default behaviour. However,
-    for parameter extraction, one has to be sure that all input parameters were
-    understood, otherwise the wrong cosmological model would be selected.
+    This will be caught by the parameter extraction code to give an extremely
+    unlikely value to this point
     """
     pass
+
 
 cdef int _build_file_content(pars, file_content * fc) except -1:
     fc.size = 0
@@ -111,15 +110,6 @@ def _build_task_dependency(tasks):
     return tasks
 
 
-class CosmoComputationError(CosmoError):
-    """
-    Raised when Class could not compute the cosmology at this point.
-
-    This will be caught by the parameter extraction code to give an extremely
-    unlikely value to this point
-    """
-    pass
-
 ctypedef struct ready_flags:
     int fc
     int ba
@@ -146,8 +136,6 @@ cdef class ClassEngine:
     cdef output op
     cdef lensing le
     cdef ready_flags ready
-
-    
     cdef file_content fc
 
     def __cinit__(self, *args, **kwargs):
@@ -190,14 +178,15 @@ cdef class ClassEngine:
         # Check the presence for all CLASS modules in the list 'tasks'. If a
         # module is found in tasks, executure its "_init" method.
         # --------------------------------------------------------------------
-        # The input module should raise a CosmoSevereError, because
+        # The input module should raise a ClassRuntimeError, because
         # non-understood parameters asked to the wrapper is a problematic
         # situation.
         if "input" in tasks:
             if input_init(fc, &self.pr, &self.ba, &self.th,
                           &self.pt, &self.tr, &self.pm, &self.sp,
                           &self.nl, &self.le, &self.op, errmsg) == _FAILURE_:
-                raise CosmoSevereError(errmsg)
+                raise ClassRuntimeError(errmsg.decode())
+
             # This part is done to list all the unread parameters, for debugging
             problem_flag = False
             problematic_parameters = []
@@ -205,60 +194,61 @@ cdef class ClassEngine:
                 if fc.read[i] == _FALSE_:
                     problem_flag = True
                     problematic_parameters.append(fc.name[i].decode())
+
             if problem_flag:
-                raise CosmoSevereError(
+                raise KeyError(
                     "Class did not read input parameter(s): %s\n" % ', '.join(
                     problematic_parameters))
 
         # The following list of computation is straightforward. If the "_init"
-        # methods fail, call `struct_cleanup` and raise a CosmoComputationError
+        # methods fail, call `struct_cleanup` and raise a ClassBadValueError
         # with the error message from the faulty module of CLASS.
         if "background" in tasks and not self.ready.ba:
             if background_init(&(self.pr), &(self.ba)) == _FAILURE_:
-                raise CosmoComputationError(self.ba.error_message)
+                raise ClassBadValueError(self.ba.error_message.decode())
             self.ready.ba = True
 
         if "thermodynamics" in tasks and not self.ready.th:
             if thermodynamics_init(&(self.pr), &(self.ba),
                                    &(self.th)) == _FAILURE_:
-                raise CosmoComputationError(self.th.error_message)
+                raise ClassBadValueError(self.th.error_message.decode())
             self.ready.th = True
 
         if "perturb" in tasks and not self.ready.pt:
             if perturb_init(&(self.pr), &(self.ba),
                             &(self.th), &(self.pt)) == _FAILURE_:
-                raise CosmoComputationError(self.pt.error_message)
+                raise ClassBadValueError(self.pt.error_message.decode())
             self.ready.pt = True
 
         if "primordial" in tasks and not self.ready.pm:
             if primordial_init(&(self.pr), &(self.pt),
                                &(self.pm)) == _FAILURE_:
-                raise CosmoComputationError(self.pm.error_message)
+                raise ClassBadValueError(self.pm.error_message.decode())
             self.ready.pm = True
 
         if "nonlinear" in tasks and not self.ready.nl:
             if nonlinear_init(&self.pr, &self.ba, &self.th,
                               &self.pt, &self.pm, &self.nl) == _FAILURE_:
-                raise CosmoComputationError(self.nl.error_message)
+                raise ClassBadValueError(self.nl.error_message.decode())
             self.ready.nl = True
 
         if "transfer" in tasks and not self.ready.tr:
             if transfer_init(&(self.pr), &(self.ba), &(self.th),
                              &(self.pt), &(self.nl), &(self.tr)) == _FAILURE_:
-                raise CosmoComputationError(self.tr.error_message)
+                raise ClassBadValueError(self.tr.error_message.decode())
             self.ready.tr = True
 
         if "spectra" in tasks and not self.ready.sp:
             if spectra_init(&(self.pr), &(self.ba), &(self.pt),
                             &(self.pm), &(self.nl), &(self.tr),
                             &(self.sp)) == _FAILURE_:
-                raise CosmoComputationError(self.sp.error_message)
+                raise ClassBadValueError(self.sp.error_message.decode())
             self.ready.sp = True
 
         if "lensing" in tasks and not self.ready.le:
             if lensing_init(&(self.pr), &(self.pt), &(self.sp),
                             &(self.nl), &(self.le)) == _FAILURE_:
-                raise CosmoComputationError(self.le.error_message)
+                raise ClassBadValueError(self.le.error_message.decode())
             self.ready.le = True
 
         # At this point, the cosmological instance contains everything needed. The
@@ -390,6 +380,8 @@ cdef class Background:
         cdef double tau
         cdef int last_index #junk
 
+        z = np.float64(z)
+
         #generate a new output array of the correct shape by broadcasting input arrays together
         out = np.empty(np.broadcast(z).shape, np.float64)
 
@@ -406,10 +398,10 @@ cdef class Background:
             aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
 
             if background_tau_of_z(self.ba,aval, &tau)==_FAILURE_:
-                raise CosmoSevereError(self.ba.error_message)
+                raise ClassRuntimeError(self.ba.error_message.decode())
 
             if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
-                raise CosmoSevereError(self.ba.error_message)
+                raise ClassRuntimeError(self.ba.error_message.decode())
 
             (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = pvecback[column]
 
@@ -430,7 +422,7 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_H)
 
     def hubble_function_prime(self, z):
-        """ d H / d tau """
+        """ d H / d tau ; d tau / da = 1 / (a ** 2 H) """
         return self.compute_for_z(z, self.ba.index_bg_H_prime)
 
     def luminosity_distance(self, z):
@@ -531,7 +523,7 @@ cdef class Spectra:
         memset(titles, 0, _MAXTITLESTRINGLENGTH_)
 
         if spectra_output_tk_titles(self.ba, self.pt, outf, titles)==_FAILURE_:
-            raise CosmoSevereError(self.op.error_message)
+            raise ClassRuntimeError(self.op.error_message.decode())
 
         tmp = (<bytes>titles).decode()
         names = tmp.split("\t")[:-1]
@@ -545,13 +537,13 @@ cdef class Spectra:
         cdef np.ndarray data = np.zeros((ic_num, self.sp.ln_k_size), dtype=dtype)
 
         if spectra_output_tk_data(self.ba, self.pt, self.sp, outf, <double> z, number_of_titles, <double*> data.data)==_FAILURE_:
-            raise CosmoSevereError(self.sp.error_message)
+            raise ClassRuntimeError(self.sp.error_message.decode())
 
         ic_keys = []
         if ic_num > 1:
             for index_ic in range(ic_num):
                 if spectra_firstline_and_ic_suffix(self.pt, index_ic, ic_info, ic_suffix)==_FAILURE_:
-                    raise CosmoSevereError(self.op.error_message)
+                    raise ClassRuntimeError(self.op.error_message.decode())
 
                 ic_key = <bytes> ic_suffix
                 ic_keys.append(ic_key.decode())
@@ -580,18 +572,12 @@ cdef class Spectra:
         cdef double pk_cross
         cdef int dummy
 
-        if not lin:
-            if (self.nl.method == 0):
-                 if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic)==_FAILURE_:
-                     raise CosmoSevereError(self.sp.error_message)
-            else:
-                 if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk) ==_FAILURE_:
-                    raise CosmoSevereError(self.sp.error_message)
-
+        if lin orself.nl.method == 0:
+            if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic) == _FAILURE_:
+                 raise ClassRuntimeError(self.sp.error_message.decode())
         else:
-            if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic)==_FAILURE_:
-                raise CosmoSevereError(self.sp.error_message)
-
+            if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk) ==_FAILURE_:
+                 raise ClassRuntimeError(self.sp.error_message.decode())
         return 0
 
     def get_pk(self, k, z):
@@ -604,10 +590,10 @@ cdef class Spectra:
         k1, z1 = np.float64(k), np.float64(z)
         return self._get_pk(k1, z1, 1)
 
-    cdef _get_pk(self, k, z, int linear):
+    def _get_pk(self, k, z, int linear):
 
         if (self.pt.has_pk_matter == _FALSE_):
-            raise CosmoSevereError(
+            raise ClassRuntimeError(
                 "No power spectrum computed. You must add mPk to the list of outputs."
                 )
 
