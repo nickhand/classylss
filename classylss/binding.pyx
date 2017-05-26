@@ -31,7 +31,7 @@ class CosmoSevereError(CosmoError):
     """
     pass
 
-cdef void _build_file_content(pars, file_content * fc):
+cdef int _build_file_content(pars, file_content * fc) except -1:
     fc.size = 0
 
     fc.filename = <char*>malloc(sizeof(FileArg))
@@ -69,6 +69,8 @@ cdef void _build_file_content(pars, file_content * fc):
         fc.read[i] = _FALSE_
 
         i += 1
+
+    return 0
 
 def _build_task_dependency(tasks):
     """
@@ -119,6 +121,7 @@ class CosmoComputationError(CosmoError):
     pass
 
 ctypedef struct ready_flags:
+    int fc
     int ba
     int th
     int pt
@@ -144,26 +147,18 @@ cdef class ClassEngine:
     cdef lensing le
     cdef ready_flags ready
 
+    
+    cdef file_content fc
+
     def __cinit__(self, *args, **kwargs):
         memset(&self.ready, 0, sizeof(self.ready))
 
-    def __init__(self, object pars={}, level=['lensing']):
-        cdef char* dumc
-
-        cdef file_content fc
-
-        tasks = _build_task_dependency(level)
-
-        _build_file_content(pars, &fc)
-
-        try:
-            self.compute(&fc, tasks)
-        finally:
-            # free fc regardless of compute exceptions.
-            parser_free(&fc) 
-            pass
+    def __init__(self, object pars={}):
+        _build_file_content(pars, &self.fc)
+        self.ready.fc = True
 
     def __dealloc__(self):
+        if self.ready.fc: parser_free(&self.fc)
         if self.ready.le: lensing_free(&self.le)
         if self.ready.sp: spectra_free(&self.sp)
         if self.ready.tr: transfer_free(&self.tr)
@@ -173,7 +168,7 @@ cdef class ClassEngine:
         if self.ready.th: thermodynamics_free(&self.th)
         if self.ready.ba: background_free(&self.ba)
 
-    cdef compute(self, file_content * fc, object tasks):
+    cdef compute(self, level):
         """
         Main function, execute all the _init methods for all desired modules.
         This is called in MontePython, and this ensures that the Class instance
@@ -182,30 +177,23 @@ cdef class ClassEngine:
 
         Parameters
         ----------
-        level : list
-                list of the last module desired. The internal function
-                _check_task_dependency will then add to this list all the
-                necessary modules to compute in order to initialize this last
-                one. The default last module is "lensing".
+        level : level of modules to arrive.
 
-        .. warning::
-
-            level default value should be left as an array (it was creating
-            problem when casting as a set later on, in _check_task_dependency)
 
         """
+        cdef file_content * fc = &self.fc
         cdef ErrorMsg errmsg
 
-        level = tasks
+        tasks = _build_task_dependency([level])
 
         # --------------------------------------------------------------------
-        # Check the presence for all CLASS modules in the list 'level'. If a
-        # module is found in level, executure its "_init" method.
+        # Check the presence for all CLASS modules in the list 'tasks'. If a
+        # module is found in tasks, executure its "_init" method.
         # --------------------------------------------------------------------
         # The input module should raise a CosmoSevereError, because
         # non-understood parameters asked to the wrapper is a problematic
         # situation.
-        if "input" in level:
+        if "input" in tasks:
             if input_init(fc, &self.pr, &self.ba, &self.th,
                           &self.pt, &self.tr, &self.pm, &self.sp,
                           &self.nl, &self.le, &self.op, errmsg) == _FAILURE_:
@@ -225,49 +213,49 @@ cdef class ClassEngine:
         # The following list of computation is straightforward. If the "_init"
         # methods fail, call `struct_cleanup` and raise a CosmoComputationError
         # with the error message from the faulty module of CLASS.
-        if "background" in level:
+        if "background" in tasks and not self.ready.ba:
             if background_init(&(self.pr), &(self.ba)) == _FAILURE_:
                 raise CosmoComputationError(self.ba.error_message)
             self.ready.ba = True
 
-        if "thermodynamics" in level:
+        if "thermodynamics" in tasks and not self.ready.th:
             if thermodynamics_init(&(self.pr), &(self.ba),
                                    &(self.th)) == _FAILURE_:
                 raise CosmoComputationError(self.th.error_message)
             self.ready.th = True
 
-        if "perturb" in level:
+        if "perturb" in tasks and not self.ready.pt:
             if perturb_init(&(self.pr), &(self.ba),
                             &(self.th), &(self.pt)) == _FAILURE_:
                 raise CosmoComputationError(self.pt.error_message)
             self.ready.pt = True
 
-        if "primordial" in level:
+        if "primordial" in tasks and not self.ready.pm:
             if primordial_init(&(self.pr), &(self.pt),
                                &(self.pm)) == _FAILURE_:
                 raise CosmoComputationError(self.pm.error_message)
             self.ready.pm = True
 
-        if "nonlinear" in level:
+        if "nonlinear" in tasks and not self.ready.nl:
             if nonlinear_init(&self.pr, &self.ba, &self.th,
                               &self.pt, &self.pm, &self.nl) == _FAILURE_:
                 raise CosmoComputationError(self.nl.error_message)
             self.ready.nl = True
 
-        if "transfer" in level:
+        if "transfer" in tasks and not self.ready.tr:
             if transfer_init(&(self.pr), &(self.ba), &(self.th),
                              &(self.pt), &(self.nl), &(self.tr)) == _FAILURE_:
                 raise CosmoComputationError(self.tr.error_message)
             self.ready.tr = True
 
-        if "spectra" in level:
+        if "spectra" in tasks and not self.ready.sp:
             if spectra_init(&(self.pr), &(self.ba), &(self.pt),
                             &(self.pm), &(self.nl), &(self.tr),
                             &(self.sp)) == _FAILURE_:
                 raise CosmoComputationError(self.sp.error_message)
             self.ready.sp = True
 
-        if "lensing" in level:
+        if "lensing" in tasks and not self.ready.le:
             if lensing_init(&(self.pr), &(self.pt), &(self.sp),
                             &(self.nl), &(self.le)) == _FAILURE_:
                 raise CosmoComputationError(self.le.error_message)
@@ -361,7 +349,7 @@ cdef class Background:
 
     def __init__(self, ClassEngine engine):
         self.engine = engine
-        assert engine.ready.ba
+        self.engine.compute("background")
         self.ba = &self.engine.ba
 
     property Omega_m:
@@ -489,11 +477,7 @@ cdef class Spectra:
 
     def __init__(self, ClassEngine engine):
         self.engine = engine
-        assert engine.ready.ba
-        assert engine.ready.sp
-        assert engine.ready.pt
-        assert engine.ready.pm
-        assert engine.ready.nl
+        self.engine.compute("spectra")
 
         self.ba = &self.engine.ba
         self.nl = &self.engine.nl
@@ -590,7 +574,7 @@ cdef class Spectra:
                      raise CosmoSevereError(self.sp.error_message)
             else:
                  if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk) ==_FAILURE_:
-                        raise CosmoSevereError(self.sp.error_message)
+                    raise CosmoSevereError(self.sp.error_message)
 
         else:
             if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic)==_FAILURE_:
