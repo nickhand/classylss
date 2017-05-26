@@ -572,7 +572,7 @@ cdef class Spectra:
         cdef double pk_cross
         cdef int dummy
 
-        if lin orself.nl.method == 0:
+        if lin or self.nl.method == 0:
             if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic) == _FAILURE_:
                  raise ClassRuntimeError(self.sp.error_message.decode())
         else:
