@@ -2,7 +2,7 @@
 cimport cython
 import numpy as np
 cimport numpy as np
-from libc.stdlib cimport malloc, free, calloc
+from libc.stdlib cimport malloc, free
 from libc.string cimport memset, strncpy, strdup
 
 from classylss import get_data_files
@@ -32,7 +32,8 @@ class CosmoSevereError(CosmoError):
     pass
 
 cdef void _build_file_content(pars, file_content * fc):
-    fc.size=0
+    fc.size = 0
+
     fc.filename = <char*>malloc(sizeof(FileArg))
 
     strncpy(fc.filename, "NOFILE", sizeof(FileArg))
@@ -46,11 +47,6 @@ cdef void _build_file_content(pars, file_content * fc):
 
     _pars.update(pars)
     pars = _pars
-
-    if fc.size!=0:
-        free(fc.name)
-        free(fc.value)
-        free(fc.read)
 
     fc.size = len(pars)
     fc.name = <FileArg*> malloc(sizeof(FileArg)*len(pars))
@@ -370,44 +366,6 @@ cdef class Background:
         self.ba = &self.engine.ba
         self.data = self._get_background()
 
-    def _get_background(self):
-        """
-        Return the background quantities.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        background : dictionary containing background.
-        """
-        cdef char *titles
-        cdef double* data
-        titles = <char*>calloc(_MAXTITLESTRINGLENGTH_,sizeof(char))
-
-        if background_output_titles(self.ba, titles)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        tmp = <bytes> titles
-        tmp = str(tmp.decode())
-        names = tmp.split("\t")[:-1]
-        number_of_titles = len(names)
-        timesteps = self.ba.bt_size
-
-        data = <double*>malloc(sizeof(double)*timesteps*number_of_titles)
-
-        if background_output_data(self.ba, number_of_titles, data)==_FAILURE_:
-            raise CosmoSevereError(self.ba.error_message)
-
-        background = {}
-
-        for i in range(number_of_titles):
-            background[names[i]] = np.zeros(timesteps, dtype=np.double)
-            for index in range(timesteps):
-                background[names[i]][index] = data[index*number_of_titles+i]
-
-        return background
-
     def Hubble(self, z):
         """
         Hubble(z)
@@ -422,19 +380,15 @@ cdef class Background:
         """
         cdef double tau
         cdef int last_index #junk
-        cdef double * pvecback
-
-        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
 
         if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         H = pvecback[self.ba.index_bg_H]
-
-        free(pvecback)
 
         return H
 
@@ -484,18 +438,16 @@ cdef class Background:
     def z_of_r (self, z_array):
         cdef double tau=0.0
         cdef int last_index=0 #junk
-        cdef double * pvecback
+        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
         r = np.zeros(len(z_array),'float64')
         dzdr = np.zeros(len(z_array),'float64')
-
-        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
 
         i = 0
         for redshift in z_array:
             if background_tau_of_z(self.ba,redshift,&tau)==_FAILURE_:
                 raise CosmoSevereError(self.ba.error_message)
 
-            if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+            if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
                 raise CosmoSevereError(self.ba.error_message)
 
             # store r
@@ -505,7 +457,6 @@ cdef class Background:
 
             i += 1
 
-        free(pvecback)
         return r[:],dzdr[:]
 
     def luminosity_distance(self, z):
@@ -514,16 +465,15 @@ cdef class Background:
         """
         cdef double tau=0.0
         cdef int last_index = 0  # junk
-        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
 
         if background_tau_of_z(self.ba, z, &tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         if background_at_tau(self.ba, tau, self.ba.long_info,
-                self.ba.inter_normal, &last_index, pvecback)==_FAILURE_:
+                self.ba.inter_normal, &last_index, &pvecback[0])==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
         lum_distance = pvecback[self.ba.index_bg_lum_distance]
-        free(pvecback)
         return lum_distance
 
     def angular_distance(self, z):
@@ -540,19 +490,15 @@ cdef class Background:
         """
         cdef double tau
         cdef int last_index #junk
-        cdef double * pvecback
-
-        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
 
         if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,&pvecback[0])==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         D_A = pvecback[self.ba.index_bg_ang_distance]
-
-        free(pvecback)
 
         return D_A
 
@@ -570,19 +516,15 @@ cdef class Background:
         """
         cdef double tau
         cdef int last_index #junk
-        cdef double * pvecback
-
-        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+        cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
 
         if background_tau_of_z(self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+        if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         D = pvecback[self.ba.index_bg_D]
-
-        free(pvecback)
 
         return D
 
@@ -678,7 +620,7 @@ cdef class Spectra:
 
 
     # Gives the pk for a given (k,z)
-    cdef double pk(self, double k, double z, int lin):
+    cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk) except -1:
         """
         Gives the pk for a given k and z (will be non linear if requested to Class, linear otherwise)
 
@@ -688,45 +630,46 @@ cdef class Spectra:
             because otherwise a segfault will occur
 
         """
-        cdef double pk
         cdef double pk_velo
         cdef double pk_cross
         cdef int dummy
 
-        # Quantities for the isocurvature modes
-        cdef double *pk_ic = <double*> calloc(self.sp.ic_ic_size[self.sp.index_md_scalars], sizeof(double))
-        if (self.pt.has_pk_matter == _FALSE_):
-            raise CosmoSevereError(
-                "No power spectrum computed. You must add mPk to the list of outputs."
-                )
-
         if not lin:
             if (self.nl.method == 0):
-                 if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,&pk,pk_ic)==_FAILURE_:
+                 if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic)==_FAILURE_:
                      raise CosmoSevereError(self.sp.error_message)
             else:
-                 if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,&pk) ==_FAILURE_:
+                 if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk) ==_FAILURE_:
                         raise CosmoSevereError(self.sp.error_message)
 
         else:
-            if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,&pk,pk_ic)==_FAILURE_:
+            if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic)==_FAILURE_:
                 raise CosmoSevereError(self.sp.error_message)
 
-        return pk
+        return 0
 
     def get_pk(self, k, z):
         """ Fast function to get the power spectrum on a k and z array """
         from numpy.lib.stride_tricks import broadcast_arrays
-        k1, z1 = broadcast_arrays(np.float64(k), np.float64(z))
+        k1, z1 = np.float64(k), np.float64(z)
         return self._get_pk(k1, z1, 0)
 
     def get_pklin(self, k, z):
         """ Fast function to get the power spectrum on a k and z array """
         from numpy.lib.stride_tricks import broadcast_arrays
-        k1, z1 = broadcast_arrays(np.float64(k), np.float64(z))
+        k1, z1 = np.float64(k), np.float64(z)
         return self._get_pk(k1, z1, 1)
 
     cdef _get_pk(self, k, z, int linear):
+
+        if (self.pt.has_pk_matter == _FALSE_):
+            raise CosmoSevereError(
+                "No power spectrum computed. You must add mPk to the list of outputs."
+                )
+
+        # Quantities for the isocurvature modes
+        cdef np.ndarray pk_ic = np.zeros(self.sp.ic_ic_size[self.sp.index_md_scalars], dtype='f8')
+
         #generate a new output array of the correct shape by broadcasting input arrays together
         out = np.empty(np.broadcast(k, z).shape, np.float64)
 
@@ -741,7 +684,7 @@ cdef class Spectra:
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
                 bval = (<double*>np.PyArray_MultiIter_DATA(it, 1))[0]
 
-                (<double*>np.PyArray_MultiIter_DATA(it, 2))[0] = self.pk(aval, bval, linear)
+                self.pk(aval, bval, <double*> pk_ic.data, linear, <double*>(np.PyArray_MultiIter_DATA(it, 2)))
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
