@@ -352,19 +352,18 @@ cdef class Background:
         self.engine.compute("background")
         self.ba = &self.engine.ba
 
-    property Omega_m:
+    property Om0:
+        """
+        Return the sum of Omega0 for all non-relativistic components
+        """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
 
-    property Omega_b:
+    property Ob0:
         def __get__(self):
             return self.ba.Omega0_b
 
-    property omega_b:
-        def __get__(self):
-            return self.ba.Omega0_b * self.ba.h * self.ba.h
-
-    property Omega_nu:
+    property Onu0:
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
 
@@ -372,7 +371,7 @@ cdef class Background:
         def __get__(self):
             return self.ba.Neff
 
-    property age:
+    property age0:
         def __get__(self):
             return self.ba.age
 
@@ -380,19 +379,12 @@ cdef class Background:
         def __get__(self):
             return self.ba.h
 
-    property T_cmb:
+    property Tcmb0:
         """
         Return the CMB temperature
         """
         def __get__(self):
             return self.ba.T_cmb
-
-    property Omega0_m:
-        """
-        Return the sum of Omega0 for all non-relativistic components
-        """
-        def __get__(self):
-            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
 
     def compute_for_z(self, z, int column):
         cdef double tau
@@ -427,10 +419,19 @@ cdef class Background:
         return out
 
     def conformal_distance(self, z):
+        """ conformal distance, comoving distance when K = 0.0 (flat universe) """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+
+    def time(self, z):
+        """ proper time (age of universe) """
+        return self.compute_for_z(z, self.ba.index_bg_time)
 
     def hubble_function(self, z):
         return self.compute_for_z(z, self.ba.index_bg_H)
+
+    def hubble_function_prime(self, z):
+        """ d H / d tau """
+        return self.compute_for_z(z, self.ba.index_bg_H_prime)
 
     def luminosity_distance(self, z):
         """
@@ -454,8 +455,6 @@ cdef class Background:
 
     def scale_independent_growth_factor(self, z):
         """
-        scale_independent_growth_factor(z)
-
         Return the scale invariant growth factor D(a) for CDM perturbations
         (exactly, the quantity defined by Class as index_bg_D in the background module)
 
@@ -465,6 +464,19 @@ cdef class Background:
                 Desired redshift
         """
         return self.compute_for_z(z, self.ba.index_bg_D)
+
+    def scale_independent_growth_rate(self, z):
+        """
+
+        Return the scale invariant growth rate d ln D(a) / d ln a for CDM perturbations
+        (exactly, the quantity defined by Class as index_bg_D in the background module)
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        return self.compute_for_z(z, self.ba.index_bg_f)
 
 cdef class Spectra:
     cdef ClassEngine engine
