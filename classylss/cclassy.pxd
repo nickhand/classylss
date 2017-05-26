@@ -10,12 +10,13 @@ DEF _MAX_NUMBER_OF_K_FILES_ = 30
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 DEF _FILENAMESIZE_ = 256
 DEF _LINE_LENGTH_MAX_ = 1024
+DEF _ERRORMSGSIZE_ = 2048
 
 cdef extern from "class.h":
 
     ctypedef char FileArg[40]
 
-    ctypedef char* ErrorMsg
+    ctypedef char ErrorMsg[_ERRORMSGSIZE_]
 
     ctypedef char FileName[_FILENAMESIZE_]
 
