@@ -671,11 +671,23 @@ cdef class Spectra:
         return 0
 
     def get_pk(self, k, z):
-        """ Fast function to get the power spectrum on a k and z array. K in h/Mpc units """
+        """ Primary Power spectrum result (non-linear if enabled) on k and z array. K in h/Mpc units.
+
+            Results
+            -------
+            Pk : array like
+                Power Spectrum in (Mpc/h)**3
+        """
         return self._get_pk(k, z, 0)
 
     def get_pklin(self, k, z):
-        """ Fast function to get the power spectrum on a k and z array. K in h/Mpc units """
+        """ Linear Power spectrum result (linear even if non-linear is enabled) on k and z array. K in h/Mpc units.
+
+            Results
+            -------
+            Pk : array like
+                Power Spectrum in (Mpc/h)**3
+        """
         return self._get_pk(k, z, 1)
 
     def _get_pk(self, k, z, int linear):
