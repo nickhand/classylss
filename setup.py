@@ -217,7 +217,7 @@ def classy_extension_config():
 
     # the configuration for GCL python extension
     config = {}
-    config['name'] = 'classylss._classylss'
+    config['name'] = 'classylss.binding'
     config['extra_link_args'] = ['-g', '-fPIC']
     config['extra_compile_args'] = ['-fopenmp']
     # important or get a symbol not found error, because class is
