@@ -247,6 +247,7 @@ cdef extern from "class.h":
         FileArg * value
         short * read
 
+    void parser_free(void*)
     void lensing_free(void*)
     void spectra_free(void*)
     void transfer_free(void*)

@@ -217,7 +217,7 @@ def classy_extension_config():
 
     # the configuration for GCL python extension
     config = {}
-    config['name'] = 'classylss.classy'
+    config['name'] = 'classylss._classylss'
     config['extra_link_args'] = ['-g', '-fPIC']
     config['extra_compile_args'] = ['-fopenmp']
     # important or get a symbol not found error, because class is
@@ -226,7 +226,7 @@ def classy_extension_config():
     config['libraries'] = ['class', 'gomp', 'gfortran']
 
     # determine if swig needs to be called
-    config['sources'] = ['classylss/classy.pyx']
+    config['sources'] = ['classylss/binding.pyx']
 
     return config
 
