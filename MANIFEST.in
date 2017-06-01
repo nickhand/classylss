@@ -3,6 +3,7 @@ include classylss/gcl.py
 include classylss/_gcl/include/*
 include classylss/*py
 include classylss/_gcl/python/*
+include classylss/*.pyx
 
 include depends/class.cfg
 include depends/install_class.sh
