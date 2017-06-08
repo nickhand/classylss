@@ -1,0 +1,6 @@
+*.pyc
+depends/tmp-*
+build/
+.cache/
+*.egg-info/
+dist/
