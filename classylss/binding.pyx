@@ -76,9 +76,9 @@ cdef np.dtype _titles_to_dtype(char * titles, int remove_units=False):
     names = tmp.split("\t")[:-1]
     number_of_titles = len(names)
     if remove_units:
-        dtype = np.dtype([(name.split()[0], 'f8') for name in names])
+        dtype = np.dtype([(str(name.split()[0]), 'f8') for name in names])
     else:
-        dtype = np.dtype([(name, 'f8') for name in names])
+        dtype = np.dtype([(str(name), 'f8') for name in names])
     return dtype
 
 
@@ -285,7 +285,7 @@ cdef class ClassEngine:
         pars['Omega_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
 
         # handle massive neutrinos
-        if cosmo.has_massive_nu: 
+        if cosmo.has_massive_nu:
 
             # convert to eV
             m_nu = cosmo.m_nu
@@ -293,9 +293,9 @@ cdef class ClassEngine:
                 m_nu = m_nu.to(units.eV)
 
             # from CLASS notes:
-            # one more remark: if you have respectively 1,2,3 massive neutrinos, 
-            # if you stick to the default value pm equal to 0.71611, designed to give m/omega of 
-            # 93.14 eV, and if you want to use N_ur to get N_eff equal to 3.046 in the early universe, 
+            # one more remark: if you have respectively 1,2,3 massive neutrinos,
+            # if you stick to the default value pm equal to 0.71611, designed to give m/omega of
+            # 93.14 eV, and if you want to use N_ur to get N_eff equal to 3.046 in the early universe,
             # then you should pass here respectively 2.0328,1.0196,0.00641
             N_ur = [2.0328, 1.0196, 0.00641]
             N_massive = (m_nu > 0.).sum()
@@ -306,7 +306,7 @@ cdef class ClassEngine:
         else:
             pars['N_ur'] = cosmo.Neff
             pars['N_ncdm'] = 0
-        
+
         # handle dark energy
         if isinstance(cosmo, cosmology.FlatLambdaCDM):
             #pars['w0_fld'] = -1
@@ -473,7 +473,7 @@ cdef class Background:
         """
 
         Return the scale invariant growth rate d ln D(a) / d ln a for CDM perturbations
-        (exactly, the quantity defined by Class as index_bg_D in the background module)
+        (exactly, the quantity defined by Class as index_bg_f in the background module)
 
         Parameters
         ----------
@@ -482,7 +482,7 @@ cdef class Background:
         """
         return self.compute_for_z(z, self.ba.index_bg_f)
 
-cdef class Primorial:
+cdef class Primordial:
     cdef ClassEngine engine
     cdef perturbs * pt
     cdef primordial * pm
