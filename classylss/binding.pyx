@@ -586,6 +586,18 @@ cdef class Spectra:
         self.pt = &self.engine.pt
         self.pm = &self.engine.pm
 
+    property sigma8:
+        def __get__(self):
+            return self.sp.sigma8
+
+    property A_s:
+        def __get__(self):
+            return self.pm.A_s
+
+    property ln_1e10_A_s:
+        def __get__(self):
+            return np.log(1e10*self.A_s)
+
     def get_transfer(self, z=0., output_format='class'):
         """
         Return the density and/or velocity transfer functions for all initial
