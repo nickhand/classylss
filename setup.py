@@ -7,6 +7,7 @@ from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.command.sdist import sdist
 from numpy.distutils.command.build import build
 from distutils.command.clean import clean
+from Cython.Build import cythonize
 
 from glob import glob
 import os
@@ -24,7 +25,7 @@ os.environ.setdefault("F90", "gfortran")
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 
 # the CLASS version to install
-CLASS_VERSION = '2.5.0'
+CLASS_VERSION = '2.6.0'
 
 MAJOR = 0
 MINOR = 1
@@ -211,7 +212,24 @@ def gcl_extension_config():
         config['swig_opts'] = ['-c++', '-Wall']
         
     return config
-    
+
+def classy_extension_config():
+
+    # the configuration for GCL python extension
+    config = {}
+    config['name'] = 'classylss.binding'
+    config['extra_link_args'] = ['-g', '-fPIC']
+    config['extra_compile_args'] = ['-fopenmp']
+    # important or get a symbol not found error, because class is
+    # compiled with c++?
+    config['language'] = 'c++'
+    config['libraries'] = ['class', 'gomp', 'gfortran']
+
+    # determine if swig needs to be called
+    config['sources'] = ['classylss/binding.pyx']
+
+    return config
+
 if __name__ == '__main__':
     
     from numpy.distutils.core import setup    
@@ -223,7 +241,10 @@ if __name__ == '__main__':
           license='GPL3',
           url=URL,
           install_requires=INSTALL_REQUIRES,
-          ext_modules = [Extension(**gcl_extension_config())],
+          ext_modules = cythonize([
+                        Extension(**classy_extension_config()),
+                        Extension(**gcl_extension_config()),
+          ]),
           libraries=[libgcl_config()],
           cmdclass = {
               'sdist': custom_sdist,
@@ -231,5 +252,6 @@ if __name__ == '__main__':
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-          py_modules = ["classylss.gcl"]
+          py_modules = ["classylss.gcl"],
+          packages=['classylss', 'classylss.tests']
     )
