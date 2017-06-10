@@ -17,7 +17,7 @@ import shutil
 # determine if swig will need to be called on GCL extension
 swig_needed = not all(os.path.isfile(f) for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp'])
 
-# use GNU compilers by default  
+# use GNU compilers by default
 os.environ.setdefault("CXX", "g++")
 os.environ.setdefault("F90", "gfortran")
 
@@ -29,7 +29,7 @@ CLASS_VERSION = '2.6.0'
 
 MAJOR = 0
 MINOR = 1
-MICRO = 17
+MICRO = 18
 ISRELEASED = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
@@ -53,16 +53,16 @@ class_version = '%s'
         a.write(cnt % (VERSION, CLASS_VERSION))
     finally:
         a.close()
-        
+
 write_version_py()
-    
+
 def check_swig_version():
     """
     Check the version of swig, >= 3.0 is required
-    
+
     Notes
     -----
-    *   swig is only needed for developers installing from the source directory, 
+    *   swig is only needed for developers installing from the source directory,
         with ``python setup.py install``
     *   the swig-generated files are included by default in the pypi distribution,
         so the swig dependency is not needed
@@ -73,37 +73,37 @@ def check_swig_version():
     except OSError:
         raise ValueError(("`swig` not found on PATH -- either install `swig` or use "
                             "``pip install classylss`` (recommended)"))
-        
+
     try:
         version = re.findall("SWIG Version [0-9].[0-9].[0-9]", output)[0].split()[-1]
     except:
         return
-        
+
     # need >= 3.0
     if version < "3.0":
         raise ValueError(("the version of `swig` on PATH must greater or equal to 3.0; "
                          "recommended installation without swig is ``pip install classylss``"))
-    
+
 def build_CLASS(prefix):
     """
     Function to dowwnload CLASS from github and and build the library
     """
-    # latest class version and download link       
+    # latest class version and download link
     args = (package_basedir, CLASS_VERSION, prefix, "/opt/class/willfail")
     command = 'sh %s/depends/install_class.sh %s %s %s' %args
-    
+
     ret = os.system(command)
     if ret != 0:
         raise ValueError("could not build CLASS v%s" %CLASS_VERSION)
-    
+
 class build_external_clib(build_clib):
     """
     Custom command to build CLASS first, and then GCL library
     """
     def finalize_options(self):
-        
-        build_clib.finalize_options(self)    
-        
+
+        build_clib.finalize_options(self)
+
         # create the CLASS build directory and save the include path
         self.class_build_dir = self.build_temp
         self.include_dirs.insert(0, os.path.join(self.class_build_dir, 'include'))
@@ -116,19 +116,19 @@ class build_external_clib(build_clib):
         # update the link objects with CLASS library
         link_objects = ['libclass.a']
         link_objects = list(glob(os.path.join(self.class_build_dir, '*', 'libclass.a')))
-                        
+
         self.compiler.set_link_objects(link_objects)
-        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))        
-        
+        self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
+
         for (library, build_info) in libraries:
-            
+
             # check swig version
-            if library == "gcl" and swig_needed: 
+            if library == "gcl" and swig_needed:
                 check_swig_version()
-            
+
             # update include dirs
             self.include_dirs += build_info.get('include_dirs', [])
-        
+
         build_clib.build_libraries(self, libraries)
 
 class custom_build_ext(build_ext):
@@ -146,49 +146,49 @@ class custom_build_ext(build_ext):
             build_clib = self.get_finalized_command('build_clib')
             self.include_dirs += build_clib.include_dirs
             self.library_dirs += build_clib.compiler.library_dirs
-            
+
         # copy data files from temp to classlssy package directory
         shutil.rmtree(os.path.join(self.build_lib, 'classylss', 'data'), ignore_errors=True)
         shutil.copytree(os.path.join(self.build_temp, 'data'), os.path.join(self.build_lib, 'classylss', 'data'))
-            
+
         build_ext.run(self)
-        
+
 class custom_sdist(sdist):
-    
+
     def run(self):
         from six.moves.urllib import request
-        
+
         # download CLASS
         tarball_link = "https://github.com/lesgourg/class_public/archive/v%s.tar.gz" %CLASS_VERSION
         tarball_local = os.path.join('depends', 'class-v%s.tar.gz' %CLASS_VERSION)
         request.urlretrieve(tarball_link, tarball_local)
-        
+
         # run the default
         sdist.run(self)
-        
+
 class custom_clean(clean):
 
     def run(self):
 
         # run the built-in clean
         clean.run(self)
-            
+
         # remove the CLASS tmp directories
         os.system("rm -rf depends/tmp*")
-        
+
         # remove build directory
         if os.path.exists('build'):
             shutil.rmtree('build')
-                        
+
 def libgcl_config():
-    
-    # c++ GCL sources and fortran FFTLog sources        
+
+    # c++ GCL sources and fortran FFTLog sources
     gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
     fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
-    
-    # GCL library extension 
+
+    # GCL library extension
     gcl_info = {}
-    gcl_info['sources'] =  gcl_sources + fftlog_sources 
+    gcl_info['sources'] =  gcl_sources + fftlog_sources
     gcl_info['include_dirs'] = ['classylss/_gcl/include']
     gcl_info['language'] = 'c++'
     gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
@@ -210,7 +210,7 @@ def gcl_extension_config():
         config['sources'] = ['classylss/gcl.i']
         config['depends'] = ['classylss/_gcl/python/*.i']
         config['swig_opts'] = ['-c++', '-Wall']
-        
+
     return config
 
 def classy_extension_config():
@@ -231,8 +231,8 @@ def classy_extension_config():
     return config
 
 if __name__ == '__main__':
-    
-    from numpy.distutils.core import setup    
+
+    from numpy.distutils.core import setup
     setup(name=DISTNAME,
           version=VERSION,
           author=AUTHOR,
