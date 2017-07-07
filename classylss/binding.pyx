@@ -289,9 +289,10 @@ cdef class ClassEngine:
 
             # convert to eV
             m_nu = cosmo.m_nu
-            if m_nu.unit != units.eV:
+            if hasattr(m_nu, 'unit') and m_nu.unit != units.eV:
                 m_nu = m_nu.to(units.eV)
-
+            else:
+                m_nu = units.eV * m_nu
             # from CLASS notes:
             # one more remark: if you have respectively 1,2,3 massive neutrinos,
             # if you stick to the default value pm equal to 0.71611, designed to give m/omega of
@@ -326,7 +327,7 @@ cdef class ClassEngine:
             valid = ["FlatLambdaCDM", "FlatwCDM", "Flatw0waCDM"]
             msg = "dark energy equation of state not recognized for class '%s'; " %cls
             msg += "valid classes: %s" %str(valid)
-            raise TypeError(msg)
+            raise ValueError(msg)
 
         # add any extra arguments
         if len(extra):
