@@ -46,6 +46,8 @@ cdef extern from "class.h":
         int index_bg_H_prime
         int index_bg_D
         int index_bg_f
+        int index_bg_Omega_r
+        int index_bg_Omega_m
         short long_info
         short inter_normal
         double T_cmb
@@ -55,8 +57,10 @@ cdef extern from "class.h":
         double * m_ncdm_in_eV
         double Neff
         double Omega0_b
+        double Omega0_g
         double Omega0_cdm
         double Omega0_dcdm
+        double Omega0_ur
         double Omega0_ncdm_tot
         double Omega0_lambda
         double Omega0_fld

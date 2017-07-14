@@ -355,9 +355,9 @@ cdef class Background:
         self.engine.compute("background")
         self.ba = &self.engine.ba
 
-    property Om0:
+    property Onr0:
         """
-        Return the sum of Omega0 for all non-relativistic components
+        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
         """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
@@ -366,9 +366,27 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_b
 
-    property Onu0:
+    property Ogamma0:
+        def __get__(self):
+            return self.ba.Omega0_g
+
+    property Ocdm0:
+        def __get__(self):
+            return self.ba.Omega0_cdm
+
+    property Odcdm0:
+        def __get__(self):
+            return self.ba.Omega0_dcdm
+
+    property Oncdm0:
+        """ total density of distinguishable (massive) neutrinos. """
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
+
+    property Our0:
+        """ total density of ultra relative (massless) neutrinos. """
+        def __get__(self):
+            return self.ba.Omega0_ur
 
     property Neff:
         def __get__(self):
@@ -426,6 +444,14 @@ cdef class Background:
     def conformal_distance(self, z):
         """ conformal distance, comoving distance when K = 0.0 (flat universe) """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+
+    def Or(self, z):
+        """ density of relative (radiation like) component, including relative part of massive neutrino and massless neutrino. """
+        return self.compute_for_z(z, self.ba.index_bg_Omega_r)
+
+    def Onr(self, z):
+        """ density of non-relative (matter like) component, including non-relative part of massive neutrino. """
+        return self.compute_for_z(z, self.ba.index_bg_Omega_m)
 
     def time(self, z):
         """ proper time (age of universe) """
