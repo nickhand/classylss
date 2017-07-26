@@ -100,6 +100,7 @@ cdef extern from "class.h":
 
         short has_density_transfers
         short has_velocity_transfers
+        short has_metricpotential_transfers
 
         int has_pk_matter
         int l_lss_max

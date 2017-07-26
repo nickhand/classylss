@@ -337,6 +337,7 @@ cdef class ClassEngine:
             "output": "vTk dTk mPk",
             "P_k_max_h/Mpc":  100.,
             "z_max_pk": 100.0,
+            "extra metric transfer functions": "y",
             }
 
         for k in _pars:
