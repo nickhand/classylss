@@ -2,6 +2,15 @@ from .binding import ClassEngine, Background, Spectra, Perturbs, Primordial
 
 class Cosmology(object):
     """
+        A cosmology calculator based on the CLASS binding in classylss
+
+        It is a collection of all method provided by the class interfaces.
+
+        The individual interfaces can be accessed too, such that
+        `c.Spectra.get_transfer` and `c.get_transfer` are identical.
+
+        Parameters are not well documented, and may grow / shrink over time.
+
         'h' : 'Hubble Parameter',
         'Omega_g' : 'photon ',
         'Omega_b' : 'Baryon',
@@ -12,10 +21,18 @@ class Cosmology(object):
         'w0_fld' : 'w0',
         'wa_fld'  : 'wa',
         'Omega_Lambda' : 'Lambda, 0 if w0 is given',
-        gauge : synchronous or newtonian
+         gauge : synchronous or newtonian
+
     """
 
-    # delegate resolve order
+    # delegate resolve order -- a pun at mro; which in
+    # this case introduces the meta class bloat and doesn't solve
+    # the issue. We want delayed initialization of interfaces
+    # or so-called 'mixins'.
+    # easier to just use delegates with a customized getattr.
+    # this doesn't work well with automated documentation tools though,
+    # unfortunately.
+
     dro = [Spectra, Perturbs, Primordial, Background, ClassEngine]
 
     def __init__(self,
@@ -43,22 +60,33 @@ class Cosmology(object):
         self.__setstate__((args,))
 
     def __dir__(self):
+        """ a list of all members from all delegate classes """
         r = []
+        # first allow tab completion of delegate names; to help resolve conflicts
+        r.extend([n.__name__ for n in self.dro])
+        # then allow tab completion of all delegate methods
         for i in reversed(self.dro):
             r.extend(dir(i))
         return sorted(list(set(r)))
 
-    def _resolve(self, name):
+    def __getattr__(self, name):
+        """ Will find the proper delegate, initialize it, and run the method """
+        # getting a delegate explicitly, e.g. c.Background
+        if name in self.dro:
+            iface = name
+            if iface not in self.delegates:
+                self.delegates[iface] = iface(self.engine)
+            return self.delegates[iface]
+
+        # resolving a name from the delegates : c.Om0 => c.Background.Om0
         for iface in self.dro:
             if hasattr(iface, name):
                 if iface not in self.delegates:
                     self.delegates[iface] = iface(self.engine)
-                return self.delegates[iface]
-
-    def __getattr__(self, name):
-        """ Will find the proper delegate, initialize it, and run the method """
-        d = self._resolve(name)
-        return getattr(d, name)
+                d = self.delegates[iface]
+                return getattr(d, name)
+        else:
+            raise AttributeError("Attribute `%s` not found in any of the delegate objects")
 
     def __getstate__(self):
         return (self.args, )
@@ -103,8 +131,9 @@ class Cosmology(object):
             pars['N_ur'] = N_ur_table[len(args['m_ncdm'])]
 
         pars['N_ncdm'] = len(args['m_ncdm'])
-        self.engine = ClassEngine(pars)
 
+        # initialize the engine as the backup delegate.
+        self.engine = ClassEngine(pars)
         self.delegates = {
             ClassEngine: self.engine,
         }

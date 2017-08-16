@@ -37,7 +37,8 @@ def test_cosmology_transfer():
 def test_cosmology_dir():
     c = Cosmology()
     d = dir(c)
-    print(d)
+    assert "Background" in d
+    assert "Om0" in d
 
 def test_cosmology_pickle():
     import pickle
