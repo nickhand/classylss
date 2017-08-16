@@ -12,7 +12,7 @@ class Cosmology(object):
         Parameters are not well documented, and may grow / shrink over time.
 
         'h' : 'Hubble Parameter',
-        'Omega_g' : 'photon ',
+        'T_cmb' : 'photon ',
         'Omega_b' : 'Baryon',
         'Omega_cdm' : 'CDM',
         'N_ur' : 'Number of Ultra relativistic species',
