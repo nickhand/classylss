@@ -1,0 +1,70 @@
+diff -uNr class_public-2.6.0.old/include/background.h class_public-2.6.0/include/background.h
+--- class_public-2.6.0.old/include/background.h	2017-08-15 20:58:01.994440424 -0700
++++ class_public-2.6.0/include/background.h	2017-08-16 01:29:47.705730887 -0700
+@@ -144,6 +144,7 @@
+   //@{
+ 
+   double a_today; /**< scale factor today (arbitrary and irrelevant for most purposes) */
++  double a_max; /**< upper limit of scale factor  */
+ 
+   //@}
+ 
+diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/background.c
+--- class_public-2.6.0.old/source/background.c	2017-08-15 20:58:02.457448246 -0700
++++ class_public-2.6.0/source/background.c	2017-08-16 01:53:20.852346459 -0700
+@@ -1528,21 +1528,21 @@
+ 
+   /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
+ 
+-  while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
++  while (pvecback_integration[pba->index_bi_a] < pba->a_max) {
+ 
+     tau_start = tau_end;
+ 
+-    /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
++    /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_max; need not be exact, difference corrected later) */
+     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
+                pba->error_message,
+                pba->error_message);
+ 
+-    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_today) {
++    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_max) {
+       tau_end = tau_start + ppr->back_integration_stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
+       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
+     }
+     else {
+-      tau_end = tau_start + (pba->a_today/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
++      tau_end = tau_start + (pba->a_max/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
+       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
+     }
+ 
+@@ -1598,7 +1598,7 @@
+                                pba->bi_size,
+                                pba->bt_size,
+                                pba->index_bi_a,
+-                               pba->a_today,
++                               pba->a_max,
+                                &last_index,
+                                pvecback_integration,
+                                pba->bi_size,
+diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.c
+--- class_public-2.6.0.old/source/input.c	2017-08-15 20:58:02.465448381 -0700
++++ class_public-2.6.0/source/input.c	2017-08-16 01:38:34.511524136 -0700
+@@ -602,6 +602,17 @@
+   /** - scale factor today (arbitrary) */
+   class_read_double("a_today",pba->a_today);
+ 
++  /** - scale factor max; same normalization as a_today. */
++  class_call(parser_read_double(pfc,"a_max",&param1,&flag1,errmsg),
++             errmsg,
++             errmsg);
++
++  if (flag1 == _TRUE_) {
++    pba->a_max = param1;
++  } else {
++    pba->a_max = pba->a_today;
++  }
++
+   /** - h (dimensionless) and [\f$ H_0/c\f$] in \f$ Mpc^{-1} = h / 2997.9... = h * 10^5 / c \f$ */
+   class_call(parser_read_double(pfc,"H0",&param1,&flag1,errmsg),
+              errmsg,
