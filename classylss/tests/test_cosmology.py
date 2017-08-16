@@ -34,6 +34,10 @@ def test_cosmology_transfer():
     assert 'k' in t.dtype.names
     assert 'd_cdm' in t.dtype.names
 
+def test_cosmology_astropy():
+    from astropy.cosmology import Planck15
+    c = Cosmology.from_astropy(Planck15)
+
 def test_cosmology_dir():
     c = Cosmology()
     d = dir(c)

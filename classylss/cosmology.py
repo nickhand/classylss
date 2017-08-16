@@ -144,3 +144,69 @@ class Cosmology(object):
         args.update(self.args)
         args.update(self.kwargs)
         return Cosmology(**args)
+
+    @classmethod
+    def from_astropy(kls, cosmo, extra={}):
+        args = astropy_to_dict(cosmo)
+        args.update(extra)
+        return Cosmology(**args)
+
+def astropy_to_dict(cosmo):
+
+    from astropy import cosmology, units
+
+    pars = {}
+    pars['h'] = cosmo.h
+    pars['T_cmb'] = cosmo.Tcmb0
+    if cosmo.Ob0 is not None:
+        pars['Omega_b'] = cosmo.Ob0
+    else:
+        raise ValueError("please specify a value 'Ob0' ")
+    pars['Omega_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
+
+    # handle massive neutrinos
+    if cosmo.has_massive_nu:
+
+        # convert to eV
+        m_nu = cosmo.m_nu
+        if hasattr(m_nu, 'unit') and m_nu.unit != units.eV:
+            m_nu = m_nu.to(units.eV)
+        else:
+            m_nu = units.eV * m_nu
+        # from CLASS notes:
+        # one more remark: if you have respectively 1,2,3 massive neutrinos,
+        # if you stick to the default value pm equal to 0.71611, designed to give m/omega of
+        # 93.14 eV, and if you want to use N_ur to get N_eff equal to 3.046 in the early universe,
+        # then you should pass here respectively 2.0328,1.0196,0.00641
+        N_ur = [2.0328, 1.0196, 0.00641]
+        N_massive = (m_nu > 0.).sum()
+        pars['N_ur'] = (cosmo.Neff/3.046) * N_ur[N_massive-1]
+
+        pars['m_ncdm'] = [k.value for k in sorted(m_nu[m_nu > 0.], reverse=True)]
+    else:
+        pars['m_ncdm'] = []
+        pars['N_ur'] = cosmo.Neff
+
+    # handle dark energy
+    if isinstance(cosmo, cosmology.FlatLambdaCDM):
+        #pars['w0_fld'] = -1
+        #pars['wa_fld'] = 0.
+        #pars['Omega_Lambda'] = 0
+        pass
+    elif isinstance(cosmo, cosmology.FlatwCDM):
+        pars['w0_fld'] = cosmo.w0
+        pars['wa_fld'] = 0.
+        pars['Omega_Lambda'] = 0. # use Omega_fld
+    elif isinstance(cosmo, cosmology.Flatw0waCDM):
+        pars['w0_fld'] = cosmo.w0
+        pars['wa_fld'] = cosmo.wa
+        pars['Omega_Lambda'] = 0. # use Omega_fld
+    else:
+        cls = cosmo.__class__.__name__
+        valid = ["FlatLambdaCDM", "FlatwCDM", "Flatw0waCDM"]
+        msg = "dark energy equation of state not recognized for class '%s'; " %cls
+        msg += "valid classes: %s" %str(valid)
+        raise ValueError(msg)
+
+    return pars
+
