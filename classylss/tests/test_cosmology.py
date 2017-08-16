@@ -27,6 +27,11 @@ def test_cosmology_init():
     assert_allclose(c.efunc(0) - c.efunc(1 / 0.9999 - 1), 
                     0.0001 * c.efunc_prime(0), rtol=1e-3)
 
+def test_cosmology_a_today():
+    c = Cosmology(gauge='synchronous', a_today=2.0)
+    print(c.parameter_file)
+    assert c.a_today == 2.0
+
 def test_cosmology_transfer():
     c = Cosmology()
     t = c.get_transfer(z=0)

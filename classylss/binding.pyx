@@ -393,7 +393,7 @@ cdef class Background:
         # convert RHO to  1e10 Msun/h
         self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
-        self.Opncdm0 = self.Opncdm(0)
+        self.Opncdm0 = self.Opncdm(0.0) # watchout, the convention is 0.0
 
     property Ob0:
         def __get__(self):
@@ -424,6 +424,11 @@ cdef class Background:
     property Or0:
         def __get__(self):
             return self.ba.Omega0_g + self.ba.Omega0_ur + self.Opncdm0
+
+    property a_today:
+        """ this is an arbitrary number that doesn't seem to affect redshift """
+        def __get__(self):
+            return self.ba.a_today
 
     property Om0:
         """
@@ -774,7 +779,7 @@ cdef class Spectra:
         def __get__(self):
             return np.log(1e10*self.A_s)
 
-    def get_transfer(self, z=0., output_format='class'):
+    def get_transfer(self, z, output_format='class'):
         """
         Return the density and/or velocity transfer functions for all initial
         conditions today. You must include 'dCl' and 'vCl' in the list of
