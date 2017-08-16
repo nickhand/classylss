@@ -34,6 +34,7 @@ class Cosmology(object):
     # unfortunately.
 
     dro = [Spectra, Perturbs, Primordial, Background, ClassEngine]
+    dro_dict = dict([(n.__name__, n) for n in dro])
 
     def __init__(self,
             h=0.67556,
@@ -72,8 +73,8 @@ class Cosmology(object):
     def __getattr__(self, name):
         """ Will find the proper delegate, initialize it, and run the method """
         # getting a delegate explicitly, e.g. c.Background
-        if name in self.dro:
-            iface = name
+        if name in self.dro_dict:
+            iface = self.dro_dict[name]
             if iface not in self.delegates:
                 self.delegates[iface] = iface(self.engine)
             return self.delegates[iface]
@@ -86,7 +87,7 @@ class Cosmology(object):
                 d = self.delegates[iface]
                 return getattr(d, name)
         else:
-            raise AttributeError("Attribute `%s` not found in any of the delegate objects")
+            raise AttributeError("Attribute `%s` not found in any of the delegate objects" % name)
 
     def __getstate__(self):
         return (self.args, )

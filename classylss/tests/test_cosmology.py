@@ -34,6 +34,14 @@ def test_cosmology_transfer():
     assert 'k' in t.dtype.names
     assert 'd_cdm' in t.dtype.names
 
+def test_cosmology_get_pk():
+    c = Cosmology()
+    p = c.get_pk(z=0, k=0.1)
+    p1 = c.Spectra.get_pk(z=0, k=0.1)
+
+    # ensure the dro did use get_pk of Spectra rather than that from Primordial
+    assert_allclose(p, p1)
+
 def test_cosmology_astropy():
     from astropy.cosmology import Planck15
     c = Cosmology.from_astropy(Planck15)
@@ -42,6 +50,7 @@ def test_cosmology_dir():
     c = Cosmology()
     d = dir(c)
     assert "Background" in d
+    assert "Spectra" in d
     assert "Om0" in d
 
 def test_cosmology_pickle():
