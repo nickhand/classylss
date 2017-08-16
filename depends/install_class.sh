@@ -26,6 +26,8 @@ fi
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
 
+patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch
+
 echo $ROOT/$PREFIX/data
 mkdir -p $ROOT/$PREFIX/data
 

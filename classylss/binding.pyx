@@ -426,9 +426,13 @@ cdef class Background:
             return self.ba.Omega0_g + self.ba.Omega0_ur + self.Opncdm0
 
     property a_today:
-        """ this is an arbitrary number that doesn't seem to affect redshift """
+        """ this is an arbitrary number that sets the refernce scaling factor. It shall be 1 usually."""
         def __get__(self):
             return self.ba.a_today
+
+    property a_max:
+        def __get__(self):
+            return self.ba.a_max
 
     property Om0:
         """
@@ -436,7 +440,6 @@ cdef class Background:
         """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Opncdm0
-
 
     property Neff:
         def __get__(self):

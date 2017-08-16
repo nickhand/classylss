@@ -65,6 +65,7 @@ cdef extern from "class.h":
         double h
         double age
         double a_today
+        double a_max
         double conformal_age
         int N_ncdm
         double * m_ncdm_in_eV
