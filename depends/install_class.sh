@@ -21,7 +21,7 @@ if ! [ -d $TMP/class_public-$CLASS_VERSION ]; then
 fi
 
 # add phi_prime
-patch -p0 < patch0
+
 # copy the Makefile
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
