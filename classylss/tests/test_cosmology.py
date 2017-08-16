@@ -31,6 +31,12 @@ def test_cosmology_a_max():
     c = Cosmology(gauge='synchronous', a_max=2.0)
     print(c.parameter_file)
     assert c.a_max == 2.0
+    t = c.Om(-0.1)
+    t = c.efunc(-0.1)
+    t = c.scale_independent_growth_factor(-0.1)
+
+    #FIXME: transfer doesn't work because thermal dynamics doesn't go beyond z=0.
+    #t = c.get_transfer(z=-0.1)
 
 def test_cosmology_transfer():
     c = Cosmology()
