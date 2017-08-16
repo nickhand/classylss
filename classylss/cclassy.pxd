@@ -48,12 +48,24 @@ cdef extern from "class.h":
         int index_bg_f
         int index_bg_Omega_r
         int index_bg_Omega_m
+        int index_bg_rho_g
+        int index_bg_rho_b
+        int index_bg_rho_cdm
+        int index_bg_rho_fld
+        int index_bg_w_fld
+        int index_bg_rho_ur
+        int index_bg_rho_crit
+        int index_bg_rho_ncdm1
+        int index_bg_p_ncdm1
+
         short long_info
         short inter_normal
         double T_cmb
+        double H0
         double h
         double age
         double conformal_age
+        int N_ncdm
         double * m_ncdm_in_eV
         double Neff
         double Omega0_b
@@ -67,7 +79,7 @@ cdef extern from "class.h":
         double w0_fld
         double wa_fld
         double cs2_fld
-
+        double K
         int bt_size
 
     cdef struct thermo:

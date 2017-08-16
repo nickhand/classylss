@@ -11,6 +11,18 @@ _DATA_FILES = get_data_files()
 
 from cclassy cimport *
 
+DEF _Mpc_over_m_ = 3.085677581282e22  #/**< conversion factor from meters to megaparsecs */
+                          #/* remark: CAMB uses 3.085678e22: good to know if you want to compare  with high accuracy */
+DEF _Gyr_over_Mpc_ = 3.06601394e2 #/**< conversion factor from megaparsecs to gigayears
+				  #       (c=1 units, Julian years of 365.25 days) */
+DEF _c_ = 2.99792458e8          #  /**< c in m/s */
+DEF _G_ = 6.67428e-11          #   /**< Newton constant in m^3/Kg/s^2 */
+DEF _eV_ = 1.602176487e-19     #   /**< 1 eV expressed in J */
+
+#/* parameters entering in Stefan-Boltzmann constant sigma_B */
+DEF _k_B_ = 1.3806504e-23
+DEF _h_P_ = 6.62606896e-34
+
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 
 class ClassRuntimeError(RuntimeError):
@@ -64,7 +76,7 @@ cdef int _build_file_content(pars, file_content * fc) except -1:
 
     # fill parameter file
     i = 0
-    for kk in pars:
+    for kk in sorted(pars):
 
         dumcp = kk.encode()
         strncpy(fc.name[i], dumcp[:sizeof(FileArg)-1], sizeof(FileArg))
@@ -364,23 +376,30 @@ cdef class Background:
     cdef background * ba
     cdef readonly dict data
 
+    cdef readonly double Opncdm0
+    cdef readonly double H0
+    cdef readonly double C
+    cdef readonly double G
+    cdef readonly double _RHO_
+
     def __init__(self, ClassEngine engine):
         self.engine = engine
         self.engine.compute("background")
         self.ba = &self.engine.ba
 
-    property Onr0:
-        """
-        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
-        """
-        def __get__(self):
-            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
+        self.H0 = 100.  # in Mpc/h unit
+        self.G = 43007.1 * 1e-3 # in 1e10 Msun/h, Mpc/h, and km/s Unit
+        self.C = 2.99792458e5          #  /**< c in km/s */
+        # convert RHO to  1e10 Msun/h
+        self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
+
+        self.Opncdm0 = self.Opncdm(0)
 
     property Ob0:
         def __get__(self):
             return self.ba.Omega0_b
 
-    property Ogamma0:
+    property Og0:
         def __get__(self):
             return self.ba.Omega0_g
 
@@ -402,9 +421,25 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_ur
 
+    property Or0:
+        def __get__(self):
+            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Opncdm0
+
+    property Om0:
+        """
+        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
+        """
+        def __get__(self):
+            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Opncdm0
+
+
     property Neff:
         def __get__(self):
             return self.ba.Neff
+
+    property N_ncdm:
+        def __get__(self):
+            return self.ba.N_ncdm
 
     property age0:
         def __get__(self):
@@ -455,48 +490,136 @@ cdef class Background:
 
         return out
 
-    def conformal_distance(self, z):
-        """ conformal distance, comoving distance when K = 0.0 (flat universe) """
-        return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+    def Opncdm(self, z, int species=0):
+        return 3 * self.p_ncdm(z, species) / self.rho_tot(z)
+
+    def rho_g(self, z):
+        """ density of radiation (gamma); """
+        return self.compute_for_z(z, self.ba.index_bg_rho_g) * self._RHO_
+
+    def rho_b(self, z):
+        """ density of baryon; """
+        return self.compute_for_z(z, self.ba.index_bg_rho_b) * self._RHO_
+
+    def rho_cdm(self, z):
+        """ density of cdm; """
+        return self.compute_for_z(z, self.ba.index_bg_rho_cdm) * self._RHO_
+
+    def rho_ur(self, z):
+        """ density of ultra relative (massless) neutrino. """
+        return self.compute_for_z(z, self.ba.index_bg_rho_ur) * self._RHO_
+
+    def rho_ncdm(self, z, species=None):
+        """ density of non-relative part of massive neutrino. """
+        if species is None:
+            return sum(self.rho_ncdm(z, species=i) for i in range(self.N_ncdm))
+        assert species < self.N_ncdm and species >= 0
+        return self.compute_for_z(z, self.ba.index_bg_rho_ncdm1 + species) * self._RHO_
+
+    def rho_crit(self, z):
+        """ critical density, total excluding curvature """
+        return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
+
+    def rho_k(self, z):
+        return self.ba.K * ( z+1.) ** 2 * self._RHO_
+
+    def rho_tot(self, z):
+        """ total density """
+        return self.rho_crit(z) + self.rho_k(z)
+
+    def p_ncdm(self, z, species=None):
+        """ pressure of non-relative part of massive neutrino. """
+        if species is None:
+            return sum(self.p_ncdm(i) for i in range(self.N_ncdm))
+
+        assert species < self.N_ncdm and species >= 0
+        return self.compute_for_z(z, self.ba.index_bg_p_ncdm1 + species) * self._RHO_
 
     def Or(self, z):
         """ density of relative (radiation like) component, including relative part of massive neutrino and massless neutrino. """
         return self.compute_for_z(z, self.ba.index_bg_Omega_r)
 
-    def Onr(self, z):
+    def Om(self, z):
         """ density of non-relative (matter like) component, including non-relative part of massive neutrino. """
         return self.compute_for_z(z, self.ba.index_bg_Omega_m)
+
+    def Og(self, z):
+        """ density of radiation """
+        return self.rho_g(z) / self.rho_tot(z)
+
+    def Ob(self, z):
+        """ density of baryon """
+        return self.rho_b(z) / self.rho_tot(z)
+
+    def Ocdm(self, z):
+        """ density of baryon """
+        return self.rho_cdm(z) / self.rho_tot(z)
+
+    def Our(self, z):
+        """ density of ultra relativistic neutrino """
+        return self.rho_ur(z) / self.rho_tot(z)
+
+    def Oncdm(self, z, species=None):
+        """ density of massive neutrino """
+        return self.rho_ncdm(z, species) / self.rho_tot(z)
 
     def time(self, z):
         """ proper time (age of universe) """
         return self.compute_for_z(z, self.ba.index_bg_time)
 
+    def conformal_distance(self, z):
+        """ conformal distance, comoving distance when K = 0.0 (flat universe). In units of Mpc/h"""
+        return self.compute_for_z(z, self.ba.index_bg_conf_distance) * self.ba.h
+
+    def tau(self, z):
+        """ conformal time , comoving distance when K = 0.0 (flat universe). In units of Mpc as CLASS"""
+        return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+
     def hubble_function(self, z):
+        """ hubble function in class units; use efunc instead """
         return self.compute_for_z(z, self.ba.index_bg_H)
 
     def hubble_function_prime(self, z):
-        """ d H / d tau ; d tau / da = 1 / (a ** 2 H) """
-        return self.compute_for_z(z, self.ba.index_bg_H_prime)
+        """ d H / d tau ; d tau / da = 1 / (a ** 2 H) in class units; use efunc_prime instead """
+        return self.compute_for_z(z, self.ba.index_bg_H_prime) 
+
+    def efunc(self, z):
+        """
+        Function giving :func:`efunc with respect
+        to the scale factor ``a``
+        Parameters
+        ----------
+        z : array-like
+            Input redshifts.
+        Returns
+        -------
+        efunc : ndarray, or float if input scalar
+            The hubble factor redshift-scaling with respect
+            to scale factor
+        """
+        return self.hubble_function(z) / self.ba.H0
+
+    def efunc_prime(self, z):
+        """
+        Function giving dE / da.
+        """
+        dtau_da = (1 + z)**2 / self.hubble_function(z) 
+        return self.hubble_function_prime(z) / self.ba.H0 * dtau_da
 
     def luminosity_distance(self, z):
-        """
-        luminosity_distance(z)
-        """
-        return self.compute_for_z(z, self.ba.index_bg_lum_distance)
+        """ in Mpc/h"""
+        return self.compute_for_z(z, self.ba.index_bg_lum_distance) * self.ba.h
 
     def angular_distance(self, z):
         """
-        angular_distance(z)
-
-        Return the angular diameter distance (exactly, the quantity defined by Class
-        as index_bg_ang_distance in the background module)
+        in Mpc/h
 
         Parameters
         ----------
         z : float
                 Desired redshift
         """
-        return self.compute_for_z(z, self.ba.index_bg_ang_distance)
+        return self.compute_for_z(z, self.ba.index_bg_ang_distance) * self.ba.h
 
     def scale_independent_growth_factor(self, z):
         """

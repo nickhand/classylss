@@ -8,10 +8,11 @@ class Cosmology(object):
         'Omega_cdm' : 'CDM',
         'N_ur' : 'Number of Ultra relativistic species',
         'N_ncdm' : 'Number of non-relativistic species',
-        'm_ncdm' : 'comma sperated string of neutrino mass, length of N_ncdm',
+        'm_ncdm' : neutrino masses
         'w0_fld' : 'w0',
         'wa_fld'  : 'wa',
         'Omega_Lambda' : 'Lambda, 0 if w0 is given',
+        gauge : synchronous or newtonian
     """
     def __init__(self,
             h=0.67556,
@@ -23,7 +24,8 @@ class Cosmology(object):
             m_ncdm=[0.06],
             P_k_max=10.,
             P_z_max=100.,
-            **kwargs
+            gauge='synchronous',
+            **kwargs # additional arguments from CLASS
         ):
         # quickly copy over all arguments -- 
         # at this point locals only contains the arguments.
@@ -34,21 +36,25 @@ class Cosmology(object):
 
         args.update(kwargs)
 
-        # remove None's -- use CLASS default
-        for key in list(args.keys()):
-            if args[key] is None: args.pop(key)
-
-        if 'P_k_max_h/Mpc' not in args:
-            args['P_k_max_h/Mpc'] = args.pop('P_k_max')
-
-        if 'z_max_pk' not in args:
-            args['z_max_pk'] = args.pop('P_z_max')
+        self.args = args
 
         pars = {
             "output": "vTk dTk mPk",
             "extra metric transfer functions": "y",
             }
         pars.update(args)
+
+        # remove None's -- use CLASS default
+        for key in list(pars.keys()):
+            if pars[key] is None: pars.pop(key)
+
+        assert gauge in ['synchronous', 'newtonian']
+
+        if 'P_k_max_h/Mpc' not in pars:
+            pars['P_k_max_h/Mpc'] = pars.pop('P_k_max')
+
+        if 'z_max_pk' not in pars:
+            pars['z_max_pk'] = pars.pop('P_z_max')
 
         for m in m_ncdm:
             if m == 0:
@@ -68,9 +74,6 @@ class Cosmology(object):
         pars['N_ncdm'] = len(m_ncdm)
         self.engine = ClassEngine(pars)
 
-        # FIXME: remove this
-        print(self.engine.parameter_file)
-
         self.delegates = {
             ClassEngine: self.engine,
         }
@@ -89,11 +92,23 @@ class Cosmology(object):
             if hasattr(iface, name):
                 if iface not in self.delegates:
                     self.delegates[iface] = iface(self.engine)
-                    print(self.delegates[iface])
                 return self.delegates[iface]
 
     def __getattr__(self, name):
+        """ Will find the proper delegate, initialize it, and run the method """
         d = self._resolve(name)
         return getattr(d, name)
 
+    def __getstate__(self):
+        return (self.args, )
 
+    def __setstate__(self, state):
+        args = state[0]
+        self.__init__(**args)
+
+    def clone(self, **kwargs):
+        """ create a new cosmology based on modification of self """
+        args = {}
+        args.update(self.args)
+        args.update(self.kwargs)
+        return Cosmology(**args)
