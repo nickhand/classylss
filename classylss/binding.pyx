@@ -30,6 +30,11 @@ class ClassBadValueError(ValueError):
     pass
 
 
+def val2str(val):
+    if isinstance(val, (list, tuple)):
+        return ','.join([str(i) for i in val])
+    return str(val)
+
 cdef int _build_file_content(pars, file_content * fc) except -1:
     fc.size = 0
 
@@ -63,7 +68,7 @@ cdef int _build_file_content(pars, file_content * fc) except -1:
 
         dumcp = kk.encode()
         strncpy(fc.name[i], dumcp[:sizeof(FileArg)-1], sizeof(FileArg))
-        dumcp = str(pars[kk]).encode()
+        dumcp = val2str(pars[kk]).encode()
         strncpy(fc.value[i], dumcp[:sizeof(FileArg)-1], sizeof(FileArg))
         fc.read[i] = _FALSE_
 
@@ -150,12 +155,21 @@ cdef class ClassEngine:
     cdef ready_flags ready
     cdef file_content fc
 
+    property parameter_file:
+        def __get__(self):
+            if not self.ready.fc: return ""
+
+            lines = ["%s : %s" %(self.fc.name[i].decode(), self.fc.value[i].decode())
+               for i in range(self.fc.size)]
+            return "\n".join(lines)
+
     def __cinit__(self, *args, **kwargs):
         memset(&self.ready, 0, sizeof(self.ready))
 
     def __init__(self, object pars={}):
         _build_file_content(pars, &self.fc)
         self.ready.fc = True
+        self.compute('input')
 
     def __dealloc__(self):
         if self.ready.fc: parser_free(&self.fc)
@@ -266,7 +280,6 @@ cdef class ClassEngine:
         # At this point, the cosmological instance contains everything needed. The
         # following functions are only to output the desired numbers
         return
-
 
     @classmethod
     def from_astropy(cls, cosmo, extra={}):
@@ -510,6 +523,18 @@ cdef class Background:
         """
         return self.compute_for_z(z, self.ba.index_bg_f)
 
+cdef class Perturbs:
+    cdef ClassEngine engine
+    cdef perturbs * pt
+    cdef background * ba
+
+    def __init__(self, ClassEngine engine):
+        self.engine = engine
+        self.engine.compute("perturbs")
+        self.pt = &self.engine.pt
+        self.ba = &self.engine.ba
+
+
 cdef class Primordial:
     cdef ClassEngine engine
     cdef perturbs * pt
@@ -641,7 +666,11 @@ cdef class Spectra:
 
         Returns
         -------
-        tk : array_like, containing transfer functions, k
+        tk : array_like, containing transfer functions. Unlike CLASS, k here is in Mpc/h Units.
+
+        .. note::
+
+            At different redshift the values of 'k' may be different.
         """
 
         if (not self.pt.has_density_transfers) and (not self.pt.has_velocity_transfers):
