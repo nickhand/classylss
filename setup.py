@@ -248,15 +248,15 @@ if __name__ == '__main__':
           install_requires=INSTALL_REQUIRES,
           ext_modules = cythonize([
                         Extension(**classy_extension_config()),
-                        Extension(**gcl_extension_config()),
+          #              Extension(**gcl_extension_config()),
           ]),
-          libraries=[libclass_config(), libgcl_config()],
+          libraries=[libclass_config()], #, libgcl_config()],
           cmdclass = {
               'sdist': custom_sdist,
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-         py_modules = ["classylss.gcl"],
+         #py_modules = ["classylss.gcl"],
          packages=['classylss', 'classylss.tests']
     )
