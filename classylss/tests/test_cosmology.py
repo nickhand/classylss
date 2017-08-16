@@ -14,7 +14,7 @@ def test_cosmology_init():
     assert_allclose(c.Om(0), c.Om0) 
     assert_allclose(c.Or(0), c.Or0)
 
-    # critical density in 10e10 Msun/h unit
+    # total density in 10e10 Msun/h unit
     assert_allclose(c.rho_tot(0), 27.754999)
 
     # comoving distance to z=1.0 in Mpc/h unit.
