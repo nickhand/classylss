@@ -1,7 +1,8 @@
 from classylss.cosmology import Cosmology
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+from numpy import meshgrid
 
-def test_cosmology_init():
+def test_cosmology_sane():
     c = Cosmology(gauge='synchronous')
 
     assert_allclose(c.Ocdm(0), c.Ocdm0)
@@ -26,6 +27,33 @@ def test_cosmology_init():
     assert_allclose(c.efunc(0), 1.) # hubble in Mpc/h km/s unit
     assert_allclose(c.efunc(0) - c.efunc(1 / 0.9999 - 1), 
                     0.0001 * c.efunc_prime(0), rtol=1e-3)
+
+def test_cosmology_density():
+    c = Cosmology(gauge='synchronous')
+    z = [0, 1, 2, 5, 9, 99]
+    assert_allclose(c.rho_cdm(z), c.Ocdm(z) * c.rho_tot(z))
+    assert_allclose(c.rho_g(z), c.Og(z) * c.rho_tot(z))
+    assert_allclose(c.rho_ncdm(z), c.Oncdm(z) * c.rho_tot(z))
+    assert_allclose(c.rho_b(z), c.Ob(z) * c.rho_tot(z))
+    assert_allclose(c.rho_m(z), c.Om(z) * c.rho_tot(z))
+    assert_allclose(c.rho_r(z), c.Or(z) * c.rho_tot(z))
+    assert_allclose(c.rho_ur(z), c.Our(z) * c.rho_tot(z))
+
+def test_cosmology_vect():
+    c = Cosmology(gauge='synchronous')
+
+    assert_allclose(c.Ocdm([0]), c.Ocdm0)
+
+    assert_array_equal(c.Ocdm([]).shape, [0])
+    assert_array_equal(c.Ocdm([0]).shape, [1])
+    assert_array_equal(c.Ocdm([[0]]).shape, [1, 1])
+
+    assert_array_equal(c.rho_k([[0]]).shape, [1, 1])
+
+    k, z = meshgrid([0, 1], [0.01, 0.05, 0.1, 0.5], sparse=True, indexing='ij')
+
+    pk = c.get_pk(z=z, k=k)
+    assert_array_equal(pk.shape, [2, 4])
 
 def test_cosmology_a_max():
     c = Cosmology(gauge='synchronous', a_max=2.0)

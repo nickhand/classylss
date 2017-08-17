@@ -468,7 +468,7 @@ cdef class Background:
         cdef double tau
         cdef int last_index #junk
 
-        z = np.float64(z)
+        z = np.array(z, dtype=np.float64)
 
         #generate a new output array of the correct shape by broadcasting input arrays together
         out = np.empty(np.broadcast(z).shape, np.float64)
@@ -502,15 +502,23 @@ cdef class Background:
         return 3 * self.p_ncdm(z, species) / self.rho_tot(z)
 
     def rho_g(self, z):
-        """ density of radiation (gamma); """
+        """ density of radiation (gamma). """
         return self.compute_for_z(z, self.ba.index_bg_rho_g) * self._RHO_
 
     def rho_b(self, z):
-        """ density of baryon; """
+        """ density of baryon. """
         return self.compute_for_z(z, self.ba.index_bg_rho_b) * self._RHO_
 
+    def rho_m(self, z):
+        """ density of matter like components."""
+        return self.Om(z) * self.rho_tot(z)
+
+    def rho_r(self, z):
+        """ density of radiation like components. """
+        return self.Or(z) * self.rho_tot(z)
+
     def rho_cdm(self, z):
-        """ density of cdm; """
+        """ density of cdm. """
         return self.compute_for_z(z, self.ba.index_bg_rho_cdm) * self._RHO_
 
     def rho_ur(self, z):
@@ -529,10 +537,12 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
 
     def rho_k(self, z):
+        """ curvature density. """
+        z = np.array(z, dtype=np.float64)
         return self.ba.K * ( z+1.) ** 2 * self._RHO_
 
     def rho_tot(self, z):
-        """ total density """
+        """ total density in 1e10 Msun/h (Mpc/h) ** -3; it is usually close to 27.76."""
         return self.rho_crit(z) + self.rho_k(z)
 
     def p_ncdm(self, z, species=None):
@@ -789,6 +799,9 @@ cdef class Spectra:
         'output'. The transfer functions can also be computed at higher redshift z
         provided that 'z_pk' has been set and that z is inside the region spanned by 'z_pk'.
 
+        This function is not vectorized; because it returns a vector when ic_size is
+        greater than 1, and I don't understand ic_size.
+
         Parameters
         ----------
         z  : redshift (default = 0)
@@ -801,7 +814,7 @@ cdef class Spectra:
 
         .. note::
 
-            At different redshift the values of 'k' may be different.
+            With different cosmology the values of 'k' may be different.
         """
 
         if (not self.pt.has_density_transfers) and (not self.pt.has_velocity_transfers):
