@@ -17,3 +17,9 @@ def get_data_files():
     ) 
     return r
 
+from .legacy import *
+
+from . import power
+from . import tools
+from . import correlation
+

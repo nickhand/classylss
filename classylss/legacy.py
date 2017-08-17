@@ -4,11 +4,8 @@ from .gcl import ClassParams
 from .gcl import transfers
 from .gcl import cltypes
 
-from . import power
-from . import tools
-from . import correlation
-
 def _init():
+    from . import get_data_files
     r = get_data_files()
 
     # setting static variables with swig is tricky.
