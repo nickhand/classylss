@@ -538,7 +538,7 @@ cdef class Background:
     def p_ncdm(self, z, species=None):
         """ pressure of non-relative part of massive neutrino. """
         if species is None:
-            return sum(self.p_ncdm(i) for i in range(self.N_ncdm))
+            return sum(self.p_ncdm(z, i) for i in range(self.N_ncdm))
 
         assert species < self.N_ncdm and species >= 0
         return self.compute_for_z(z, self.ba.index_bg_p_ncdm1 + species) * self._RHO_
