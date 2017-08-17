@@ -498,7 +498,7 @@ cdef class Background:
 
         return out
 
-    def Opncdm(self, z, int species=0):
+    def Opncdm(self, z, species=None):
         return 3 * self.p_ncdm(z, species) / self.rho_tot(z)
 
     def rho_g(self, z):
