@@ -296,8 +296,15 @@ cdef class ClassEngine:
     @classmethod
     def from_astropy(cls, cosmo, extra={}):
         """
-        Convert an astropy cosmology to a ``ClassParams`` instance
+        Convert an astropy cosmology to a ``ClassEngine`` instance.
+
+        .. warning::
+
+            This method is deprecated. Use classylss.cosmology.Cosmology instead.
         """
+        import warnings
+        warnings.warn("creating ClassEngine directly from Astropy Cosmology is deprecated; Use classylss.cosmology.Cosmology", DeprecationWarning)
+
         from astropy import units, cosmology
 
         pars = {}
