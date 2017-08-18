@@ -101,7 +101,6 @@ class build_external_clib(build_clib):
     Custom command to build CLASS first, and then GCL library
     """
     def finalize_options(self):
-
         build_clib.finalize_options(self)
 
         # create the CLASS build directory and save the include path
@@ -109,7 +108,6 @@ class build_external_clib(build_clib):
         self.include_dirs.insert(0, os.path.join(self.class_build_dir, 'include'))
 
     def build_libraries(self, libraries):
-
         # build CLASS first
         build_CLASS(self.class_build_dir)
 
@@ -119,6 +117,10 @@ class build_external_clib(build_clib):
 
         self.compiler.set_link_objects(link_objects)
         self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
+
+        # then no longer need to build class.
+
+        libraries = [lib for lib in libraries if lib[0] != 'class']
 
         for (library, build_info) in libraries:
 
@@ -194,6 +196,9 @@ def libgcl_config():
     gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
     return ('gcl', gcl_info)
 
+def libclass_config():
+    return ('class', {})
+
 def gcl_extension_config():
 
     # the configuration for GCL python extension
@@ -245,13 +250,13 @@ if __name__ == '__main__':
                         Extension(**classy_extension_config()),
                         Extension(**gcl_extension_config()),
           ]),
-          libraries=[libgcl_config()],
+          libraries=[libclass_config(), libgcl_config()],
           cmdclass = {
               'sdist': custom_sdist,
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-          py_modules = ["classylss.gcl"],
-          packages=['classylss', 'classylss.tests']
+         py_modules = ["classylss.gcl"],
+         packages=['classylss', 'classylss.tests']
     )
