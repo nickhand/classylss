@@ -25,7 +25,7 @@ os.environ.setdefault("F90", "gfortran")
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 
 # the CLASS version to install
-CLASS_VERSION = '2.6.0'
+CLASS_VERSION = '2.6.1'
 
 MAJOR = 0
 MINOR = 1
