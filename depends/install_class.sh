@@ -26,13 +26,14 @@ fi
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
 
-patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch
+patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch || exit 1
 
 echo $ROOT/$PREFIX/data
 mkdir -p $ROOT/$PREFIX/data
 
 # copy all *.dat files to install dir
 find . -type f -name "*.dat" -print0 |  xargs -0  tar cf - | tar xvf - -C $ROOT/$PREFIX/data
+find . -type f -name "*_ref.pre" -print0 |  xargs -0  tar cf - | tar xvf - -C $ROOT/$PREFIX/data
 
 make CLASSCFG=$ROOT/depends/class.cfg libclass.a
 cp -r include $START/$PREFIX/
