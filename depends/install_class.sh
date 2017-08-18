@@ -18,6 +18,10 @@ fi
 
 if ! [ -d $TMP/class_public-$CLASS_VERSION ]; then
     gzip -dc $ROOT/depends/class-v$CLASS_VERSION.tar.gz | tar xf - -C $TMP
+    (
+        cd $TMP/class_public-$CLASS_VERSION
+        patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch
+    ) || exit 1
 fi
 
 # add phi_prime
@@ -25,8 +29,6 @@ fi
 # copy the Makefile
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
-
-patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch || exit 1
 
 echo $ROOT/$PREFIX/data
 mkdir -p $ROOT/$PREFIX/data
