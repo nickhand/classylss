@@ -20,7 +20,8 @@ if ! [ -d $TMP/class_public-$CLASS_VERSION ]; then
     gzip -dc $ROOT/depends/class-v$CLASS_VERSION.tar.gz | tar xf - -C $TMP
     (
         cd $TMP/class_public-$CLASS_VERSION
-        patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch
+        patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch || exit 1
+        patch -p1 < $ROOT/depends/class-2.6.0-tol-ncdm.patch || exit 1
     ) || exit 1
 fi
 
