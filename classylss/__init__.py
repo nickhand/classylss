@@ -17,6 +17,18 @@ def get_data_files():
     ) 
     return r
 
+def load_precision(precision):
+    import os
+
+    path = os.path.dirname(__file__)
+    path = os.path.join(path, 'data', precision)
+
+    r = dict()
+    with open(path, 'r') as f:
+        exec(f.read(), {}, r)
+
+    return r
+
 from .legacy import *
 
 from . import power
