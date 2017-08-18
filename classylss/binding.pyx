@@ -235,7 +235,7 @@ cdef class ClassEngine:
 
             if problem_flag:
                 raise KeyError(
-                    "Class did not read input parameter(s): %s\n" % ', '.join(
+                    "Class did not read input parameter(s): %s" % ', '.join(
                     problematic_parameters))
 
         # The following list of computation is straightforward. If the "_init"
