@@ -418,6 +418,41 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_cdm
 
+    property Omega0_l:
+        """
+        Density parameter for cosmological constant, :math:`\Omega_{\Lambda,0}`
+        """
+        def __get__(self):
+            return self.ba.Omega0_lambda
+
+    property Omega0_fld:
+        """
+        Density parameter for dark energy (fluid), :math:`\Omega_{de,0}`
+        """
+        def __get__(self):
+            return self.ba.Omega0_fld
+
+    property Omega0_k:
+        """
+        Density parameter for curvaturve, :math:`\Omega_{k,0}`
+        """
+        def __get__(self):
+            return self.ba.Omega0_k
+
+    property w0_fld:
+        """
+        Current fluid equation of state parameter, :math:`w_{0,fld}`
+        """
+        def __get__(self):
+            return self.ba.w0_fld
+
+    property wa_fld:
+        """
+        Fluid equation of state derivative, :math:`w_{a,fld}`
+        """
+        def __get__(self):
+            return self.ba.wa_fld
+
     property Omega0_dcdm:
         """
         Density parammeter for decaying dark matter, :math:`\Oemga_{dcdm,0}`
@@ -464,9 +499,17 @@ cdef class Background:
         def __get__(self):
             return self.ba.Neff
 
+    property N_ur:
+        def __get__(self):
+            return self.Omega0_ur / (7./8.*(4./11)**(4./3.)*self.Omega0_g)
+
     property N_ncdm:
         def __get__(self):
             return self.ba.N_ncdm
+
+    property m_ncdm:
+        def __get__(self):
+            return [self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)]
 
     property age0:
         def __get__(self):
@@ -694,6 +737,17 @@ cdef class Perturbs:
         self.pt = &self.engine.pt
         self.ba = &self.engine.ba
 
+    property P_k_max:
+        def __get__(self):
+            return self.pt.k_max_for_pk/self.ba.h
+
+    property P_z_max:
+        def __get__(self):
+            return self.pt.z_max_pk
+
+    property gauge:
+        def __get__(self):
+            return self.pt.gauge
 
 cdef class Primordial:
     cdef ClassEngine engine
@@ -799,6 +853,18 @@ cdef class Spectra:
         self.pt = &self.engine.pt
         self.pm = &self.engine.pm
 
+    property nonlinear:
+      def __get__(self):
+        return self.nl.method > 0
+
+    property has_pk_matter:
+        def __get__(self):
+          return self.pt.has_pk_matter
+
+    property P_k_min:
+        def __get__(self):
+            return np.exp(self.sp.ln_k[0])/self.ba.h;
+
     property sigma8:
         def __get__(self):
             return self.sp.sigma8
@@ -810,6 +876,33 @@ cdef class Spectra:
     property ln_1e10_A_s:
         def __get__(self):
             return np.log(1e10*self.A_s)
+
+    property n_s:
+        def __get__(self):
+            return self.pm.n_s
+
+    def sigma8_z(self, z):
+
+      #generate a new output array of the correct shape by broadcasting input arrays together
+      z = np.float64(z)
+      out = np.empty(np.broadcast(z).shape, np.float64)
+
+      #generate the iterator over the input and output arrays, does the same thing as
+      cdef np.broadcast it = np.broadcast(z,  out)
+
+      while np.PyArray_MultiIter_NOTDONE(it):
+
+              #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
+              aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+
+              if _FAILURE_ == spectra_sigma(self.ba, self.pm, self.sp, 8./self.ba.h, aval,
+                  <double*>(np.PyArray_MultiIter_DATA(it, 1))):
+                  raise ClassRuntimeError(self.sp.error_message.decode())
+
+              #PyArray_MultiIter_NEXT is used to advance the iterator
+              np.PyArray_MultiIter_NEXT(it)
+
+      return out
 
     def get_transfer(self, z, output_format='class'):
         """
