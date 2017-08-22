@@ -69,7 +69,7 @@ def test_cosmology_a_max():
     c = Cosmology(gauge='synchronous', a_max=2.0)
     print(c.parameter_file)
     assert c.a_max == 2.0
-    t = c.Om(-0.1)
+    t = c.Omega_m(-0.1)
     t = c.efunc(-0.1)
     t = c.scale_independent_growth_factor(-0.1)
 
@@ -100,7 +100,7 @@ def test_cosmology_dir():
     d = dir(c)
     assert "Background" in d
     assert "Spectra" in d
-    assert "Om0" in d
+    assert "Omega0_m" in d
 
 def test_cosmology_pickle():
     import pickle
