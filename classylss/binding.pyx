@@ -150,6 +150,7 @@ ctypedef struct ready_flags:
     int sp
     int op
     int le
+    int input
 
 
 cdef class ClassEngine:
@@ -219,7 +220,7 @@ cdef class ClassEngine:
         # The input module should raise a ClassRuntimeError, because
         # non-understood parameters asked to the wrapper is a problematic
         # situation.
-        if "input" in tasks:
+        if "input" in tasks and not self.ready.input:
             if input_init(fc, &self.pr, &self.ba, &self.th,
                           &self.pt, &self.tr, &self.pm, &self.sp,
                           &self.nl, &self.le, &self.op, errmsg) == _FAILURE_:
