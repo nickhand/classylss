@@ -78,6 +78,7 @@ cdef extern from "class.h":
         double Omega0_ncdm_tot
         double Omega0_lambda
         double Omega0_fld
+        double Omega0_k
         double w0_fld
         double wa_fld
         double cs2_fld
@@ -116,6 +117,9 @@ cdef extern from "class.h":
         short has_velocity_transfers
         short has_metricpotential_transfers
 
+        int gauge
+        double k_max_for_pk
+        double z_max_pk
         int has_pk_matter
         int l_lss_max
 
@@ -345,6 +349,14 @@ cdef extern from "class.h":
         int mode,
         double z,
         double * output_tot)
+
+    int spectra_sigma(
+        void * pba,
+        void * ppm,
+        void * psp,
+        double R,
+        double z,
+        double *sigma)
 
     int nonlinear_k_nl_at_z(void* pba, void* pnl, double z, double* k_nl)
 
