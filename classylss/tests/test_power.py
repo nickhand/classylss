@@ -2,9 +2,9 @@
 def test_power():
 
     from astropy.cosmology import Planck15
-    from classylss import power
+    from classylss.legacy import power
     import numpy
-    
+
     # desired wavenumbers (in h/Mpc)
     k = numpy.logspace(-3, 0, 500)
 

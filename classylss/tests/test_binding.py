@@ -25,4 +25,3 @@ def test_sp():
 
     t = sp.get_transfer(0.0)
     t = sp.get_transfer(2.0)
-

@@ -14,7 +14,7 @@ def get_data_files():
         R_inf_hyrec_file = os.path.join(path, 'hyrec', 'R_inf.dat'),
         two_photon_tables_hyrec_file = os.path.join(path, 'hyrec', 'two_photon_tables.dat'),
         sBBN_file = os.path.join(path, 'bbn', 'sBBN.dat'),
-    ) 
+    )
     return r
 
 def load_precision(precision):
@@ -28,10 +28,3 @@ def load_precision(precision):
         exec(f.read(), {}, r)
 
     return r
-
-from .legacy import *
-
-from . import power
-from . import tools
-from . import correlation
-

@@ -9,20 +9,20 @@ def test_load_precision():
 
     c = Cosmology(gauge='synchronous', tol_background_integration=1e-5, **p)
 
-    assert_allclose(c.Ocdm(0), c.Ocdm0)
+    assert_allclose(c.Omega_cdm(0), c.Omega0_cdm)
 
 def test_cosmology_sane():
     c = Cosmology(gauge='synchronous')
 
-    assert_allclose(c.Ocdm(0), c.Ocdm0)
-    assert_allclose(c.Og(0), c.Og0)
-    assert_allclose(c.Ob(0), c.Ob0)
-    assert_allclose(c.Oncdm(0), c.Oncdm0)
-    assert_allclose(c.Our(0), c.Our0)
+    assert_allclose(c.Omega_cdm(0), c.Omega0_cdm)
+    assert_allclose(c.Omega_g(0), c.Omega0_g)
+    assert_allclose(c.Omega_b(0), c.Omega0_b)
+    assert_allclose(c.Omega_ncdm(0), c.Omega0_ncdm)
+    assert_allclose(c.Omega_ur(0), c.Omega0_ur)
 
-    assert_allclose(c.Opncdm(0), c.Opncdm0)
-    assert_allclose(c.Om(0), c.Om0) 
-    assert_allclose(c.Or(0), c.Or0)
+    assert_allclose(c.Omega_pncdm(0), c.Omega0_pncdm)
+    assert_allclose(c.Omega_m(0), c.Omega_m)
+    assert_allclose(c.Omega_r(0), c.Omega_r)
 
     # total density in 10e10 Msun/h unit
     assert_allclose(c.rho_tot(0), 27.754999)
@@ -34,28 +34,28 @@ def test_cosmology_sane():
     assert_allclose(c.tau(1.0), 3396.157391)
 
     assert_allclose(c.efunc(0), 1.) # hubble in Mpc/h km/s unit
-    assert_allclose(c.efunc(0) - c.efunc(1 / 0.9999 - 1), 
+    assert_allclose(c.efunc(0) - c.efunc(1 / 0.9999 - 1),
                     0.0001 * c.efunc_prime(0), rtol=1e-3)
 
 def test_cosmology_density():
     c = Cosmology(gauge='synchronous')
     z = [0, 1, 2, 5, 9, 99]
-    assert_allclose(c.rho_cdm(z), c.Ocdm(z) * c.rho_tot(z))
-    assert_allclose(c.rho_g(z), c.Og(z) * c.rho_tot(z))
-    assert_allclose(c.rho_ncdm(z), c.Oncdm(z) * c.rho_tot(z))
-    assert_allclose(c.rho_b(z), c.Ob(z) * c.rho_tot(z))
-    assert_allclose(c.rho_m(z), c.Om(z) * c.rho_tot(z))
-    assert_allclose(c.rho_r(z), c.Or(z) * c.rho_tot(z))
-    assert_allclose(c.rho_ur(z), c.Our(z) * c.rho_tot(z))
+    assert_allclose(c.rho_cdm(z), c.Omega_cdm(z) * c.rho_tot(z))
+    assert_allclose(c.rho_g(z), c.Omega_g(z) * c.rho_tot(z))
+    assert_allclose(c.rho_ncdm(z), c.Omega_ncdm(z) * c.rho_tot(z))
+    assert_allclose(c.rho_b(z), c.Omega_b(z) * c.rho_tot(z))
+    assert_allclose(c.rho_m(z), c.Omega_m(z) * c.rho_tot(z))
+    assert_allclose(c.rho_r(z), c.Omega_r(z) * c.rho_tot(z))
+    assert_allclose(c.rho_ur(z), c.Omega_ur(z) * c.rho_tot(z))
 
 def test_cosmology_vect():
     c = Cosmology(gauge='synchronous')
 
-    assert_allclose(c.Ocdm([0]), c.Ocdm0)
+    assert_allclose(c.Omega_cdm([0]), c.Omega0_cdm)
 
-    assert_array_equal(c.Ocdm([]).shape, [0])
-    assert_array_equal(c.Ocdm([0]).shape, [1])
-    assert_array_equal(c.Ocdm([[0]]).shape, [1, 1])
+    assert_array_equal(c.Omega_cdm([]).shape, [0])
+    assert_array_equal(c.Omega_cdm([0]).shape, [1])
+    assert_array_equal(c.Omega_cdm([[0]]).shape, [1, 1])
 
     assert_array_equal(c.rho_k([[0]]).shape, [1, 1])
 

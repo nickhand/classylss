@@ -1,9 +1,9 @@
 def test_corr():
-    
+
     from astropy.cosmology import Planck15
-    from classylss import correlation
+    from classylss.legacy import correlation
     import numpy
-    
+
     # desired separation (in Mpc/h)
     r = numpy.logspace(0, numpy.log10(150), 500)
 
