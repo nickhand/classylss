@@ -1,4 +1,6 @@
 from .binding import ClassEngine, Background, Spectra, Perturbs, Primordial
+from .astropy_compat import AstropyCompat
+
 import numpy
 from six import string_types
 import os
@@ -73,7 +75,7 @@ class Cosmology(object):
     # this doesn't work well with automated documentation tools though,
     # unfortunately.
 
-    dro = [Spectra, Perturbs, Primordial, Background, ClassEngine]
+    dro = [AstropyCompat, Spectra, Perturbs, Primordial, Background, ClassEngine]
     dro_dict = dict([(n.__name__, n) for n in dro])
 
     def __init__(self,
@@ -382,7 +384,9 @@ def verify_parameters(args, extra):
 
     for m in pars['m_ncdm']:
         if m == 0:
-            raise ValueError("A zero mass is specified in the massive neutrino list.")
+            raise ValueError("A zero mass is specified in the non-cold dark matter list. "
+                             "This is not needed, as we automatically set N_ur based on "
+                             "the number of entries in m_ncdm such that Neff = 3.046.")
 
     # remove None's -- use CLASS default
     for key in list(pars.keys()):
@@ -434,3 +438,4 @@ CONFLICTS = {'h': ['H0', '100*theta_s'],
              'sigma8': ['A_s', 'ln10^{10}A_s'],
              'nonlinear' : ['non linear']
             }
+

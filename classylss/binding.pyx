@@ -425,7 +425,7 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_cdm
 
-    property Omega0_l:
+    property Omega0_lambda:
         """
         Density parameter for cosmological constant, :math:`\Omega_{\Lambda,0}`
         """
@@ -469,7 +469,14 @@ cdef class Background:
 
     property Omega0_ncdm:
         """
-        Total density of distinguishable (massive) neutrinos.
+        Density of distinguishable (massive) neutrinos for each species as an array
+        """
+        def __get__(self):
+            return np.array([self.ba.Omega0_ncdm[i] for i in range(self.N_ncdm)], np.float64)
+
+    property Omega0_ncdm_tot:
+        """
+        Total density of distinguishable (massive) neutrinos ;
         """
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
@@ -497,7 +504,7 @@ cdef class Background:
 
     property Omega0_m:
         """
-        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
+        Return the sum of Omega0 for all non-relativistic components. The value differ from Astropy's; the semantics is identical.
         """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Omega0_pncdm
@@ -516,7 +523,7 @@ cdef class Background:
 
     property m_ncdm:
         def __get__(self):
-            return [self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)]
+            return np.array([self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)], dtype=np.float64)
 
     property age0:
         def __get__(self):
@@ -526,7 +533,7 @@ cdef class Background:
         def __get__(self):
             return self.ba.h
 
-    property Tcmb0:
+    property T0_cmb:
         """
         Return the CMB temperature
         """
@@ -614,6 +621,22 @@ cdef class Background:
         """ total density in 1e10 Msun/h (Mpc/h) ** -3; it is usually close to 27.76."""
         return self.rho_crit(z) + self.rho_k(z)
 
+    def rho_fld(self, z):
+        """ density of fluid (dark energy fluid). """
+        if self.ba.has_fld:
+            return self.compute_for_z(z, self.ba.index_bg_rho_fld) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
+    def rho_lambda(self, z):
+        """ density of cosmology constant (dark energy non fluid) """
+        if self.ba.has_lambda:
+            return self.compute_for_z(z, self.ba.index_bg_rho_lambda) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
     def p_ncdm(self, z, species=None):
         """ pressure of non-relative part of massive neutrino. """
         if species is None:
@@ -642,6 +665,10 @@ cdef class Background:
         """ density of baryon """
         return self.rho_cdm(z) / self.rho_tot(z)
 
+    def Omega_k(self, z):
+        """ density of curvature"""
+        return self.rho_k(z) / self.rho_tot(z)
+
     def Omega_ur(self, z):
         """ density of ultra relativistic neutrino """
         return self.rho_ur(z) / self.rho_tot(z)
@@ -649,6 +676,14 @@ cdef class Background:
     def Omega_ncdm(self, z, species=None):
         """ density of massive neutrino """
         return self.rho_ncdm(z, species) / self.rho_tot(z)
+
+    def Omega_fld(self, z):
+        """ density of dark energy (fluid) """
+        return self.rho_fld(z) / self.rho_tot(z)
+
+    def Omega_lambda(self, z):
+        """ density of dark energy (cosmological constant) """
+        return self.rho_lambda(z) / self.rho_tot(z)
 
     def time(self, z):
         """ proper time (age of universe) """
