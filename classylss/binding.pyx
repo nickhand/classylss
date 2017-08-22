@@ -504,7 +504,7 @@ cdef class Background:
 
     property Omega0_m:
         """
-        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
+        Return the sum of Omega0 for all non-relativistic components. The value differ from Astropy's; the semantics is identical.
         """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Omega0_pncdm
@@ -523,7 +523,7 @@ cdef class Background:
 
     property m_ncdm:
         def __get__(self):
-            return [self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)]
+            return np.array([self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)], dtype=np.float64)
 
     property age0:
         def __get__(self):
@@ -533,7 +533,7 @@ cdef class Background:
         def __get__(self):
             return self.ba.h
 
-    property Tcmb0:
+    property T0_cmb:
         """
         Return the CMB temperature
         """
