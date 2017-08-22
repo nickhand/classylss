@@ -3,30 +3,30 @@ diff -uNr class_public-2.6.0.old/include/background.h class_public-2.6.0/include
 +++ class_public-2.6.0/include/background.h	2017-08-16 01:29:47.705730887 -0700
 @@ -144,6 +144,7 @@
    //@{
- 
+
    double a_today; /**< scale factor today (arbitrary and irrelevant for most purposes) */
 +  double a_max; /**< upper limit of scale factor  */
- 
+
    //@}
- 
+
 diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/background.c
 --- class_public-2.6.0.old/source/background.c	2017-08-15 20:58:02.457448246 -0700
 +++ class_public-2.6.0/source/background.c	2017-08-16 01:53:20.852346459 -0700
 @@ -1528,21 +1528,21 @@
- 
+
    /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
- 
+
 -  while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
 +  while (pvecback_integration[pba->index_bi_a] < pba->a_max) {
- 
+
      tau_start = tau_end;
- 
+
 -    /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
 +    /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_max; need not be exact, difference corrected later) */
      class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
                 pba->error_message,
                 pba->error_message);
- 
+
 -    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_today) {
 +    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_max) {
        tau_end = tau_start + ppr->back_integration_stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
@@ -37,7 +37,7 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
 +      tau_end = tau_start + (pba->a_max/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
        /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
      }
- 
+
 @@ -1598,7 +1598,7 @@
                                 pba->bi_size,
                                 pba->bt_size,
@@ -53,7 +53,7 @@ diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.
 @@ -602,6 +602,17 @@
    /** - scale factor today (arbitrary) */
    class_read_double("a_today",pba->a_today);
- 
+
 +  /** - scale factor max; same normalization as a_today. */
 +  class_call(parser_read_double(pfc,"a_max",&param1,&flag1,errmsg),
 +             errmsg,
@@ -68,3 +68,98 @@ diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.
    /** - h (dimensionless) and [\f$ H_0/c\f$] in \f$ Mpc^{-1} = h / 2997.9... = h * 10^5 / c \f$ */
    class_call(parser_read_double(pfc,"H0",&param1,&flag1,errmsg),
               errmsg,
+
+diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/source/thermodynamics.c
+--- class_public-2.6.0.old/source/thermodynamics.c	2017-08-22 13:46:49.000000000 -0400
++++ class_public-2.6.0/source/thermodynamics.c	2017-08-22 15:18:47.000000000 -0400
+@@ -2279,6 +2279,7 @@
+   double chi_heat;
+   int last_index_back;
+   double relative_variation;
++  double zend=1./pba->a_max - 1;
+
+   Yp = pth->YHe;
+
+@@ -2367,7 +2368,7 @@
+   /* initial step */
+   dz = dz_max;
+
+-  while (z > 0.) {
++  while (z > zend) {
+
+     class_test(dz < ppr->smallest_allowed_variation,
+                pth->error_message,
+@@ -2375,7 +2376,7 @@
+
+     /* - try next step */
+     z_next=z-dz;
+-    if (z_next < 0.) z_next=0.;
++    if (z_next < zend) z_next=zend;
+
+     class_call(thermodynamics_reionization_function(z_next,pth,preio,&xe_next),
+                pth->error_message,
+@@ -2660,7 +2661,7 @@
+   param.nH0 = 11.223846333047*param.obh2*(1.-param.Y);  /* number density of hydrogen today in m-3 */
+   param.fHe = param.Y/(1-param.Y)/3.97153;              /* abundance of helium by number */
+   param.zstart = ppr->recfast_z_initial; /* Redshift range */
+-  param.zend = 0.;
++  param.zend = 1./pba->a_max - 1.;
+   param.dlna = 8.49e-5;
+   param.nz = (long) floor(2+log((1.+param.zstart)/(1.+param.zend))/param.dlna);
+   param.annihilation = pth->annihilation;
+@@ -2799,7 +2800,7 @@
+
+     /** - --> get redshift, corresponding results from hyrec, and background quantities */
+
+-    z = param.zstart * (1. - (double)(i+1) / (double)Nz);
++    z = param.zstart  - (param.zstart - param.zend) * (double)(i+1) / (double)Nz;
+
+     /* get (xe,Tm) by interpolating in pre-computed tables */
+
+@@ -2945,7 +2946,7 @@
+   double y[3],dy[3];
+
+   /* other recfast variables */
+-  double OmegaB,zinitial,x_He0,x0;
++  double OmegaB,zinitial,zfinal,x_He0,x0;
+   double x_H0=0.;
+   double z,mu_H,Lalpha,Lalpha_He,DeltaB,DeltaB_He;
+   double zstart,zend,rhs;
+@@ -2989,6 +2990,9 @@
+   /* z_initial */
+   zinitial=ppr->recfast_z_initial;
+
++  /* z_final */
++  zfinal=1./pba->a_max - 1.;
++
+   /* H_frac */
+   preco->H_frac = ppr->recfast_H_frac;
+
+@@ -3068,8 +3072,8 @@
+
+   for(i=0; i <Nz; i++) {
+
+-    zstart = zinitial * (double)(Nz-i) / (double)Nz;
+-    zend   = zinitial * (double)(Nz-i-1) / (double)Nz;
++    zstart = zinitial  - (zinitial-zfinal) * (double)(i) / (double)Nz;
++    zend   = zinitial  - (zinitial-zfinal) * (double)(i+1) / (double)Nz;
+
+     z = zend;
+
+@@ -3226,7 +3230,7 @@
+
+       class_call(generic_integrator(thermodynamics_derivs_with_recfast,
+                                     zstart,
+-                                    zend,
++                                    0.99999*zend,
+                                     y,
+                                     &tpaw,
+                                     ppr->tol_thermo_integration,
+@@ -3264,7 +3268,7 @@
+     *(preco->recombination_table+(Nz-i-1)*preco->re_size+preco->index_re_Tb)=y[2];
+
+     /* get dTb/dz=dy[2] */
+-    class_call(thermodynamics_derivs_with_recfast(zend, y, dy, &tpaw,pth->error_message),
++    class_call(thermodynamics_derivs_with_recfast(0.99999*zend, y, dy, &tpaw,pth->error_message),
+                pth->error_message,
+                pth->error_message);
