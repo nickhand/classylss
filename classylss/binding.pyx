@@ -469,7 +469,14 @@ cdef class Background:
 
     property Omega0_ncdm:
         """
-        Total density of distinguishable (massive) neutrinos.
+        Density of distinguishable (massive) neutrinos for each species as an array
+        """
+        def __get__(self):
+            return np.array([self.ba.Omega0_ncdm[i] for i in range(self.N_ncdm)], np.float64)
+
+    property Omega0_ncdm_tot:
+        """
+        Total density of distinguishable (massive) neutrinos ;
         """
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
