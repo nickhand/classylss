@@ -24,37 +24,17 @@ os.environ.setdefault("F90", "gfortran")
 # base directory of package
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 
-# the CLASS version to install
-CLASS_VERSION = '2.6.1'
+def find_version(path, name='version'):
+    import re
+    # path shall be a plain ascii text file.
+    s = open(path, 'rt').read()
+    version_match = re.search(r"^%s = ['\"]([^'\"]*)['\"]" %name,
+                              s, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("version not found")
 
-MAJOR = 0
-MINOR = 1
-MICRO = 20
-ISRELEASED = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
-
-DISTNAME = 'classylss'
-AUTHOR = 'Nick Hand'
-AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
-INSTALL_REQUIRES = ['numpy', 'astropy', 'six']
-DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
-URL = "http://github.com/nickhand/classylss"
-
-if not ISRELEASED: VERSION += '.dev0'
-
-def write_version_py():
-    cnt = """\
-version = '%s'
-class_version = '%s'
-"""
-    filename = os.path.join(os.path.dirname(__file__), 'classylss', 'version.py')
-    a = open(filename, 'w')
-    try:
-        a.write(cnt % (VERSION, CLASS_VERSION))
-    finally:
-        a.close()
-
-write_version_py()
+CLASS_VERSION = find_version("classylss/version.py", name='class_version')
 
 def check_swig_version():
     """
@@ -238,14 +218,14 @@ def classy_extension_config():
 if __name__ == '__main__':
 
     from numpy.distutils.core import setup
-    setup(name=DISTNAME,
-          version=VERSION,
-          author=AUTHOR,
-          author_email=AUTHOR_EMAIL,
-          description=DESCRIPTION,
+    setup(name='classylss',
+          version=find_version("classylss/version.py"),
+          author='Nick Hand, Yu Feng',
+          author_email='nicholas.adam.hand@gmail.com',
+          description="python binding of CLASS for large-scale structure calculations",
           license='GPL3',
-          url=URL,
-          install_requires=INSTALL_REQUIRES,
+          url="http://github.com/nickhand/classylss",
+          install_requires=['numpy', 'astropy', 'six'],
           ext_modules = cythonize([
                         Extension(**classy_extension_config()),
                         Extension(**gcl_extension_config()),
