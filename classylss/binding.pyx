@@ -235,9 +235,10 @@ cdef class ClassEngine:
                     problematic_parameters.append(fc.name[i].decode())
 
             if problem_flag:
-                raise KeyError(
-                    "Class did not read input parameter(s): %s\n" % ', '.join(
-                    problematic_parameters))
+                import warnings
+                warnings.warn("Class did not read input parameter(s): %s\n" % ', '.join(
+                              problematic_parameters))
+            self.ready.input = True
 
         # The following list of computation is straightforward. If the "_init"
         # methods fail, call `struct_cleanup` and raise a ClassBadValueError
