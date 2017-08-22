@@ -621,6 +621,22 @@ cdef class Background:
         """ total density in 1e10 Msun/h (Mpc/h) ** -3; it is usually close to 27.76."""
         return self.rho_crit(z) + self.rho_k(z)
 
+    def rho_fld(self, z):
+        """ density of fluid (dark energy fluid). """
+        if self.ba.has_fld:
+            return self.compute_for_z(z, self.ba.index_bg_rho_fld) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
+    def rho_lambda(self, z):
+        """ density of cosmology constant (dark energy non fluid) """
+        if self.ba.has_lambda:
+            return self.compute_for_z(z, self.ba.index_bg_rho_lambda) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
     def p_ncdm(self, z, species=None):
         """ pressure of non-relative part of massive neutrino. """
         if species is None:
@@ -649,6 +665,10 @@ cdef class Background:
         """ density of baryon """
         return self.rho_cdm(z) / self.rho_tot(z)
 
+    def Omega_k(self, z):
+        """ density of curvature"""
+        return self.rho_k(z) / self.rho_tot(z)
+
     def Omega_ur(self, z):
         """ density of ultra relativistic neutrino """
         return self.rho_ur(z) / self.rho_tot(z)
@@ -656,6 +676,14 @@ cdef class Background:
     def Omega_ncdm(self, z, species=None):
         """ density of massive neutrino """
         return self.rho_ncdm(z, species) / self.rho_tot(z)
+
+    def Omega_fld(self, z):
+        """ density of dark energy (fluid) """
+        return self.rho_fld(z) / self.rho_tot(z)
+
+    def Omega_lambda(self, z):
+        """ density of dark energy (cosmological constant) """
+        return self.rho_lambda(z) / self.rho_tot(z)
 
     def time(self, z):
         """ proper time (age of universe) """
