@@ -258,5 +258,5 @@ if __name__ == '__main__':
               'clean': custom_clean
           },
          py_modules = ["classylss.gcl"],
-         packages=['classylss', 'classylss.tests']
+         packages=['classylss', 'classylss.tests', 'classylss.power']
     )
