@@ -378,7 +378,7 @@ cdef class Background:
     cdef background * ba
     cdef readonly dict data
 
-    cdef readonly double Opncdm0
+    cdef readonly double Omega0_pncdm
     cdef readonly double H0
     cdef readonly double C
     cdef readonly double G
@@ -395,37 +395,54 @@ cdef class Background:
         # convert RHO to  1e10 Msun/h
         self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
-        self.Opncdm0 = self.Opncdm(0.0) # watchout, the convention is 0.0
+        self.Omega0_pncdm = self.Omega_pncdm(0.0) # watchout, the convention is 0.0
 
-    property Ob0:
+    property Omega0_b:
+        """
+        Density parameter for photons, :math:`\Omega_{b,0}`
+        """
         def __get__(self):
             return self.ba.Omega0_b
 
-    property Og0:
+    property Omega0_g:
+        """
+        Density parameter for photons, :math:`\Omega_{g,0}`
+        """
         def __get__(self):
             return self.ba.Omega0_g
 
-    property Ocdm0:
+    property Omega0_cdm:
+        """
+        Density parameter for cold dark matter, :math:`\Omega_{cdm,0}`
+        """
         def __get__(self):
             return self.ba.Omega0_cdm
 
-    property Odcdm0:
+    property Omega0_dcdm:
+        """
+        Density parammeter for decaying dark matter, :math:`\Oemga_{dcdm,0}`
+        """
         def __get__(self):
             return self.ba.Omega0_dcdm
 
-    property Oncdm0:
-        """ total density of distinguishable (massive) neutrinos. """
+    property Omega0_ncdm:
+        """
+        Total density of distinguishable (massive) neutrinos.
+        """
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
 
-    property Our0:
-        """ total density of ultra relative (massless) neutrinos. """
+    property Omega0_ur:
+        """
+        Density parameter of ultra-relativistic (massless) neutrinos,
+        :math:`\Omega_{0,\nu_r}`
+        """
         def __get__(self):
             return self.ba.Omega0_ur
 
-    property Or0:
+    property Omega0_r:
         def __get__(self):
-            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Opncdm0
+            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm
 
     property a_today:
         """ this is an arbitrary number that sets the refernce scaling factor. It shall be 1 usually."""
@@ -436,12 +453,12 @@ cdef class Background:
         def __get__(self):
             return self.ba.a_max
 
-    property Om0:
+    property Omega0_m:
         """
         Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
         """
         def __get__(self):
-            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Opncdm0
+            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Omega0_pncdm
 
     property Neff:
         def __get__(self):
@@ -500,7 +517,7 @@ cdef class Background:
 
         return out
 
-    def Opncdm(self, z, species=None):
+    def Omega_pncdm(self, z, species=None):
         return 3 * self.p_ncdm(z, species) / self.rho_tot(z)
 
     def rho_g(self, z):
@@ -513,11 +530,11 @@ cdef class Background:
 
     def rho_m(self, z):
         """ density of matter like components."""
-        return self.Om(z) * self.rho_tot(z)
+        return self.Omega_m(z) * self.rho_tot(z)
 
     def rho_r(self, z):
         """ density of radiation like components. """
-        return self.Or(z) * self.rho_tot(z)
+        return self.Omega_r(z) * self.rho_tot(z)
 
     def rho_cdm(self, z):
         """ density of cdm. """
@@ -555,31 +572,31 @@ cdef class Background:
         assert species < self.N_ncdm and species >= 0
         return self.compute_for_z(z, self.ba.index_bg_p_ncdm1 + species) * self._RHO_
 
-    def Or(self, z):
+    def Omega_r(self, z):
         """ density of relative (radiation like) component, including relative part of massive neutrino and massless neutrino. """
         return self.compute_for_z(z, self.ba.index_bg_Omega_r)
 
-    def Om(self, z):
+    def Omega_m(self, z):
         """ density of non-relative (matter like) component, including non-relative part of massive neutrino. """
         return self.compute_for_z(z, self.ba.index_bg_Omega_m)
 
-    def Og(self, z):
+    def Omega_g(self, z):
         """ density of radiation """
         return self.rho_g(z) / self.rho_tot(z)
 
-    def Ob(self, z):
+    def Omega_b(self, z):
         """ density of baryon """
         return self.rho_b(z) / self.rho_tot(z)
 
-    def Ocdm(self, z):
+    def Omega_cdm(self, z):
         """ density of baryon """
         return self.rho_cdm(z) / self.rho_tot(z)
 
-    def Our(self, z):
+    def Omega_ur(self, z):
         """ density of ultra relativistic neutrino """
         return self.rho_ur(z) / self.rho_tot(z)
 
-    def Oncdm(self, z, species=None):
+    def Omega_ncdm(self, z, species=None):
         """ density of massive neutrino """
         return self.rho_ncdm(z, species) / self.rho_tot(z)
 
@@ -601,7 +618,7 @@ cdef class Background:
 
     def hubble_function_prime(self, z):
         """ d H / d tau ; d tau / da = 1 / (a ** 2 H) in class units; use efunc_prime instead """
-        return self.compute_for_z(z, self.ba.index_bg_H_prime) 
+        return self.compute_for_z(z, self.ba.index_bg_H_prime)
 
     def efunc(self, z):
         """
@@ -623,7 +640,7 @@ cdef class Background:
         """
         Function giving dE / da.
         """
-        dtau_da = (1 + z)**2 / self.hubble_function(z) 
+        dtau_da = (1 + z)**2 / self.hubble_function(z)
         return self.hubble_function_prime(z) / self.ba.H0 * dtau_da
 
     def luminosity_distance(self, z):
