@@ -3,21 +3,6 @@ import numpy
 from six import string_types
 import os
 
-
-aliases = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm'}
-
-conflicts = {'h': ['H0', '100*theta_s'],
-             'T_cmb': ['Omega_g', 'omega_g'],
-             'Omega_b': ['omega_b'],
-             'N_ur': ['Omega_ur', 'omega_ur'],
-             'Omega_cdm': ['omega_cdm'],
-             'm_ncdm': ['Omega_ncdm', 'omega_ncdm'],
-             'P_k_max': ['P_k_max_h/Mpc', 'P_k_max_1/Mpc'],
-             'P_z_max': ['z_max_pk'],
-             'sigma8': ['A_s', 'ln10^{10}A_s'],
-             'nonlinear' : ['non linear']
-            }
-
 class Cosmology(object):
     """
     A cosmology calculator based on the CLASS binding in classylss.
@@ -172,14 +157,14 @@ class Cosmology(object):
         """
         if not numpy.isclose(self.sigma8, value):
             extra = self.extra.copy()
-            for key in conflicts['sigma8']:
+            for key in CONFLICTS['sigma8']:
                 if key in extra: extra.pop(key)
             A_s = self.A_s * (value/self.sigma8)**2
             extra['A_s'] = A_s
             self.__setstate__((self.args,extra))
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, **kwargs):
         """
         Initialize a :class:`Cosmology` object from the CLASS parameter file
 
@@ -195,6 +180,7 @@ class Cosmology(object):
         # extract dictionary of parameters from the file
         fc = open(filename, 'r').read()
         pars = read_CLASS_ini(filename)
+        pars.update(**kwargs)
 
         # initialize the engine as the backup delegate.
         toret = object.__new__(cls)
@@ -206,21 +192,21 @@ class Cosmology(object):
         for name in list(pars.keys()):
             val = pars.pop(name)
 
-            if name in conflicts:
-                alias = aliases.get(name, name)
+            if name in CONFLICTS:
+                alias = ALIASES.get(name, name)
                 args[name] = getattr(toret, alias)
             else:
-                for c in conflicts:
+                for c in CONFLICTS:
                     if c == 'sigma8': continue
-                    if name in conflicts[c]:
-                        alias = aliases.get(c, c)
+                    if name in CONFLICTS[c]:
+                        alias = ALIASES.get(c, c)
                         args[c] = getattr(toret, alias)
 
         # set the gauge
         args['gauge'] = 'newtonian' if toret.gauge == 0 else 'synchronous'
 
         # set sigma8 norm
-        if not any(par in pars for par in conflicts['sigma8']):
+        if not any(par in pars for par in CONFLICTS['sigma8']):
             pars['A_s'] = toret.A_s
 
         toret.args = args
@@ -245,7 +231,7 @@ class Cosmology(object):
 
         # set sigma8 by re-scaling A_s, if A_s was not specified
         if desired_sigma8 is not None:
-            if not any(key in self.extra for key in conflicts['sigma8']):
+            if not any(key in self.extra for key in CONFLICTS['sigma8']):
                 self.sigma8 = desired_sigma8
 
     def clone(self, **kwargs):
@@ -279,10 +265,10 @@ def astropy_to_dict(cosmo):
     pars['h'] = cosmo.h
     pars['T_cmb'] = cosmo.Tcmb0
     if cosmo.Ob0 is not None:
-        pars['Omega0_b'] = cosmo.Ob0
+        pars['Omega_b'] = cosmo.Ob0
     else:
         raise ValueError("please specify a value 'Ob0' ")
-    pars['Omega0_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
+    pars['Omega_cdm'] = cosmo.Om0 - cosmo.Ob0 # should be okay for now
 
     # handle massive neutrinos
     if cosmo.has_massive_nu:
@@ -365,8 +351,8 @@ def verify_parameters(args, extra):
     set various default values
     """
     # check for conflicts
-    for par in conflicts:
-        for p in conflicts[par]:
+    for par in CONFLICTS:
+        for p in CONFLICTS[par]:
             if p in extra and par is not 'sigma8':
                 raise ValueError("input parameter conflict; use '%s', not '%s'" %(par, p))
 
@@ -434,3 +420,17 @@ def verify_parameters(args, extra):
     pars['N_ncdm'] = len(pars['m_ncdm'])
 
     return pars
+
+ALIASES = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm'}
+
+CONFLICTS = {'h': ['H0', '100*theta_s'],
+             'T_cmb': ['Omega_g', 'omega_g'],
+             'Omega_b': ['omega_b'],
+             'N_ur': ['Omega_ur', 'omega_ur'],
+             'Omega_cdm': ['omega_cdm'],
+             'm_ncdm': ['Omega_ncdm', 'omega_ncdm'],
+             'P_k_max': ['P_k_max_h/Mpc', 'P_k_max_1/Mpc'],
+             'P_z_max': ['z_max_pk'],
+             'sigma8': ['A_s', 'ln10^{10}A_s'],
+             'nonlinear' : ['non linear']
+            }
