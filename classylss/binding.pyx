@@ -425,7 +425,7 @@ cdef class Background:
         def __get__(self):
             return self.ba.Omega0_cdm
 
-    property Omega0_l:
+    property Omega0_lambda:
         """
         Density parameter for cosmological constant, :math:`\Omega_{\Lambda,0}`
         """
