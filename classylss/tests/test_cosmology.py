@@ -2,6 +2,15 @@ from classylss.cosmology import Cosmology
 from numpy.testing import assert_allclose, assert_array_equal
 from numpy import meshgrid
 
+def test_load_precision():
+    from classylss import load_precision
+
+    p = load_precision('pk_ref.pre')
+
+    c = Cosmology(gauge='synchronous', tol_background_integration=1e-5, **p)
+
+    assert_allclose(c.Ocdm(0), c.Ocdm0)
+
 def test_cosmology_sane():
     c = Cosmology(gauge='synchronous')
 

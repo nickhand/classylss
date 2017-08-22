@@ -18,6 +18,11 @@ fi
 
 if ! [ -d $TMP/class_public-$CLASS_VERSION ]; then
     gzip -dc $ROOT/depends/class-v$CLASS_VERSION.tar.gz | tar xf - -C $TMP
+    (
+        cd $TMP/class_public-$CLASS_VERSION
+        patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch || exit 1
+        patch -p1 < $ROOT/depends/class-2.6.0-tol-ncdm.patch || exit 1
+    ) || exit 1
 fi
 
 # add phi_prime
@@ -26,13 +31,12 @@ fi
 cp Makefile $TMP/class_public-$CLASS_VERSION
 cd $TMP/class_public-$CLASS_VERSION
 
-patch -p1 < $ROOT/depends/class-2.6.0-a_max.patch
-
 echo $ROOT/$PREFIX/data
 mkdir -p $ROOT/$PREFIX/data
 
 # copy all *.dat files to install dir
 find . -type f -name "*.dat" -print0 |  xargs -0  tar cf - | tar xvf - -C $ROOT/$PREFIX/data
+find . -type f -name "*_ref.pre" -print0 |  xargs -0  tar cf - | tar xvf - -C $ROOT/$PREFIX/data
 
 make CLASSCFG=$ROOT/depends/class.cfg libclass.a
 cp -r include $START/$PREFIX/
