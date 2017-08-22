@@ -92,22 +92,20 @@ class Cosmology(object):
             n_s=0.9667,
             nonlinear=False,
             verbose=False,
-            extra={}, # additional arguments to pass to CLASS
-            **kwargs
+            **kwargs # additional arguments to pass to CLASS
         ):
         # quickly copy over all arguments --
         # at this point locals only contains the arguments.
         args = dict(locals())
 
         # store the extra CLASS params
-        extra = args.pop('extra')
-        extra.update(args.pop('kwargs'))
+        kwargs = args.pop('kwargs')
 
         # remove some non-CLASS variables
         args.pop('self')
 
         # use set state to de-serialize the object.
-        self.__setstate__((args,extra))
+        self.__setstate__((args,kwargs))
 
     def __dir__(self):
         """ a list of all members from all delegate classes """
@@ -139,7 +137,7 @@ class Cosmology(object):
             raise AttributeError("Attribute `%s` not found in any of the delegate objects" % name)
 
     def __getstate__(self):
-        return (self.args, self.extra)
+        return (self.args, self.kwargs)
 
     @property
     def sigma8(self):
@@ -158,7 +156,7 @@ class Cosmology(object):
         Set the sigma8 value and normalize the power spectrum to the new value
         """
         if not numpy.isclose(self.sigma8, value):
-            extra = self.extra.copy()
+            extra = self.kwargs.copy()
             for key in CONFLICTS['sigma8']:
                 if key in extra: extra.pop(key)
             A_s = self.A_s * (value/self.sigma8)**2
@@ -219,13 +217,13 @@ class Cosmology(object):
     def __setstate__(self, state):
 
         # remember for serialization
-        self.args, self.extra = state
+        self.args, self.kwargs = state
 
         # remove sigma8 for norm later
         desired_sigma8 = self.args.pop('sigma8', None)
 
         # verify and set defaults
-        pars = verify_parameters(self.args, self.extra)
+        pars = verify_parameters(self.args, self.kwargs)
 
         # initialize the engine as the backup delegate.
         self.engine = ClassEngine(pars)
@@ -233,7 +231,7 @@ class Cosmology(object):
 
         # set sigma8 by re-scaling A_s, if A_s was not specified
         if desired_sigma8 is not None:
-            if not any(key in self.extra for key in CONFLICTS['sigma8']):
+            if not any(key in self.kwargs for key in CONFLICTS['sigma8']):
                 self.sigma8 = desired_sigma8
 
     def clone(self, **kwargs):
@@ -248,8 +246,9 @@ class Cosmology(object):
         args = self.args.copy()
         args.update(new.args)
 
-        args['extra'] = self.extra.copy()
-        args['extra'].update(new.extra)
+        kwargs = self.kwargs.copy()
+        kwargs.update(new.kwargs)
+        args.update(kwargs)
 
         return Cosmology(**args)
 
