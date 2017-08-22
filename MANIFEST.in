@@ -10,6 +10,6 @@ include depends/class.cfg
 include depends/install_class.sh
 include depends/*.patch
 include depends/Makefile
-include depends/class-v2.6.0.tar.gz
+include depends/class-v2.6.1.tar.gz
 include README.rst
 include LICENSE
