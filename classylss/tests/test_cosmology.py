@@ -19,10 +19,11 @@ def test_cosmology_sane():
     assert_allclose(c.Omega_b(0), c.Omega0_b)
     assert_allclose(c.Omega_ncdm(0), c.Omega0_ncdm)
     assert_allclose(c.Omega_ur(0), c.Omega0_ur)
+    assert_allclose(c.Omega_ncdm(0), c.Omega0_ncdm_tot)
 
     assert_allclose(c.Omega_pncdm(0), c.Omega0_pncdm)
-    assert_allclose(c.Omega_m(0), c.Omega_m)
-    assert_allclose(c.Omega_r(0), c.Omega_r)
+    assert_allclose(c.Omega_m(0), c.Omega0_m)
+    assert_allclose(c.Omega_r(0), c.Omega0_r)
 
     # total density in 10e10 Msun/h unit
     assert_allclose(c.rho_tot(0), 27.754999)
@@ -116,3 +117,14 @@ def test_cosmology_clone():
 
     c2 = Cosmology(P_k_max=1.01234567)
     assert '1.01234567' in c2.parameter_file
+
+def test_cosmology_astropy():
+    c = Cosmology(gauge='synchronous', m_ncdm=[0.06])
+
+    assert_allclose(c.Odm(0), c.Odm0)
+    assert_allclose(c.Ogamma(0), c.Ogamma0)
+    assert_allclose(c.Ob(0), c.Ob0)
+    assert_allclose(c.Onu(0), c.Onu0)
+    assert_allclose(c.Ok(0), c.Ok0)
+    assert_allclose(c.Ode(0), c.Ode0)
+    assert_array_equal(c.has_massive_nu, True)
