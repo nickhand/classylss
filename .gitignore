@@ -1,5 +1,7 @@
+build
 *.pyc
 depends/tmp-*
+depends/class_public*
 build/
 .cache/
 *.egg-info/
