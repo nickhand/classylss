@@ -7,7 +7,13 @@ NUM_PTS = 1024
 class CorrelationFunction(object):
     """
     Evaluate the correlation function by Fourier transforming
-    a power spectrum.
+    a power spectrum object.
+
+    Parameters
+    ----------
+    power : callable
+         a callable power spectrum that returns the power at a given ``k``;
+         this should have ``z`` and ``sigma8`` attributes
     """
     def __init__(self, power):
 
@@ -34,7 +40,21 @@ class CorrelationFunction(object):
         self.power.sigma8 = value
 
     def __call__(self, r, smoothing=0., kmin=1e-5, kmax=10.):
+        """
+        Return the correlation function (dimensionless) for separations ``r``
 
+        Parameters
+        ----------
+        r : float, array_like
+            the separation array in units of :math:`h^{-1} \mathrm(Mpc)`
+        smoothing  : float, optional
+            the std deviation of the Fourier space Gaussian smoothing to apply
+            to P(k) before taking the FFT
+        kmin : float, optional
+            the minimum ``k`` value to compute P(k) for before taking the FFT
+        kmax : float, optional
+            the maximum ``k`` value to compute P(k) for before taking the FFT
+        """
         k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
         xi = mcfit.P2xi(k)
 
