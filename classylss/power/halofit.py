@@ -6,7 +6,7 @@ class HalofitPower(object):
 
         # make sure nonlinear is enabled in CLASS
         if not cosmo.nonlinear:
-            cosmo = cosmo.clone(extra={'non linear':'halofit'})
+            cosmo = cosmo.clone(**{'non linear':'halofit'})
         self.cosmo = cosmo
         self.z = z
 

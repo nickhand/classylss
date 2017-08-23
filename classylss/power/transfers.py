@@ -184,8 +184,9 @@ class NoWiggleEisensteinHu(object):
     ----------
     Eisenstein & Hu, "Baryonic Features in the Matter Transfer Function", 1998
     """
-    def __init__(self, cosmo):
+    def __init__(self, cosmo, z):
         self.cosmo = cosmo
+        self.z = z
 
         self.Obh2      = cosmo.Omega0_b * cosmo.h ** 2
         self.Omh2      = cosmo.Omega0_m * cosmo.h ** 2
