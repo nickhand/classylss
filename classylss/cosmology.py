@@ -396,7 +396,17 @@ def verify_parameters(args, extra):
 def set_sigma8(cosmo, sigma8, inplace=False):
     """
     Return a clone of the input Cosmology object, with the ``sigma8`` value
-    set to the specified value
+    set to the specified value.
+
+    Parameters
+    ----------
+    cosmo : Cosmology
+        the input cosmology object
+    sigma8 : float
+        the desired sigma8 value
+    inplace : bool, optional
+        if ``True``, update sigma8 of the input ``cosmo`` object, else return
+        a new Cosmology object
     """
     # the new scalar amplitude A_s
     A_s = cosmo.A_s * (sigma8/cosmo.sigma8)**2
@@ -429,25 +439,28 @@ def sanitize_class_params(cosmo, pars):
     ``kwargs`` holds all of the extra keywords.
     """
     args = {}
+    kwargs = pars.copy()
+
     # loop over all parameters
-    for name in list(pars.keys()):
-        val = pars.pop(name)
+    for name in list(kwargs.keys()):
 
         # parameter is a main parameter
         if name in CONFLICTS:
+            kwargs.pop(name)
             alias = ALIASES.get(name, name) # check for attribute alias
             args[name] = getattr(cosmo, alias)
         else:
             # check if parameter conflicts with main parameter
             for c in CONFLICTS:
                 if name in CONFLICTS[c]:
+                    kwargs.pop(name)
                     alias = ALIASES.get(c, c)
                     args[c] = getattr(cosmo, alias)
 
     # set all named keywords that do not have parameter conflicts
     args['gauge'] = cosmo.gauge
 
-    return args
+    return args, kwargs
 
 # dict mapping input CLASS params to the Cosmology attribute name
 ALIASES = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm', 'T_cmb':'T0_cmb'}
