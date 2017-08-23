@@ -11,7 +11,6 @@ class AstropyCompat(object):
     def Om0(self): return self.bg.Omega0_m
     def Om(self, z): return self.bg.Omega_m(z)
 
-
     @property
     def Ob0(self): return self.bg.Omega0_b
     def Ob(self, z): return self.bg.Omega_b(z)
@@ -19,7 +18,6 @@ class AstropyCompat(object):
     @property
     def Ogamma0(self): return self.bg.Omega0_g
     def Ogamma(self, z): return self.bg.Omega_g(z)
-
 
     @property
     def Odm0(self): return self.bg.Omega0_cdm
@@ -44,8 +42,13 @@ class AstropyCompat(object):
     def Tcmb(self, z): return self.bg.T0_cmb * (1 + z)
 
     @property
-    def Tnu0(self): raise NotImplementedError #FIXME: find the right equation (using N_ur?)
-    def Tnu(self, z): return NotImplementedError
+    def Tnu0(self): return self.bg.T0_ncdm
+    def Tnu(self, z): return self.bg.T0_ncdm * (1 + z)
+
+    @property
+    def w0(self): return self.bg.w0_fld
+    @property
+    def wa(self): return self.bg.wa_fld
 
     @property
     def has_massive_nu(self):
@@ -53,4 +56,3 @@ class AstropyCompat(object):
 
     def nu_relative_density(self, z):
         return self.Onu(z) / self.Ogamma(z)
-
