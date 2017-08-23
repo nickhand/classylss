@@ -388,8 +388,7 @@ def verify_parameters(args, extra):
     # then you should pass here respectively 2.0328,1.0196,0.00641
     N_ur_table = [3.046, 2.0328, 1.0196, 0.00641]
     if 'N_ur' not in pars:
-        pars['N_ur'] = N_ur_table[len(pars['m_ncdm'])]
-    pars['N_ncdm'] = len(pars['m_ncdm'])
+        pars['N_ur'] = N_ur_table[pars['N_ncdm']]
 
     return pars
 
