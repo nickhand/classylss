@@ -151,7 +151,7 @@ diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/sour
        class_call(generic_integrator(thermodynamics_derivs_with_recfast,
                                      zstart,
 -                                    zend,
-+                                    0.99999*zend // avoids spline bounds check failure due to round-off error
++                                    0.99999*zend, // avoids spline bounds check failure due to round-off error
                                      y,
                                      &tpaw,
                                      ppr->tol_thermo_integration,
