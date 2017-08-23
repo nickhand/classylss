@@ -22,16 +22,18 @@ class Cosmology(object):
       inferred by the curvature condition.
     * Non-cosmological constant dark energy can be used by specifying the
       ``w0_fld``, ``wa_fld``, and/or ``Omega_fld`` values.
+    * The ``sigma8`` attribute can be set to the desired value, and the internal
+      value of ``A_s`` will be automatically adjusted.
 
     Parameters
     ----------
     h : float
         the dimensionaless Hubble parameter
-    Tcmb0 : float
+    T_cmb : float
         the temperature of the CMB in Kelvins
-    Omega0_b : float
+    Omega_b : float
         the current baryon density parameter, :math:`\Omega_{b,0}`
-    Omega0_cdm : float
+    Omega_cdm : float
         the current cold dark matter density parameter, :math:`\Omega_{cdm,0}`
     N_ur : float
         the number of ultra-relativistic (massless neutrino) species; the
