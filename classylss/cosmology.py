@@ -52,18 +52,14 @@ class Cosmology(object):
         the maximum redshift to compute power spectrum results to
     gauge : str,
         either synchronous or newtonian
-    sigma8 : float
-        the desired current amplitude of matter fluctuations; the scalar
-        amplitude parameter ``A_s`` will be automatically adjusted to
-        achieve the desired ``sigma8`` value
     n_s : float
         the tilt of the primordial power spectrum
     nonlinear : bool
         whether to compute nonlinear power spectrum results via HaloFit
     verbose : bool
         whether to turn on the default CLASS logging for all submodules
-    extra : dict
-        dictionary of extra parameters to pass to CLASS; users should be wary
+    **kwargs :
+        extra keyword parameters to pass to CLASS; users should be wary
         of configuration options that may conflict with the base set
         of parameters
     """
@@ -88,7 +84,6 @@ class Cosmology(object):
             P_k_max=10.,
             P_z_max=100.,
             gauge='synchronous',
-            sigma8=0.82,
             n_s=0.9667,
             nonlinear=False,
             verbose=False,
@@ -118,7 +113,9 @@ class Cosmology(object):
         return sorted(list(set(r)))
 
     def __getattr__(self, name):
-        """ Will find the proper delegate, initialize it, and run the method """
+        """
+        Find the proper delegate, initialize it, and run the method
+        """
         # getting a delegate explicitly, e.g. c.Background
         if name in self.dro_dict:
             iface = self.dro_dict[name]
@@ -142,26 +139,41 @@ class Cosmology(object):
     @property
     def sigma8(self):
         """
-        The present day value of ``sigma_r(r=8 Mpc/h)``, used to normalize
-        the power spectrum, which is proportional to the square of this value.
+        The amplitude of matter fluctuations at :math:`z=0` in a sphere
+        of radius :math:`r = 8 \ h^{-1}\mathrm{Mpc}`.
 
-        The power spectrum can re-normalized by setting a different
-        value for this parameter
+        This is not an input CLASS parameter, but users can set this parameter
+        and the scalar amplitude ``A_s`` will be internally adjusted to
+        achieve the desired ``sigma8``.
         """
         return self.Spectra.sigma8
 
     @sigma8.setter
     def sigma8(self, value):
-        """
-        Set the sigma8 value and normalize the power spectrum to the new value
-        """
         if not numpy.isclose(self.sigma8, value):
-            extra = self.kwargs.copy()
-            for key in CONFLICTS['sigma8']:
-                if key in extra: extra.pop(key)
-            A_s = self.A_s * (value/self.sigma8)**2
-            extra['A_s'] = A_s
-            self.__setstate__((self.args,extra))
+            set_sigma8(self, value, inplace=True)
+
+    @classmethod
+    def from_astropy(kls, cosmo, **kwargs):
+        """
+        Initialize and return a :class:`Cosmology` object from a subclass of
+        :class:`astropy.cosmology.FLRW`.
+
+        Parameters
+        ----------
+        cosmo : subclass of :class:`astropy.cosmology.FLRW`.
+            the astropy cosmology instance
+        **kwargs :
+            extra keyword parameters to pass when initializing
+
+        Returns
+        -------
+        :class:`Cosmology` :
+            the initialized cosmology object
+        """
+        args = astropy_to_dict(cosmo)
+        args.update(kwargs)
+        return Cosmology(**args)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -173,13 +185,15 @@ class Cosmology(object):
         filename : str
             the name of the parameter file to read
         """
+        from classylss import load_ini
+
         # make sure it is a valid file
         if not os.path.exists(filename):
             raise ValueError("no such file: %s" %filename)
 
         # extract dictionary of parameters from the file
         fc = open(filename, 'r').read()
-        pars = read_CLASS_ini(filename)
+        pars = load_ini(filename)
         pars.update(**kwargs)
 
         # initialize the engine as the backup delegate.
@@ -188,30 +202,10 @@ class Cosmology(object):
         toret.delegates = {ClassEngine: toret.engine}
 
         # reconstruct the correct __init__ params
-        args = {}
-        for name in list(pars.keys()):
-            val = pars.pop(name)
-
-            if name in CONFLICTS:
-                alias = ALIASES.get(name, name)
-                args[name] = getattr(toret, alias)
-            else:
-                for c in CONFLICTS:
-                    if c == 'sigma8': continue
-                    if name in CONFLICTS[c]:
-                        alias = ALIASES.get(c, c)
-                        args[c] = getattr(toret, alias)
-
-        # set the gauge
-        args['gauge'] = 'newtonian' if toret.gauge == 0 else 'synchronous'
-
-        # set sigma8 norm
-        if not any(par in pars for par in CONFLICTS['sigma8']):
-            pars['A_s'] = toret.A_s
+        args, kwargs = sanitize_class_params(toret, pars)
 
         toret.args = args
-        toret.extra = pars
-
+        toret.kwargs = kwargs
         return toret
 
     def __setstate__(self, state):
@@ -229,40 +223,44 @@ class Cosmology(object):
         self.engine = ClassEngine(pars)
         self.delegates = {ClassEngine: self.engine}
 
-        # set sigma8 by re-scaling A_s, if A_s was not specified
-        if desired_sigma8 is not None:
-            if not any(key in self.kwargs for key in CONFLICTS['sigma8']):
-                self.sigma8 = desired_sigma8
-
     def clone(self, **kwargs):
         """
-        Create a new cosmology based on modification of self
-        """
-        desired_sigma8 = kwargs.pop('sigma8', None)
-        if desired_sigma8 is not None:
-            kwargs['A_s'] = self.A_s * (desired_sigma8/self.sigma8)**2
+        Create a new cosmology based on modification of self, with the
+        input keyword parameters changed.
 
+        Parameters
+        ----------
+        **kwargs :
+            keyword parameters to adjust
+
+        Returns
+        -------
+        :class:`Cosmology`
+            a copy of self, with the input ``kwargs`` adjusted
+        """
+        # initialize a new object (so we have sanitized args/kwargs)
         new = Cosmology(**kwargs)
+
+        # the named keywords
         args = self.args.copy()
         args.update(new.args)
 
+        # the extra keywords
         kwargs = self.kwargs.copy()
         kwargs.update(new.kwargs)
         args.update(kwargs)
 
         return Cosmology(**args)
 
-    @classmethod
-    def from_astropy(kls, cosmo, extra={}):
-        args = astropy_to_dict(cosmo)
-        args.update(extra)
-        return Cosmology(**args)
 
 def astropy_to_dict(cosmo):
-
+    """
+    Convert an astropy cosmology object to a dictionary of parameters
+    suitable for initializing a Cosmology object.
+    """
     from astropy import cosmology, units
 
-    pars = {'extra':{}}
+    pars = {}
     pars['h'] = cosmo.h
     pars['T_cmb'] = cosmo.Tcmb0
     if cosmo.Ob0 is not None:
@@ -295,7 +293,7 @@ def astropy_to_dict(cosmo):
         pars['N_ur'] = cosmo.Neff
 
     # specify the curvature
-    pars['extra']['Omega_k'] = cosmo.Ok0
+    pars['Omega_k'] = cosmo.Ok0
 
     # handle dark energy
     if isinstance(cosmo, cosmology.LambdaCDM):
@@ -317,44 +315,15 @@ def astropy_to_dict(cosmo):
 
     return pars
 
-def read_CLASS_ini(filename):
-    """
-    Read a CLASS ``.ini`` file, returning a dictionary of parameters
-
-    Parameters
-    ----------
-    filename : str
-        the name of the file to read
-    """
-    pars = {}
-
-    with open(filename, 'r') as ff:
-
-        # loop over lines
-        for lineno, line in enumerate(ff):
-
-            # skip any commented lines with #
-            if '#' in line: line = line[line.index('#'):]
-
-            # must have an equals sign to be valid
-            if "=" not in line: continue
-
-            # extract key and value pairs
-            fields = line.split("=")
-            assert len(fields) == 2, "error reading line number %d" %lineno
-            pars[fields[0].strip()] = fields[1].strip()
-
-    return pars
-
 def verify_parameters(args, extra):
     """
     Verify the input parameters to a :class:`Cosmology` object and
-    set various default values
+    set various default values.
     """
     # check for conflicts
     for par in CONFLICTS:
         for p in CONFLICTS[par]:
-            if p in extra and par is not 'sigma8':
+            if p in extra:
                 raise ValueError("input parameter conflict; use '%s', not '%s'" %(par, p))
 
     pars = {}
@@ -424,8 +393,67 @@ def verify_parameters(args, extra):
 
     return pars
 
+
+def set_sigma8(cosmo, sigma8, inplace=False):
+    """
+    Return a clone of the input Cosmology object, with the ``sigma8`` value
+    set to the specified value
+    """
+    # the new scalar amplitude A_s
+    A_s = cosmo.A_s * (sigma8/cosmo.sigma8)**2
+
+    # the extra keywords
+    kwargs = cosmo.kwargs.copy()
+
+    # set the desired A_s and remove conflicting parameters
+    kwargs['A_s'] = A_s
+    kwargs.pop('ln10^{10}A_s', None)
+
+    if inplace:
+        cosmo.__setstate__((cosmo.args, kwargs))
+    else:
+        # add the name keywords
+        kwargs.update(cosmo.args)
+
+        # new cosmo clone
+        cosmo = Cosmology(**kwargs)
+
+    return cosmo
+
+def sanitize_class_params(cosmo, pars):
+    """
+    Given a dictionary of CLASS parameters, construct the ``args``
+    dict and ``kwargs`` dict that can used to initialize a
+    Cosmology class, accounting for any possible conflicts.
+
+    The ``args`` dict holds the main (named) __init__ keywords, and the
+    ``kwargs`` holds all of the extra keywords.
+    """
+    args = {}
+    # loop over all parameters
+    for name in list(pars.keys()):
+        val = pars.pop(name)
+
+        # parameter is a main parameter
+        if name in CONFLICTS:
+            alias = ALIASES.get(name, name) # check for attribute alias
+            args[name] = getattr(cosmo, alias)
+        else:
+            # check if parameter conflicts with main parameter
+            for c in CONFLICTS:
+                if name in CONFLICTS[c]:
+                    alias = ALIASES.get(c, c)
+                    args[c] = getattr(cosmo, alias)
+
+    # set all named keywords that do not have parameter conflicts
+    args['gauge'] = cosmo.gauge
+
+    return args
+
+# dict mapping input CLASS params to the Cosmology attribute name
 ALIASES = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm'}
 
+# dict that defines input parameters that conflict with each other
 CONFLICTS = {'h': ['H0', '100*theta_s'],
              'T_cmb': ['Omega_g', 'omega_g'],
              'Omega_b': ['omega_b'],
@@ -434,7 +462,5 @@ CONFLICTS = {'h': ['H0', '100*theta_s'],
              'm_ncdm': ['Omega_ncdm', 'omega_ncdm'],
              'P_k_max': ['P_k_max_h/Mpc', 'P_k_max_1/Mpc'],
              'P_z_max': ['z_max_pk'],
-             'sigma8': ['A_s', 'ln10^{10}A_s'],
              'nonlinear' : ['non linear']
             }
-
