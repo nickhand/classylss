@@ -789,7 +789,12 @@ cdef class Perturbs:
 
     property gauge:
         def __get__(self):
-            return self.pt.gauge
+            if self.pt.gauge == newtonian:
+              return 'newtonian'
+            elif self.pt.gauge == synchronous:
+              return 'synchronous'
+            else:
+              raise ValueError("gauge value not understood")
 
 cdef class Primordial:
     cdef ClassEngine engine
