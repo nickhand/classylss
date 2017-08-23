@@ -337,7 +337,7 @@ def verify_parameters(args, extra):
         pars['m_ncdm'] = [pars['m_ncdm']]
 
     # needs to be a list
-    if not isinstance(pars['m_ncdm'], list):
+    if not isinstance(pars['m_ncdm'], (list,numpy.ndarray)):
         raise TypeError("``m_ncdm`` should be a list of mass values in eV")
 
     # check gauge
