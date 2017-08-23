@@ -28,3 +28,32 @@ def load_precision(precision):
         exec(f.read(), {}, r)
 
     return r
+
+def load_ini(filename):
+    """
+    Read a CLASS ``.ini`` file, returning a dictionary of parameters
+
+    Parameters
+    ----------
+    filename : str
+        the name of the file to read
+    """
+    pars = {}
+
+    with open(filename, 'r') as ff:
+
+        # loop over lines
+        for lineno, line in enumerate(ff):
+
+            # skip any commented lines with #
+            if '#' in line: line = line[line.index('#'):]
+
+            # must have an equals sign to be valid
+            if "=" not in line: continue
+
+            # extract key and value pairs
+            fields = line.split("=")
+            assert len(fields) == 2, "error reading line number %d" %lineno
+            pars[fields[0].strip()] = fields[1].strip()
+
+    return pars
