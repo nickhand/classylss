@@ -70,8 +70,8 @@ diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.
               errmsg,
 
 diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/source/thermodynamics.c
---- class_public-2.6.0.old/source/thermodynamics.c	2017-08-22 13:46:49.000000000 -0400
-+++ class_public-2.6.0/source/thermodynamics.c	2017-08-22 15:18:47.000000000 -0400
+--- class_v2.6.old/source/thermodynamics.c	2017-08-22 13:46:49.000000000 -0400
++++ class_v2.6/source/thermodynamics.c	2017-08-22 20:30:55.000000000 -0400
 @@ -2279,6 +2279,7 @@
    double chi_heat;
    int last_index_back;
@@ -151,15 +151,16 @@ diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/sour
        class_call(generic_integrator(thermodynamics_derivs_with_recfast,
                                      zstart,
 -                                    zend,
-+                                    0.99999*zend,
++                                    0.99999*zend // avoids spline bounds check failure due to round-off error
                                      y,
                                      &tpaw,
                                      ppr->tol_thermo_integration,
-@@ -3264,7 +3268,7 @@
+@@ -3264,7 +3268,8 @@
      *(preco->recombination_table+(Nz-i-1)*preco->re_size+preco->index_re_Tb)=y[2];
 
      /* get dTb/dz=dy[2] */
 -    class_call(thermodynamics_derivs_with_recfast(zend, y, dy, &tpaw,pth->error_message),
++    // 0.99999 avoids spline bounds check failure due to round-off error
 +    class_call(thermodynamics_derivs_with_recfast(0.99999*zend, y, dy, &tpaw,pth->error_message),
                 pth->error_message,
                 pth->error_message);
