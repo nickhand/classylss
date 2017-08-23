@@ -1,7 +1,8 @@
-from classylss.power import LinearPower
+from classylss.power import LinearPower, HalofitPower, ZeldovichPower
 from classylss.cosmology import Cosmology
 import numpy
 from numpy.testing import assert_allclose
+import pytest
 
 def test_linear():
 
@@ -9,6 +10,9 @@ def test_linear():
     c = Cosmology()
     c.sigma8 = 0.82
     P = LinearPower(c, z=0, transfer='CLASS')
+
+    # check velocity dispersion
+    assert_allclose(P.velocity_dispersion(), 6.034, rtol=1e-3)
 
     # test sigma8
     assert_allclose(P.sigma_r(8.), c.sigma8, rtol=1e-3)
@@ -28,18 +32,44 @@ def test_linear():
     P2 = LinearPower(c, z=P.z, transfer='EisensteinHu')
     P3 = LinearPower(c, z=P.z, transfer='NoWiggleEisensteinHu')
 
+    # check different transfers
     Pk1 = P(k)
     Pk2 = P2(k)
     Pk3 = P3(k)
+    assert_allclose(P1k, P2k)
+    assert_allclose(P1k, P3k)
 
-    # desired redshift
-    z = 0
+    # also try scalar
+    Pk = P(0.1)
 
-    # linear power spectrum in [Mpc/h]^3
-    Plin = power.linear(k, z, verbose=True, cosmo=Planck15)
+def test_halofit():
 
-    # nonlinear power spectrum in [Mpc/h]^3
-    Pnl = power.nonlinear(k, z, verbose=True, cosmo=Planck15)
+    # initialize the power
+    c = Cosmology()
+    c.sigma8 = 0.82
+    P = HalofitPower(c, z=0)
 
-    # Zeldovich power spectrum in [Mpc/h]^3
-    Pzel = power.zeldovich(k, z, verbose=True, cosmo=Planck15)
+    # k is out of range
+    with pytest.raises(ValueError):
+        Pk = P(2*c.P_k_max)
+
+    # compute for scalar
+    Pk = P(0.1)
+
+    # compute for array
+    k = numpy.logspace(-3, numpy.log10(c.P_k_max), 500)
+    Pk = P(k)
+
+def test_zeldovich():
+
+    # initialize the power
+    c = Cosmology()
+    c.sigma8 = 0.82
+    P = ZeldovichPower(c, z=0)
+
+    # compute for scalar
+    Pk = P(0.1)
+
+    # compute for array
+    k = numpy.logspace(-3, numpy.log10(c.P_k_max), 500)
+    Pk = P(k)
