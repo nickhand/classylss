@@ -375,6 +375,12 @@ def verify_parameters(args, extra):
         if pars.pop('nonlinear', False):
             pars['non linear'] = 'halofit'
 
+    # number of massive neutrino species
+    pars['N_ncdm'] = len(pars['m_ncdm'])
+
+    # m_ncdm only needed if we have massive neutrinos
+    if not pars['N_ncdm']: pars.pop('m_ncdm')
+
     # from CLASS notes:
     # one more remark: if you have respectively 1,2,3 massive neutrinos,
     # if you stick to the default value pm equal to 0.71611, designed to give m/omega of
