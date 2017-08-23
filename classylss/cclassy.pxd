@@ -25,8 +25,12 @@ cdef extern from "class.h":
         logarithmic
 
     cdef enum file_format:
-         class_format
-         camb_format
+        class_format
+        camb_format
+
+    cdef enum possible_gauges:
+        newtonian
+        synchronous
 
     cdef struct precision:
         FileName hyrec_Alpha_inf_file;
@@ -122,7 +126,7 @@ cdef extern from "class.h":
         short has_velocity_transfers
         short has_metricpotential_transfers
 
-        int gauge
+        possible_gauges gauge
         double k_max_for_pk
         double z_max_pk
         int has_pk_matter
