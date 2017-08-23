@@ -189,12 +189,7 @@ class Cosmology(object):
         """
         from classylss import load_ini
 
-        # make sure it is a valid file
-        if not os.path.exists(filename):
-            raise ValueError("no such file: %s" %filename)
-
         # extract dictionary of parameters from the file
-        fc = open(filename, 'r').read()
         pars = load_ini(filename)
         pars.update(**kwargs)
 
@@ -214,9 +209,6 @@ class Cosmology(object):
 
         # remember for serialization
         self.args, self.kwargs = state
-
-        # remove sigma8 for norm later
-        desired_sigma8 = self.args.pop('sigma8', None)
 
         # verify and set defaults
         pars = verify_parameters(self.args, self.kwargs)
