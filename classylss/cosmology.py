@@ -43,7 +43,7 @@ class Cosmology(object):
         to give m/omega of 93.14 eV, and you wish to have ``N_eff=3.046`` in
         the early universe, then ``N_ur`` is set to 2.0328, 1.0196, 0.00641,
         respectively.
-    m_ncdm : list
+    m_ncdm : list, None
         the masses (in eV) for all massive neutrino species; an empty list
         should  be passed for no massive neutrinso. The default is a single
         massive neutrino with mass of 0.06 eV
