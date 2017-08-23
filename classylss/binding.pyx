@@ -463,7 +463,7 @@ cdef class Background:
     property Omega0_dcdm:
         r"""
         Current density parammeter for decaying cold dark matter,
-        :math:`\Oemga_{dcdm,0}`.
+        :math:`\Omega_{dcdm,0}`.
         """
         def __get__(self):
             return self.ba.Omega0_dcdm
@@ -498,7 +498,7 @@ cdef class Background:
         This is equal to:
 
        .. math::
-           \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}
+           \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}.
         """
         def __get__(self):
             return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm
@@ -528,11 +528,11 @@ cdef class Background:
         This is equal to:
 
         .. math::
-            \Omega_{0,m} = \Omega_{0,b} + \Omega_{0,cdm} + \Omega_{0,ncdm} +
-                            \Omega_{0,dcdm} - \Omega_{0,pncdm}.
+            \Omega_{0,m} = \Omega_{0,b} + \Omega_{0,cdm} + \Omega_{0,ncdm} + \Omega_{0,dcdm} - \Omega_{0,pncdm}.
         """
         def __get__(self):
-            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm - self.Omega0_pncdm
+            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + \
+                  self.ba.Omega0_dcdm - self.Omega0_pncdm
 
     property Neff:
         """
@@ -677,7 +677,7 @@ cdef class Background:
         Density of ultra-relativistic radiation (massless neutrinos)
         :math:`\rho_{ur}` as a function of redshift, in units of
         :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
-        """"
+        """
         return self.compute_for_z(z, self.ba.index_bg_rho_ur) * self._RHO_
 
     def rho_ncdm(self, z, species=None):
@@ -869,7 +869,7 @@ cdef class Background:
 
     def scale_independent_growth_factor(self, z):
         """
-        Return the scale invariant growth factor :math:`D(a)`` for CDM
+        Return the scale invariant growth factor :math:`D(a)` for CDM
         perturbations.
 
         This is the quantity defined by CLASS as ``index_bg_D`` in the
@@ -879,7 +879,7 @@ cdef class Background:
 
     def scale_independent_growth_rate(self, z):
         """
-        The scale invariant growth rate :math:`d\mathrm{ln}D/d\mathrm{ln}a for
+        The scale invariant growth rate :math:`d\mathrm{ln}D/d\mathrm{ln}a` for
         CDM perturbations.
 
         This is the quantity defined by CLASS as ``index_bg_f`` in the
@@ -901,7 +901,7 @@ cdef class Perturbs:
     property P_k_max:
         """
         The maximum ``k`` value measured for power spectra in
-        :math:``h \mathrm{Mpc}^{-1}``.
+        :math:`h \mathrm{Mpc}^{-1}`.
         """
         def __get__(self):
             return self.pt.k_max_for_pk/self.ba.h
