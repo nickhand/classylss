@@ -17,11 +17,11 @@ class Cosmology(object):
     Notes
     -----
     * The default configuration assumes a flat cosmology, :math:`\Omega_{0,k}=0`.
-      Pass ``Omega0_k`` in the ``extra`` keyword dictionary to change this value.
+      Pass ``Omega_k`` in the ``extra`` keyword dictionary to change this value.
     * By default, a cosmological constant is assumed, with its density value
       inferred by the curvature condition.
     * Non-cosmological constant dark energy can be used by specifying the
-      ``w0_fld``, ``wa_fld``, and/or ``Omega0_fld`` values.
+      ``w0_fld``, ``wa_fld``, and/or ``Omega_fld`` values.
 
     Parameters
     ----------
