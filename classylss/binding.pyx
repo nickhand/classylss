@@ -535,10 +535,18 @@ cdef class Background:
 
     property T0_cmb:
         """
-        Return the CMB temperature
+        Return the CMB temperature in units of Kelvin
         """
         def __get__(self):
             return self.ba.T_cmb
+
+    property T0_ncdm:
+        """
+        Return the ncdm temperature in units of Kelvin
+        """
+        def __get__(self):
+            T = np.array([self.ba.T_ncdm[i] for i in range(self.N_ncdm)], dtype=np.float64)
+            return T*self.ba.T_cmb # from units of photon temp to K
 
     def compute_for_z(self, z, int column):
         cdef double tau
