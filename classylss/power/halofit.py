@@ -47,6 +47,9 @@ class HalofitPower(object):
         Pk = numpy.zeros_like(k)
         k_in = k[inrange]; k_out = k[~inrange]
 
+        # nonlinear power in range
         Pk[inrange] = self.cosmo.get_pk(k=k_in, z=self.z)
-        Pk[~inrange] = self.cosmo.get_pk(k=k_out, z=self.z)
+
+        # linear power on large scales (small k)
+        Pk[~inrange] = self.cosmo.get_pklin(k=k_out, z=self.z)
         return Pk
