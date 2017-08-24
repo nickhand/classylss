@@ -463,7 +463,8 @@ def sanitize_class_params(cosmo, pars):
     return args, kwargs
 
 # dict mapping input CLASS params to the Cosmology attribute name
-ALIASES = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm', 'T_cmb':'T0_cmb'}
+ALIASES = {'Omega_b': 'Omega0_b', 'Omega_cdm':'Omega0_cdm', 'T_cmb':'T0_cmb',
+           'P_k_max': 'k_max_for_pk'}
 
 # dict that defines input parameters that conflict with each other
 CONFLICTS = {'h': ['H0', '100*theta_s'],

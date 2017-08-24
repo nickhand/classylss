@@ -9,33 +9,57 @@ class LinearPower(object):
 
     Parameters
     ----------
-    cosmo : :class:`Cosmology`
-        the cosmology instance
+    cosmo : :class:`Cosmology`, astropy.cosmology.FLRW
+        the cosmology instance; astropy cosmology objects are automatically
+        converted to the proper type
     z : float
         the redshift of the power spectrum
     transfer : str, optional
         string specifying the transfer function to use; one of
         'CLASS', 'EisensteinHu', 'NoWiggleEisensteinHu'
+
+    Attributes
+    ----------
+    cosmo : class:`Cosmology`
+        the object giving the cosmological parameters
+    sigma8 : float
+        the z=0 amplitude of matter fluctuations
+    z : float
+        the redshift to compute the power at
+    transfer : str
+        the type of transfer function used
     """
     def __init__(self, cosmo, z, transfer='CLASS'):
+        from astropy.cosmology import FLRW
 
-        self.cosmo = cosmo
+        # convert astropy
+        if isinstance(cosmo, FLRW):
+            from classylss.cosmology import Cosmology
+            cosmo = Cosmology.from_astropy(cosmo)
+            
+        # store a copy of the cosmology
+        self.cosmo = cosmo.clone()
 
         # set sigma8 to the cosmology value
-        self._sigma8 = self._sigma8_0 = self.cosmo.sigma8
+        self._sigma8 = self.cosmo.sigma8
 
         # setup the transfers
         if transfer not in transfers.available:
             raise ValueError("'transfer' should be one of %s" %str(transfers.available))
         self.transfer = transfer
-        self._transfer = getattr(transfers, transfer)(cosmo, z)
-        self._fallback = transfers.EisensteinHu(cosmo, z) # fallback to analytic when out of range
+
+        # initialize internal transfers
+        c = self.cosmo.clone() # transfers get an internal copy
+        self._transfer = getattr(transfers, transfer)(c, z)
+        self._fallback = transfers.EisensteinHu(c, z) # fallback to analytic when out of range
 
         # normalize to proper sigma8
         self._norm = 1.
-        self.z = 0; s8_0 = self.sigma_r(8.) # sigma_r(z=0, r=8)
-        self.z = z; s8_z = self.sigma_r(8.) # sigma_r(z=z, r=8)
-        self._norm =  (self._sigma8/s8_0)**2 * (s8_z / s8_0)**2
+        self.z = 0;
+        self._norm = (self._sigma8 / self.sigma_r(8.))**2 # sigma_r(z=0, r=8)
+
+        # set redshift
+        self.z = z
 
     @property
     def z(self):
@@ -66,7 +90,10 @@ class LinearPower(object):
         """
         Set the sigma8 value and normalize the power spectrum to the new value
         """
+        # re-scale the normalization
         self._norm *= (value / self._sigma8)**2
+
+        # update to this sigma8
         self._sigma8 = value
 
     def __call__(self, k):
@@ -114,13 +141,13 @@ class LinearPower(object):
 
     def velocity_dispersion(self, kmin=1e-5, kmax=10.):
         r"""
-        The velocity dispersion in units of of :math:`\mathrm{Mpc/h}`.
+        The velocity dispersion in units of of :math:`\mathrm{Mpc/h}` at ``z``.
 
         This returns :math:`\sigma_v`, defined as
 
         .. math::
 
-            \sigma_v^2 = \frac{1}{3} \int_a^b \frac{d^3 q}{(2\pi)^3} \frac{P(q)}{q^2}.
+            \sigma_v^2 = \frac{1}{3} \int_a^b \frac{d^3 q}{(2\pi)^3} \frac{P(q,z)}{q^2}.
 
         Parameters
         ----------
@@ -140,11 +167,13 @@ class LinearPower(object):
     def sigma_r(self, r, kmin=1e-5, kmax=1e1):
         r"""
         The mass fluctuation within a sphere of radius ``r``, in
-        units of :math:`h^{-1} Mpc`. This returns :math:`\sigma`, where
+        units of :math:`h^{-1} Mpc` at ``z``.
+
+        This returns :math:`\sigma`, where
 
         .. math::
 
-            \sigma^2 = \int_0^\infty \frac{k^3 P(k)}{2\pi^2} W^2_T(kr) \frac{dk}{k},
+            \sigma^2 = \int_0^\infty \frac{k^3 P(k,z)}{2\pi^2} W^2_T(kr) \frac{dk}{k},
 
         where :math:`W_T(x) = 3/x^3 (\mathrm{sin}x - x\mathrm{cos}x)` is
         a top-hat filter in Fourier space.

@@ -1,6 +1,7 @@
 import numpy
 import mcfit
 from scipy.interpolate import InterpolatedUnivariateSpline
+from .power.zeldovich import ZeldovichPower
 
 NUM_PTS = 1024
 
@@ -18,7 +19,13 @@ class CorrelationFunction(object):
     def __init__(self, power):
 
         self.power = power
+
+        if not hasattr(power, 'z'):
+            raise AttributeError("input power spectrum must have a ``z`` attribute")
         self._z = power.z
+
+        if not hasattr(power, 'sigma8'):
+            raise AttributeError("input power spectrum must have a ``z`` attribute")
         self._sigma8 = power.sigma8
 
     @property
@@ -58,7 +65,11 @@ class CorrelationFunction(object):
         k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
         xi = mcfit.P2xi(k)
 
+        # power with smoothing
         Pk = self.power(k)
         Pk *= numpy.exp(-(k*smoothing)**2)
-        rr, CF = xi(Pk)
+
+        # only extrap if not zeldovich
+        extrap = not isinstance(self.power, ZeldovichPower)
+        rr, CF = xi(Pk, extrap=extrap)
         return InterpolatedUnivariateSpline(rr, CF)(r)

@@ -6,19 +6,45 @@ class HalofitPower(object):
 
     Parameters
     ----------
-    cosmo : :class:`Cosmology`
-        the cosmology instance
+    cosmo : :class:`Cosmology`, astropy.cosmology.FLRW
+        the Cosmology instance; astropy cosmology objects are automatically
+        converted
     z : float
         the redshift of the power spectrum
+
+    Attributes
+    ----------
+    cosmo : class:`Cosmology`
+        the object giving the cosmological parameters
+    sigma8 : float
+        the z=0 amplitude of matter fluctuations
+    z : float
+        the redshift to compute the power at
     """
-
     def __init__(self, cosmo, z):
+        from astropy.cosmology import FLRW
 
-        # make sure nonlinear is enabled in CLASS
-        if not cosmo.nonlinear:
-            cosmo = cosmo.clone(**{'non linear':'halofit'})
-        self.cosmo = cosmo
+        # convert astropy
+        if isinstance(cosmo, FLRW):
+            from classylss.cosmology import Cosmology
+            cosmo = Cosmology.from_astropy(cosmo)
+
+        # internal cosmology clone with nonlinear enabled
+        self.cosmo = cosmo = cosmo.clone(nonlinear=True)
         self.z = z
+        self._sigma8 = self.cosmo.sigma8
+
+    @property
+    def sigma8(self):
+        """
+        The amplitude of matter fluctuations at :math:`z=0`.
+        """
+        return self._sigma8
+
+    @sigma8.setter
+    def sigma8(self, value):
+        self._sigma8 = value
+        self.cosmo.sigma8 = value
 
     def __call__(self, k):
         r"""
