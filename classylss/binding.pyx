@@ -898,17 +898,18 @@ cdef class Perturbs:
         self.pt = &self.engine.pt
         self.ba = &self.engine.ba
 
-    property P_k_max:
-        """
-        The maximum ``k`` value measured for power spectra in
-        :math:`h \mathrm{Mpc}^{-1}`.
+    property k_max_for_pk:
+        r"""
+        The input parameter specifying the maximum ``k`` value to compute
+        spectra for in :math:`h \mathrm{Mpc}^{-1}`.
         """
         def __get__(self):
             return self.pt.k_max_for_pk/self.ba.h
 
     property P_z_max:
         """
-        The maximum redshift measured for power spectra.
+        The input parameter specifying the maximum redshift measured for
+        power spectra.
         """
         def __get__(self):
             return self.pt.z_max_pk
@@ -1049,9 +1050,19 @@ cdef class Spectra:
         """
         The minimum ``k`` value for which power spectra have been computed in
         :math:`h \mathrm{Mpc}^{-1}`.
+
+        This is computed from the ``ln_k`` array of the Spectra module.
         """
         def __get__(self):
             return np.exp(self.sp.ln_k[0])/self.ba.h;
+
+    property P_k_max:
+        """
+        The maximum ``k`` value measured for power spectra in
+        :math:`h \mathrm{Mpc}^{-1}`.
+        """
+        def __get__(self):
+            return np.exp(self.sp.ln_k[self.sp.ln_k_size-1])/self.ba.h;
 
     property sigma8:
         """
