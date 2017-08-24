@@ -41,6 +41,7 @@ install:
     - conda install --yes numpy=$NUMPY_VERSION nose astropy six
     - conda install --yes "swig>=3.0"
     - conda install --yes cython
+    - pip install mcfit
     - conda install --yes -c bccp runtests
 
     # build the swig extensions (included in pypi dist but have to build here)
