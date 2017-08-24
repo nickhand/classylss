@@ -943,7 +943,7 @@ cdef class Primordial:
         """
         The primoridal spectrum at ``k``.
 
-        Units are unclear. ``Tf_k ** 2 * primordial_k`` is dimensionless.
+        `2 * pi ** 2 / k ** 3 * Tf_k ** 2 * primordial_k`` produces the primary linear power spectrum.
 
         Parameters
         ----------
@@ -976,9 +976,12 @@ cdef class Primordial:
                 #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
 
-                if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
-                    <double*>(np.PyArray_MultiIter_DATA(it, 1))):
-                    raise ClassRuntimeError(self.pm.error_message.decode())
+                if aval == 0: # forcefully set k == 0 to zero.
+                    (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = 0.
+                else:
+                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
+                        <double*>(np.PyArray_MultiIter_DATA(it, 1))):
+                        raise ClassRuntimeError(self.pm.error_message.decode())
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
