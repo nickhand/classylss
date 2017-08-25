@@ -213,7 +213,8 @@ class ZeldovichPowerIntegral(mcfit.mcfit):
     This evaluates:
 
     .. math::
-        I(k, n) =
+        I(k, n) = 4\pi \int dr r^2 \mathrm{exp}\left[-0.5k^2(X(r) + Y(r)) \right]
+                    \left (\frac{k Y(r)}{r} \right)^n j_n(kr).
     """
     def __init__(self, r, n):
         self.n = n
