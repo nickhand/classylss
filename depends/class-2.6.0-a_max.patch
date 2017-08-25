@@ -121,7 +121,7 @@ diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/sour
 
    /* other recfast variables */
 -  double OmegaB,zinitial,x_He0,x0;
-+  double OmegaB,zinitial,zfinal,x_He0,x0;
++  double OmegaB,zinitial,zfinal,zend_fuzzy,x_He0,x0;
    double x_H0=0.;
    double z,mu_H,Lalpha,Lalpha_He,DeltaB,DeltaB_He;
    double zstart,zend,rhs;
@@ -146,21 +146,26 @@ diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/sour
 
      z = zend;
 
-@@ -3226,7 +3230,7 @@
+@@ -3224,9 +3228,11 @@
+         x_H0 = 0.5*(sqrt(pow(rhs,2)+4.*rhs) - rhs);
+       }
 
++      /* avoids spline bounds check failure due to round-off error when zend=zfinal*/
++      zend_fuzzy = i == Nz-1 ? 0.99999*zend : zend;
        class_call(generic_integrator(thermodynamics_derivs_with_recfast,
                                      zstart,
 -                                    zend,
-+                                    0.99999*zend, // avoids spline bounds check failure due to round-off error
++                                    zend_fuzzy,
                                      y,
                                      &tpaw,
                                      ppr->tol_thermo_integration,
-@@ -3264,7 +3268,8 @@
+@@ -3264,7 +3270,9 @@
      *(preco->recombination_table+(Nz-i-1)*preco->re_size+preco->index_re_Tb)=y[2];
 
      /* get dTb/dz=dy[2] */
 -    class_call(thermodynamics_derivs_with_recfast(zend, y, dy, &tpaw,pth->error_message),
-+    // 0.99999 avoids spline bounds check failure due to round-off error
-+    class_call(thermodynamics_derivs_with_recfast(0.99999*zend, y, dy, &tpaw,pth->error_message),
++    // 0.99999 avoids spline bounds check failure due to round-off error when zend=zfinal
++    zend_fuzzy = i == Nz-1 ? 0.99999*zend : zend;
++    class_call(thermodynamics_derivs_with_recfast(zend_fuzzy, y, dy, &tpaw,pth->error_message),
                 pth->error_message,
                 pth->error_message);
