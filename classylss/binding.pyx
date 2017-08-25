@@ -1057,7 +1057,8 @@ cdef class Spectra:
         This is computed from the ``ln_k`` array of the Spectra module.
         """
         def __get__(self):
-            return np.exp(self.sp.ln_k[0])/self.ba.h;
+            # factor of 1.001 to avoid bounds errors due to rounding errors
+            return 1.001*np.exp(self.sp.ln_k[0])/self.ba.h;
 
     property P_k_max:
         """
@@ -1065,7 +1066,8 @@ cdef class Spectra:
         :math:`h \mathrm{Mpc}^{-1}`.
         """
         def __get__(self):
-            return np.exp(self.sp.ln_k[self.sp.ln_k_size-1])/self.ba.h;
+            # factor of 0.999 to avoid bounds errors due to rounding errors
+            return 0.999*np.exp(self.sp.ln_k[self.sp.ln_k_size-1])/self.ba.h;
 
     property sigma8:
         """
