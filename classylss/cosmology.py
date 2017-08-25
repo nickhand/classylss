@@ -1,4 +1,4 @@
-from .binding import ClassEngine, Background, Spectra, Perturbs, Primordial
+from .binding import ClassEngine, Background, Spectra, Perturbs, Primordial, Thermo
 from .astropy_compat import AstropyCompat
 
 import numpy
@@ -73,7 +73,7 @@ class Cosmology(object):
     # this doesn't work well with automated documentation tools though,
     # unfortunately.
 
-    dro = [AstropyCompat, Spectra, Perturbs, Primordial, Background, ClassEngine]
+    dro = [AstropyCompat, Thermo, Spectra, Perturbs, Primordial, Background, ClassEngine]
     dro_dict = dict([(n.__name__, n) for n in dro])
 
     def __init__(self,

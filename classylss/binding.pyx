@@ -926,6 +926,70 @@ cdef class Perturbs:
             else:
               raise ValueError("gauge value not understood")
 
+cdef class Thermo:
+    cdef ClassEngine engine
+    cdef thermo * th
+    cdef background * ba
+
+    def __init__(self, ClassEngine engine):
+        self.engine = engine
+        self.engine.compute("thermodynamics")
+        self.th = &self.engine.th
+        self.ba = &self.engine.ba
+
+    property z_drag:
+        """
+        The baryon drag redshift.
+        """
+        def __get__(self):
+            return self.th.z_d
+
+    property rs_drag:
+        r"""
+        The comoving sound horizon at baryon drag, in :math:`\mathrm{Mpc}/h`.
+        """
+        def __get__(self):
+            return self.th.rs_d * self.ba.h
+
+    property tau_reio:
+        """
+        The reionization optical depth.
+        """
+        def __get__(self):
+            return self.th.tau_reio
+
+    property z_reio:
+        """
+        The reionization redshift.
+        """
+        def __get__(self):
+            return self.th.z_reio
+
+    property z_rec:
+        """
+        The redshift at which the visibility reaches its maximum; equals
+        the recombination redshift.
+        """
+        def __get__(self):
+            return self.th.z_rec
+
+    property rs_rec:
+        r"""
+        The comoving sound horizon at recombination, :math:`z=z_\mathrm{rec}`.
+        Units of :math:`\mathrm{Mpc}/h`.
+        """
+        def __get__(self):
+            return self.th.rs_rec * self.ba.h
+
+    property theta_s:
+        r"""
+        The sound horizon angle at recombination, equal to
+        :math:`r_s(z_\mathrm{rec}) / D_a(z_\mathrm{rec})`.
+        """
+        def __get__(self):
+            return self.th.rs_rec / self.th.ra_rec
+
+
 cdef class Primordial:
     cdef ClassEngine engine
     cdef perturbs * pt
@@ -946,7 +1010,7 @@ cdef class Primordial:
         .. math ::
 
             P_L = 2 \pi^2 / k^3 T^2(k) P_\mathrm{primordial}
-            
+
         Parameters
         ----------
         k : array_like
@@ -1079,8 +1143,9 @@ cdef class Spectra:
             return self.sp.sigma8
 
     property A_s:
-        """
-        The scalar amplitude of the primordial power spectrum.
+        r"""
+        The scalar amplitude of the primordial power spectrum at
+        :math:`k_\mathrm{pivot}`.
         """
         def __get__(self):
             return self.pm.A_s
@@ -1098,6 +1163,14 @@ cdef class Spectra:
         """
         def __get__(self):
             return self.pm.n_s
+
+    property k_pivot:
+        r"""
+        The primordial power spectrum pivot scale, where the primordial power
+        is equal to :math:`A_s`. Units of :math:`h \mathrm{Mpc}^{-1}`.
+        """
+        def __get__(self):
+            return self.pm.k_pivot / self.ba.h
 
     def sigma8_z(self, z):
         """
