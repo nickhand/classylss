@@ -940,11 +940,13 @@ cdef class Primordial:
         self.pm = &self.engine.pm
 
     def get_pk(self, k, mode='linear'):
-        """
-        The primoridal spectrum at ``k``.
+        r"""
+        The primoridal spectrum at ``k``. The units are such that:
 
-        `2 * pi ** 2 / k ** 3 * Tf_k ** 2 * primordial_k`` produces the primary linear power spectrum.
+        .. math ::
 
+            P_L = 2 \pi^2 / k^3 T^2(k) P_\mathrm{primordial}
+            
         Parameters
         ----------
         k : array_like
