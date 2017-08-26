@@ -25,3 +25,23 @@ def test_sp():
 
     t = sp.get_transfer(0.0)
     t = sp.get_transfer(2.0)
+
+def test_thermo():
+    cosmo = ClassEngine({'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+    th = Thermo(cosmo)
+
+    z_d = th.z_drag
+    rs_d = th.rs_drag
+    tau_reio = th.tau_reio
+    z_reio = th.z_reio
+    z_rec = th.z_rec
+    rs_res = th.rs_rec
+    theta_s = th.theta_s
+
+def test_primordial():
+
+    cosmo = ClassEngine({'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+    pm = Primordial(cosmo)
+    Pk = pm.get_pk(k=[0., 0.1, 0.2])
+
+    pr = pm.get_primordial()
