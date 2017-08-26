@@ -158,7 +158,7 @@ if __name__ == '__main__':
           license='GPL3',
           url="http://github.com/nickhand/classylss",
           install_requires=['numpy', 'cython', 'six'],
-          extras_require={'tests': ['runtests', 'astropy']},
+          extras_require={'tests': ['runtests', 'astropy', 'scipy']},
           ext_modules = cythonize([
                         Extension(**classy_extension_config())
           ]),
