@@ -729,15 +729,22 @@ cdef class Background:
         """
         return self.compute_for_z(z, self.ba.index_bg_time) / _Gyr_over_Mpc_
 
-    def conformal_distance(self, z):
+    def comoving_distance(self, z):
         """
-        Conformal distance, equal to the comoving distance when K = 0.0
-        (flat universe). In units of :math:`\mathrm{Mpc}/h`.
+        Comoving line-of-sight distance in :math:`\mathrm{Mpc}/h` at a given
+        redshift.
+
+        The comoving distance along the line-of-sight between two
+        objects remains constant with time for objects in the Hubble
+        flow.
+
+        See eq. 15 of astro-ph/9905116 for :math:`D_C(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance) * self.ba.h
 
     def tau(self, z):
-        """Conformal time, equal to comoving distance when K = 0.0
+        """
+        Conformal time, equal to comoving distance when K = 0.0
         (flat universe). In units of :math:`\mathrm{Mpc}` as in CLASS.
         """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance)
@@ -772,15 +779,56 @@ cdef class Background:
 
     def luminosity_distance(self, z):
         """
-        Luminosity distance in :math:`\mathrm{Mpc}/h`.
+        Luminosity distance in :math:`\mathrm{Mpc}/h` at redshift ``z``.
+
+        This is the distance to use when converting between the
+        bolometric flux from an object at redshift ``z`` and its
+        bolometric luminosity.
+
+        It is equal to the comoving transverse distance times :math:`1+z`.
+
+        See eq. 21 of astro-ph/9905116 for :math:`D_L(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_lum_distance) * self.ba.h
 
-    def angular_distance(self, z):
+    def angular_diameter_distance(self, z):
         """
-        Angular diameter distance in :math:`\mathrm{Mpc}/h`.
+        Angular diameter distance in :math:`\mathrm{Mpc}/h at a given redshift.
+
+        This gives the proper (sometimes called 'physical') transverse
+        distance corresponding to an angle of 1 radian for an object
+        at redshift ``z``.
+
+        It is equal to the comoving transverse distance divided by :math:`1+z`.
+
+        See eq. 18 of astro-ph/9905116 for :math:`D_A(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_ang_distance) * self.ba.h
+
+    def comoving_transverse_distance(self, z):
+        """
+        Comoving transverse distance in :math:`\mathrm{Mpc}/h` at a given
+        redshift.
+
+        This value is the transverse comoving distance at redshift ``z``
+        corresponding to an angular separation of 1 radian. This is
+        the same as the comoving distance in a flat universe.
+
+        See eq. 16 of astro-ph/9905116 for :math:`D_M(z)`.
+        """
+        # comoving distance if flat (in Mpc)
+        toret = self.comoving_distance(z) / self.ba.h
+
+        # positive curvature
+        if (self.ba.sgnK == 1):
+            toret = np.sin(np.sqrt(self.ba.K)*toret)/np.sqrt(self.ba.K)
+
+        # negative curvature
+        if (self.ba.sgnK == -1):
+            toret = np.sinh(np.sqrt(-self.ba.K)*toret)/np.sqrt(-self.ba.K)
+
+        # in Mpc/h
+        return toret * self.ba.h
 
     def scale_independent_growth_factor(self, z):
         """

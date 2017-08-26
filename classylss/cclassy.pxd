@@ -66,6 +66,7 @@ cdef extern from "class.h":
         int index_bg_rho_ncdm1
         int index_bg_p_ncdm1
 
+        int sgnK
         short long_info
         short inter_normal
         double T_cmb
