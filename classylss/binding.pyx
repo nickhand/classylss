@@ -512,6 +512,24 @@ cdef class Background:
             T = np.array([self.ba.T_ncdm[i] for i in range(self.N_ncdm)], dtype=np.float64)
             return T*self.ba.T_cmb # from units of photon temp to K
 
+    def T_cmb(self, z):
+        """
+        The CMB temperature as a function of redshift.
+        """
+        return self.T0_cmb * (1 + z)
+
+    def T_ncdm(self, z):
+        """
+        The ncdm temperature (massive neutrinos) as a function of redshift.
+
+        Return shape is (N_ncdm,) if N_ncdm == 1 else (len(z), N_ncdm)
+        """
+        if np.isscalar(z):
+            return self.T0_ncdm * (1+z)
+        else:
+            z = np.array(z, ndmin=1, dtype=np.float64)
+        return self.T0_ncdm * (1 + z)[:,None]
+
     def compute_for_z(self, z, int column):
         cdef double tau
         cdef int last_index #junk
