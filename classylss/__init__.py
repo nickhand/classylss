@@ -4,7 +4,6 @@ def get_data_files():
     """
     Returns the path of data files, which are installed to the package directory.
     """
-
     import os
 
     path = os.path.dirname(__file__)
@@ -98,3 +97,5 @@ def load_ini(filename):
             pars[fields[0].strip()] = fields[1].strip()
 
     return pars
+
+from . import binding

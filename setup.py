@@ -14,13 +14,6 @@ import os
 import numpy
 import shutil
 
-# determine if swig will need to be called on GCL extension
-swig_needed = not all(os.path.isfile(f) for f in ['classylss/gcl.py', 'classylss/gcl_wrap.cpp'])
-
-# use GNU compilers by default
-os.environ.setdefault("CXX", "g++")
-os.environ.setdefault("F90", "gfortran")
-
 # base directory of package
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -35,34 +28,6 @@ def find_version(path, name='version'):
     raise RuntimeError("version not found")
 
 CLASS_VERSION = find_version("classylss/version.py", name='class_version')
-
-def check_swig_version():
-    """
-    Check the version of swig, >= 3.0 is required
-
-    Notes
-    -----
-    *   swig is only needed for developers installing from the source directory,
-        with ``python setup.py install``
-    *   the swig-generated files are included by default in the pypi distribution,
-        so the swig dependency is not needed
-    """
-    import subprocess, re
-    try:
-        output = subprocess.check_output(["swig", "-version"])
-    except OSError:
-        raise ValueError(("`swig` not found on PATH -- either install `swig` or use "
-                            "``pip install classylss`` (recommended)"))
-
-    try:
-        version = re.findall("SWIG Version [0-9].[0-9].[0-9]", output)[0].split()[-1]
-    except:
-        return
-
-    # need >= 3.0
-    if version < "3.0":
-        raise ValueError(("the version of `swig` on PATH must greater or equal to 3.0; "
-                         "recommended installation without swig is ``pip install classylss``"))
 
 def build_CLASS(prefix):
     """
@@ -162,41 +127,8 @@ class custom_clean(clean):
         if os.path.exists('build'):
             shutil.rmtree('build')
 
-def libgcl_config():
-
-    # c++ GCL sources and fortran FFTLog sources
-    gcl_sources = list(glob("classylss/_gcl/cpp/*cpp"))
-    fftlog_sources = list(glob("classylss/_gcl/extern/fftlog/*f"))
-
-    # GCL library extension
-    gcl_info = {}
-    gcl_info['sources'] =  gcl_sources + fftlog_sources
-    gcl_info['include_dirs'] = ['classylss/_gcl/include']
-    gcl_info['language'] = 'c++'
-    gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
-    return ('gcl', gcl_info)
-
 def libclass_config():
     return ('class', {})
-
-def gcl_extension_config():
-
-    # the configuration for GCL python extension
-    config = {}
-    config['name'] = 'classylss._gcl'
-    config['extra_link_args'] = ['-g', '-fPIC']
-    config['extra_compile_args'] = ['-fopenmp']
-    config['libraries'] = ['gcl', 'class', 'gomp', 'gfortran']
-
-    # determine if swig needs to be called
-    if not swig_needed:
-        config['sources'] = ['classylss/gcl_wrap.cpp']
-    else:
-        config['sources'] = ['classylss/gcl.i']
-        config['depends'] = ['classylss/_gcl/python/*.i']
-        config['swig_opts'] = ['-c++', '-Wall']
-
-    return config
 
 def classy_extension_config():
 
@@ -222,21 +154,19 @@ if __name__ == '__main__':
           version=find_version("classylss/version.py"),
           author='Nick Hand, Yu Feng',
           author_email='nicholas.adam.hand@gmail.com',
-          description="python binding of CLASS for large-scale structure calculations",
+          description="lightweight Python binding of the CLASS CMB Boltzmann code",
           license='GPL3',
           url="http://github.com/nickhand/classylss",
-          install_requires=['numpy', 'astropy', 'six', 'mcfit'],
+          install_requires=['numpy', 'cython'],
           ext_modules = cythonize([
-                        Extension(**classy_extension_config()),
-                        Extension(**gcl_extension_config()),
+                        Extension(**classy_extension_config())
           ]),
-          libraries=[libclass_config(), libgcl_config()],
+          libraries=[libclass_config()],
           cmdclass = {
               'sdist': custom_sdist,
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-         py_modules = ["classylss.gcl"],
-         packages=['classylss', 'classylss.tests', 'classylss.power', 'classylss.legacy']
+         packages=['classylss', 'classylss.tests']
     )
