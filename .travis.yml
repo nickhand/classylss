@@ -3,6 +3,7 @@ language: python
 python:
     - 2.7
     - 3.5
+    - 3.6
 
 addons:
   apt:
@@ -20,11 +21,8 @@ cache:
 
 env:
     global:
-        - NUMPY_VERSION=1.11
+        - NUMPY_VERSION=1.13
         - OMP_NUM_THREADS=2
-    matrix:
-        - WITH_SWIG=true
-        - WITH_SWIG=false
 
 before_install:
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -38,30 +36,13 @@ before_install:
 install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
-    - conda install --yes numpy=$NUMPY_VERSION nose astropy six
-    - conda install --yes "swig>=3.0"
-    - conda install --yes cython
-    - pip install mcfit
-    - conda install --yes -c bccp runtests
-
-    # build the swig extensions (included in pypi dist but have to build here)
-    - python setup.py build_src --inplace
-
-    # swig not available at install time
-    - if [[ "$WITH_SWIG" == "false" ]]; then conda uninstall --yes swig; fi
-
-    # install from sdist
-    - python setup.py sdist
-    - cd dist
-    - pip install classylss*
-    - cd ..
+    - conda install --yes numpy=$NUMPY_VERSION cython
+    - pip install .
 
 script:
-    - python runtests.py
+    - conda install --yes -c bccp runtests
+    - python run-tests.py
     - bash check_tag.sh classylss/version.py
-
-
-before_deploy: "python setup.py build_src --inplace"
 
 deploy:
     - provider: pypi
@@ -71,4 +52,4 @@ deploy:
           secure: "SFknKu4DDcBYI6iQNhu4ihtqtQE15uKZ5KSU9qIdNRxLEZKp6urCWt67R3WM0wm6vj81fsSiCh9qvE0i8X3dZ1d2YOLm1CATeT+3zLIwY4GTmKRYv1l26uSmXiMye0LQOcRQu4o4qaitwHhMz3BtJzZ61JpelnSBnpT9MZfPKYdLS1Fgo5EL3WrxwMsztpnlI4WWCiZN+JJk0Ajo37PS7Oq1SjuKz0QNDMnraGo5XggBd3ZhlOolf/vW3q7jQlw6Pj9Xs9Aw+C66syMos/f3i7Hj1oO+F2Gv8qlvjDGvdBOjBJu/z39jJRXqKNfZr4uDT6cMP6qaWahnDQJeHFdH2Bc8XYvSVCOIqGT0qbVK7JoLefHIOJImRNyFzb0cV3dYWsYTwJZHz/RtQvMVZWEnB1Ev3Dvw3gxj7N8GMPigBa0dg7Pkey2cEaUFfvQcVk2gzRKWb3lAsfivzOacDW1sS9tAhyFIQdL8MFr/EvgN+IepktBnMVXGXacrVBgZHHTNcxCpnqgJtnMZzSXMfRkzc0oB1jE5opN06nKPvJJK0N+I5CLhvdJ3zn8Bn0Oxbg7BofVFnzPLAcYTsdVYdGSionsjaHjxEYf5sNGaAP0FoBulrwaCsXmMKIWLIpVsGMS2D7v2gZor1/zCBBvjwOf9O4yfRTSeDUo1wWFEWj3CqI4="
       on:
         tags   : true
-        condition : $TRAVIS_PYTHON_VERSION = "2.7" && $WITH_SWIG = "true"
+        condition : ${TRAVIS_JOB_NUMBER##*.} == 1
