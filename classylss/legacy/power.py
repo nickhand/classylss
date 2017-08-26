@@ -1,14 +1,14 @@
 from . import ClassParams, Cosmology, ClassEngine
 from . import transfers
-from .gcl import LinearPS, ZeldovichPS
+from ..gcl import LinearPS, ZeldovichPS
 
 import numpy
 
 def linear(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_kws={}):
     """
-    Compute the linear power spectrum P_lin(k, z) using the specified 
+    Compute the linear power spectrum P_lin(k, z) using the specified
     transfer function
-    
+
     Parameters
     ----------
     k : array_like
@@ -24,7 +24,7 @@ def linear(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_kws=
         whether to be verbose when running CLASS; default is `False`
     class_kws : dict, optional
         extra parameter keywords to use when running CLASS
-    
+
     Returns
     -------
     Plin : array_like
@@ -33,25 +33,25 @@ def linear(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_kws=
     from astropy.cosmology import default_cosmology, FLRW
     if cosmo is None:
         cosmo = default_cosmology.get()
-    
+
     if not isinstance(cosmo, FLRW):
         raise TypeError("cosmology should be a astropy.cosmology.FLRW subclass")
     if isinstance(k, list):
         k = numpy.array(k)
-        
+
     # astropy to CLASS params
     pars = ClassParams.from_astropy(cosmo, extra=class_kws)
-    
+
     # do the work
     class_cosmo = Cosmology(pars, transfer, verbose)
     Plin = LinearPS(class_cosmo, z)
-    
-    return Plin(k)    
-    
+
+    return Plin(k)
+
 def nonlinear(k, z, cosmo=None, verbose=False, class_kws={}):
     """
     Compute the nonlinear power spectrum P_nl(k, z) using HALOFIT
-    
+
     Parameters
     ----------
     k : array_like
@@ -64,7 +64,7 @@ def nonlinear(k, z, cosmo=None, verbose=False, class_kws={}):
         whether to be verbose when running CLASS; default is `False`
     class_kws : dict, optional
         extra parameter keywords to use when running CLASS
-    
+
     Returns
     -------
     Plin : array_like
@@ -72,9 +72,9 @@ def nonlinear(k, z, cosmo=None, verbose=False, class_kws={}):
     """
     # set the defaul class keywords
     class_kws.setdefault('non linear', 'halofit')
-    
+
     return linear(k, z, cosmo=cosmo, verbose=verbose, class_kws=class_kws)
-    
+
 def zeldovich(k, z, transfer=transfers.CLASS, cosmo=None, verbose=False, class_kws={}):
     """
     Compute the Zel'dovich power spectrum P_zel(k, z) using the specified

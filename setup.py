@@ -24,37 +24,17 @@ os.environ.setdefault("F90", "gfortran")
 # base directory of package
 package_basedir = os.path.abspath(os.path.dirname(__file__))
 
-# the CLASS version to install
-CLASS_VERSION = '2.6.0'
+def find_version(path, name='version'):
+    import re
+    # path shall be a plain ascii text file.
+    s = open(path, 'rt').read()
+    version_match = re.search(r"^%s = ['\"]([^'\"]*)['\"]" %name,
+                              s, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("version not found")
 
-MAJOR = 0
-MINOR = 1
-MICRO = 20
-ISRELEASED = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
-
-DISTNAME = 'classylss'
-AUTHOR = 'Nick Hand'
-AUTHOR_EMAIL = 'nicholas.adam.hand@gmail.com'
-INSTALL_REQUIRES = ['numpy', 'astropy', 'six']
-DESCRIPTION = "python binding of CLASS for large-scale structure calculations"
-URL = "http://github.com/nickhand/classylss"
-
-if not ISRELEASED: VERSION += '.dev0'
-
-def write_version_py():
-    cnt = """\
-version = '%s'
-class_version = '%s'
-"""
-    filename = os.path.join(os.path.dirname(__file__), 'classylss', 'version.py')
-    a = open(filename, 'w')
-    try:
-        a.write(cnt % (VERSION, CLASS_VERSION))
-    finally:
-        a.close()
-
-write_version_py()
+CLASS_VERSION = find_version("classylss/version.py", name='class_version')
 
 def check_swig_version():
     """
@@ -101,7 +81,6 @@ class build_external_clib(build_clib):
     Custom command to build CLASS first, and then GCL library
     """
     def finalize_options(self):
-
         build_clib.finalize_options(self)
 
         # create the CLASS build directory and save the include path
@@ -109,7 +88,6 @@ class build_external_clib(build_clib):
         self.include_dirs.insert(0, os.path.join(self.class_build_dir, 'include'))
 
     def build_libraries(self, libraries):
-
         # build CLASS first
         build_CLASS(self.class_build_dir)
 
@@ -119,6 +97,10 @@ class build_external_clib(build_clib):
 
         self.compiler.set_link_objects(link_objects)
         self.compiler.library_dirs.insert(0, os.path.join(self.class_build_dir, 'lib'))
+
+        # then no longer need to build class.
+
+        libraries = [lib for lib in libraries if lib[0] != 'class']
 
         for (library, build_info) in libraries:
 
@@ -194,6 +176,9 @@ def libgcl_config():
     gcl_info['extra_compiler_args'] = ["-fopenmp", "-O2", '-std=c++11']
     return ('gcl', gcl_info)
 
+def libclass_config():
+    return ('class', {})
+
 def gcl_extension_config():
 
     # the configuration for GCL python extension
@@ -233,25 +218,25 @@ def classy_extension_config():
 if __name__ == '__main__':
 
     from numpy.distutils.core import setup
-    setup(name=DISTNAME,
-          version=VERSION,
-          author=AUTHOR,
-          author_email=AUTHOR_EMAIL,
-          description=DESCRIPTION,
+    setup(name='classylss',
+          version=find_version("classylss/version.py"),
+          author='Nick Hand, Yu Feng',
+          author_email='nicholas.adam.hand@gmail.com',
+          description="python binding of CLASS for large-scale structure calculations",
           license='GPL3',
-          url=URL,
-          install_requires=INSTALL_REQUIRES,
+          url="http://github.com/nickhand/classylss",
+          install_requires=['numpy', 'astropy', 'six', 'mcfit'],
           ext_modules = cythonize([
                         Extension(**classy_extension_config()),
                         Extension(**gcl_extension_config()),
           ]),
-          libraries=[libgcl_config()],
+          libraries=[libclass_config(), libgcl_config()],
           cmdclass = {
               'sdist': custom_sdist,
               'build_clib': build_external_clib,
               'build_ext': custom_build_ext,
               'clean': custom_clean
           },
-          py_modules = ["classylss.gcl"],
-          packages=['classylss', 'classylss.tests']
+         py_modules = ["classylss.gcl"],
+         packages=['classylss', 'classylss.tests', 'classylss.power', 'classylss.legacy']
     )

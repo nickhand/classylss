@@ -1,117 +1,75 @@
-from . import power, tools
 import numpy
+import mcfit
+from scipy.interpolate import InterpolatedUnivariateSpline
+from .power.zeldovich import ZeldovichPower
 
 NUM_PTS = 1024
 
-def linear(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
+class CorrelationFunction(object):
     """
-    Compute the linear correlation function using the specified 
-    transfer function
-    
-    Parameters
-    ----------
-    r : array_like
-        the separation in units of `Mpc/h`
-    z : float
-        the redshift to compute the power at
-    kmin : float, optional
-        minimum wavenumber in `h/Mpc` to integrate over when computing CF
-    kmax : float, optional
-        maximum wavenumber in `h/Mpc` to integrate over when computing CF
-    smoothing : float, optional
-        smoothing scale in `Mpc/h`
-    **power_kws : 
-        keywords passed to :func:`power.linear`
-            transfer : int, optional
-                available transfer functions defined in `classy_lss.transfers`;
-                the default value runs CLASS
-            cosmo : astropy.cosmology, optional
-                the astropy cosmology; defaults to ``default_cosmology()``
-            verbose : bool, optional
-                whether to be verbose when running CLASS; default is `False`
-            class_kws : dict, optional
-                extra parameter keywords to use when running CLASS
-    
-    Returns
-    -------
-    cf : array_like
-        the linear correlation function (unitless)
-    """
-    k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
-    Pk = power.linear(k, z, **power_kws)
-    
-    return tools.pk_to_xi(0, k, Pk, r, smoothing)
-    
-def nonlinear(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
-    """
-    Compute the nonlinear correlation function using HALOFIT
+    Evaluate the correlation function by Fourier transforming
+    a power spectrum object.
 
     Parameters
     ----------
-    r : array_like
-        the separation in units of `Mpc/h`
-    z : float
-        the redshift to compute the power at
-    kmin : float, optional
-        minimum wavenumber in `h/Mpc` to integrate over when computing CF
-    kmax : float, optional
-        maximum wavenumber in `h/Mpc` to integrate over when computing CF
-    smoothing : float, optional
-        smoothing scale in `Mpc/h`
-    **power_kws : 
-        keywords passed to :func:`power.nonlinear`
-            cosmo : astropy.cosmology
-                the astropy cosmology; defaults to ``default_cosmology()``
-            verbose : bool, optional
-                whether to be verbose when running CLASS; default is `False`
-            class_kws : dict, optional
-                extra parameter keywords to use when running CLASS
-
-    Returns
-    -------
-    cf : array_like
-        the nonlinear correlation function (unitless)
+    power : callable
+         a callable power spectrum that returns the power at a given ``k``;
+         this should have ``z`` and ``sigma8`` attributes
     """
-    k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
-    Pk = power.nonlinear(k, z, **power_kws)
-    
-    return tools.pk_to_xi(0, k, Pk, r, smoothing)
+    def __init__(self, power):
 
-def zeldovich(r, z, kmin=1e-5, kmax=10., smoothing=0., **power_kws):
-    """
-    Compute the Zel'dovich correlation function using the specified
-    transfer function for the Zel'dovich power spectrum
+        self.power = power
 
-    Parameters
-    ----------
-    r : array_like
-        the separation in units of `Mpc/h`
-    z : float
-        the redshift to compute the power at
-    kmin : float, optional
-        minimum wavenumber in `h/Mpc` to integrate over when computing CF
-    kmax : float, optional
-        maximum wavenumber in `h/Mpc` to integrate over when computing CF
-    smoothing : float, optional
-        smoothing scale in `Mpc/h`
-    **power_kws : 
-        keywords passed to :func:`power.zeldovich`
-            transfer : int, optional
-                available transfer functions defined in `classy_lss.transfers`;
-                the default value runs CLASS
-            cosmo : astropy.cosmology, optional
-                the astropy cosmology; defaults to ``default_cosmology()``
-            verbose : bool, optional
-                whether to be verbose when running CLASS; default is `False`
-            class_kws : dict, optional
-                extra parameter keywords to use when running CLASS
+        if not hasattr(power, 'z'):
+            raise AttributeError("input power spectrum must have a ``z`` attribute")
+        self._z = power.z
 
-    Returns
-    -------
-    cf : array_like
-        the Zel'dovich correlation function (unitless)
-    """
-    k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
-    Pk = power.zeldovich(k, z, **power_kws)
-    
-    return tools.pk_to_xi(0, k, Pk, r, smoothing)
+        if not hasattr(power, 'sigma8'):
+            raise AttributeError("input power spectrum must have a ``z`` attribute")
+        self._sigma8 = power.sigma8
+
+    @property
+    def z(self):
+        return self._z
+
+    @z.setter
+    def z(self, value):
+        self._z = value
+        self.power.z = value
+
+    @property
+    def sigma8(self):
+        return self._sigma8
+
+    @sigma8.setter
+    def sigma8(self, value):
+        self._sigma8 = value
+        self.power.sigma8 = value
+
+    def __call__(self, r, smoothing=0., kmin=1e-5, kmax=10.):
+        """
+        Return the correlation function (dimensionless) for separations ``r``
+
+        Parameters
+        ----------
+        r : float, array_like
+            the separation array in units of :math:`h^{-1} \mathrm(Mpc)`
+        smoothing  : float, optional
+            the std deviation of the Fourier space Gaussian smoothing to apply
+            to P(k) before taking the FFT
+        kmin : float, optional
+            the minimum ``k`` value to compute P(k) for before taking the FFT
+        kmax : float, optional
+            the maximum ``k`` value to compute P(k) for before taking the FFT
+        """
+        k = numpy.logspace(numpy.log10(kmin), numpy.log10(kmax), NUM_PTS)
+        xi = mcfit.P2xi(k)
+
+        # power with smoothing
+        Pk = self.power(k)
+        Pk *= numpy.exp(-(k*smoothing)**2)
+
+        # only extrap if not zeldovich
+        extrap = not isinstance(self.power, ZeldovichPower)
+        rr, CF = xi(Pk, extrap=extrap)
+        return InterpolatedUnivariateSpline(rr, CF)(r)

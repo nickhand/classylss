@@ -1,20 +1,43 @@
-def test_corr():
-    
-    from astropy.cosmology import Planck15
-    from classylss import correlation
-    import numpy
-    
+from classylss.correlation import CorrelationFunction
+from classylss.cosmology import Cosmology
+from classylss.power import LinearPower, HalofitPower, ZeldovichPower
+import numpy
+
+def test_linear():
+
+    # linear power
+    Plin = LinearPower(Cosmology(), z=0)
+
     # desired separation (in Mpc/h)
     r = numpy.logspace(0, numpy.log10(150), 500)
 
-    # desired redshift
-    z = 0
+    # linear correlation
+    CF = CorrelationFunction(Plin)
 
-    # linear 2PCF
-    cf_lin = correlation.linear(r, z, verbose=True, cosmo=Planck15)
+    xi = CF(r)
 
-    # nonlinear 2PCF
-    cf_nl = correlation.nonlinear(r, z, verbose=True, cosmo=Planck15)
+def test_halofit():
 
-    # Zeldovich power spectrum in [Mpc/h]^3
-    cf_zel = correlation.zeldovich(r, z, smoothing=1.0, verbose=True, cosmo=Planck15)
+    # nonlinear power
+    Pnl = HalofitPower(Cosmology(), z=0)
+
+    # desired separation (in Mpc/h)
+    r = numpy.logspace(0, numpy.log10(150), 500)
+
+    # nonlinear correlation
+    CF = CorrelationFunction(Pnl)
+
+    xi = CF(r)
+
+def test_zeldovich():
+
+    # zeldovich power
+    Pzel = ZeldovichPower(Cosmology(), z=0)
+
+    # desired separation (in Mpc/h)
+    r = numpy.logspace(0, numpy.log10(150), 500)
+
+    # zeldovich correlation
+    CF = CorrelationFunction(Pzel)
+
+    xi = CF(r)

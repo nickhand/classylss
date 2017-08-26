@@ -11,6 +11,18 @@ _DATA_FILES = get_data_files()
 
 from cclassy cimport *
 
+DEF _Mpc_over_m_ = 3.085677581282e22  #/**< conversion factor from meters to megaparsecs */
+                          #/* remark: CAMB uses 3.085678e22: good to know if you want to compare  with high accuracy */
+DEF _Gyr_over_Mpc_ = 3.06601394e2 #/**< conversion factor from megaparsecs to gigayears
+				  #       (c=1 units, Julian years of 365.25 days) */
+DEF _c_ = 2.99792458e8          #  /**< c in m/s */
+DEF _G_ = 6.67428e-11          #   /**< Newton constant in m^3/Kg/s^2 */
+DEF _eV_ = 1.602176487e-19     #   /**< 1 eV expressed in J */
+
+#/* parameters entering in Stefan-Boltzmann constant sigma_B */
+DEF _k_B_ = 1.3806504e-23
+DEF _h_P_ = 6.62606896e-34
+
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 
 class ClassRuntimeError(RuntimeError):
@@ -29,6 +41,11 @@ class ClassBadValueError(ValueError):
     """
     pass
 
+
+def val2str(val):
+    if isinstance(val, (list, tuple)):
+        return ','.join([str(i) for i in val])
+    return str(val)
 
 cdef int _build_file_content(pars, file_content * fc) except -1:
     fc.size = 0
@@ -59,11 +76,11 @@ cdef int _build_file_content(pars, file_content * fc) except -1:
 
     # fill parameter file
     i = 0
-    for kk in pars:
+    for kk in sorted(pars):
 
         dumcp = kk.encode()
         strncpy(fc.name[i], dumcp[:sizeof(FileArg)-1], sizeof(FileArg))
-        dumcp = str(pars[kk]).encode()
+        dumcp = val2str(pars[kk]).encode()
         strncpy(fc.value[i], dumcp[:sizeof(FileArg)-1], sizeof(FileArg))
         fc.read[i] = _FALSE_
 
@@ -133,6 +150,7 @@ ctypedef struct ready_flags:
     int sp
     int op
     int le
+    int input
 
 
 cdef class ClassEngine:
@@ -150,12 +168,21 @@ cdef class ClassEngine:
     cdef ready_flags ready
     cdef file_content fc
 
+    property parameter_file:
+        def __get__(self):
+            if not self.ready.fc: return ""
+
+            lines = ["%s : %s" %(self.fc.name[i].decode(), self.fc.value[i].decode())
+               for i in range(self.fc.size)]
+            return "\n".join(lines)
+
     def __cinit__(self, *args, **kwargs):
         memset(&self.ready, 0, sizeof(self.ready))
 
     def __init__(self, object pars={}):
         _build_file_content(pars, &self.fc)
         self.ready.fc = True
+        self.compute('input')
 
     def __dealloc__(self):
         if self.ready.fc: parser_free(&self.fc)
@@ -193,7 +220,7 @@ cdef class ClassEngine:
         # The input module should raise a ClassRuntimeError, because
         # non-understood parameters asked to the wrapper is a problematic
         # situation.
-        if "input" in tasks:
+        if "input" in tasks and not self.ready.input:
             if input_init(fc, &self.pr, &self.ba, &self.th,
                           &self.pt, &self.tr, &self.pm, &self.sp,
                           &self.nl, &self.le, &self.op, errmsg) == _FAILURE_:
@@ -208,9 +235,10 @@ cdef class ClassEngine:
                     problematic_parameters.append(fc.name[i].decode())
 
             if problem_flag:
-                raise KeyError(
-                    "Class did not read input parameter(s): %s\n" % ', '.join(
-                    problematic_parameters))
+                import warnings
+                warnings.warn("Class did not read input parameter(s): %s" % ', '.join(
+                              problematic_parameters))
+            self.ready.input = True
 
         # The following list of computation is straightforward. If the "_init"
         # methods fail, call `struct_cleanup` and raise a ClassBadValueError
@@ -267,12 +295,18 @@ cdef class ClassEngine:
         # following functions are only to output the desired numbers
         return
 
-
     @classmethod
     def from_astropy(cls, cosmo, extra={}):
         """
-        Convert an astropy cosmology to a ``ClassParams`` instance
+        Convert an astropy cosmology to a ``ClassEngine`` instance.
+
+        .. warning::
+
+            This method is deprecated. Use classylss.cosmology.Cosmology instead.
         """
+        import warnings
+        warnings.warn("creating ClassEngine directly from Astropy Cosmology is deprecated; Use classylss.cosmology.Cosmology", DeprecationWarning)
+
         from astropy import units, cosmology
 
         pars = {}
@@ -351,68 +385,223 @@ cdef class Background:
     cdef background * ba
     cdef readonly dict data
 
+    cdef readonly double Omega0_pncdm
+    cdef readonly double H0
+    cdef readonly double C
+    cdef readonly double G
+    cdef readonly double _RHO_
+
     def __init__(self, ClassEngine engine):
         self.engine = engine
         self.engine.compute("background")
         self.ba = &self.engine.ba
 
-    property Onr0:
-        """
-        Return the sum of Omega0 for all non-relativistic components; this differs from astropy's Om0.
-        """
-        def __get__(self):
-            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
+        self.H0 = 100.  # in Mpc/h unit
+        self.G = 43007.1 * 1e-3 # in 1e10 Msun/h, Mpc/h, and km/s Unit
+        self.C = 2.99792458e5          #  /**< c in km/s */
+        # convert RHO to  1e10 Msun/h
+        self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
-    property Ob0:
+        self.Omega0_pncdm = self.Omega_pncdm(0.0) # watchout, the convention is 0.0
+
+    property Omega0_b:
+        r"""
+        Current density parameter for photons, :math:`\Omega_{b,0}`.
+        """
         def __get__(self):
             return self.ba.Omega0_b
 
-    property Ogamma0:
+    property Omega0_g:
+        r"""
+        Current density parameter for photons, :math:`\Omega_{g,0}`.
+        """
         def __get__(self):
             return self.ba.Omega0_g
 
-    property Ocdm0:
+    property Omega0_cdm:
+        r"""
+        Current density parameter for cold dark matter, :math:`\Omega_{cdm,0}`.
+        """
         def __get__(self):
             return self.ba.Omega0_cdm
 
-    property Odcdm0:
+    property Omega0_lambda:
+        r"""
+        Current density parameter for cosmological constant, :math:`\Omega_{\Lambda,0}`.
+        """
+        def __get__(self):
+            return self.ba.Omega0_lambda
+
+    property Omega0_fld:
+        r"""
+        Current density parameter for dark energy (fluid), :math:`\Omega_{de,0}`.
+        """
+        def __get__(self):
+            return self.ba.Omega0_fld
+
+    property Omega0_k:
+        r"""
+        Current density parameter for curvaturve, :math:`\Omega_{k,0}`.
+        """
+        def __get__(self):
+            return self.ba.Omega0_k
+
+    property w0_fld:
+        r"""
+        Current fluid equation of state parameter, :math:`w_{0,fld}`.
+        """
+        def __get__(self):
+            return self.ba.w0_fld
+
+    property wa_fld:
+        r"""
+        Fluid equation of state derivative, :math:`w_{a,fld}`.
+        """
+        def __get__(self):
+            return self.ba.wa_fld
+
+    property Omega0_dcdm:
+        r"""
+        Current density parammeter for decaying cold dark matter,
+        :math:`\Omega_{dcdm,0}`.
+        """
         def __get__(self):
             return self.ba.Omega0_dcdm
 
-    property Oncdm0:
-        """ total density of distinguishable (massive) neutrinos. """
+    property Omega0_ncdm:
+        r"""
+        Current density parameter for distinguishable (massive) neutrinos for
+        each species as an array, :math:`\Omega_{0, ncdm}`.
+        """
+        def __get__(self):
+            return np.array([self.ba.Omega0_ncdm[i] for i in range(self.N_ncdm)], np.float64)
+
+    property Omega0_ncdm_tot:
+        """
+        Current total density parameter of all distinguishable (massive)
+        neutrinos.
+        """
         def __get__(self):
             return self.ba.Omega0_ncdm_tot
 
-    property Our0:
-        """ total density of ultra relative (massless) neutrinos. """
+    property Omega0_ur:
+        r"""
+        Current density parameter of ultra-relativistic (massless) neutrinos,
+        :math:`\Omega_{0,\nu_r}`.
+        """
         def __get__(self):
             return self.ba.Omega0_ur
 
+    property Omega0_r:
+        """
+        Current density parameter of radiation, :math:`\Omega_{0,r}`.
+        This is equal to:
+
+       .. math::
+           \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}.
+        """
+        def __get__(self):
+            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm
+
+    property a_today:
+        """
+        An arbitrary number that sets the reference scaling factor.
+        It shall be 1 usually.
+        """
+        def __get__(self):
+            return self.ba.a_today
+
+    property a_max:
+        """
+        The maximum scale factor for which results can be computed; it can be
+        greater than 1.0.
+        """
+        def __get__(self):
+            return self.ba.a_max
+
+    property Omega0_m:
+        r"""
+        The sum of density parameters for all non-relativistic components,
+        :math:`\Omega_{0,m}`. The value differ from Astropy's; the semantics is
+        identical.
+
+        This is equal to:
+
+        .. math::
+            \Omega_{0,m} = \Omega_{0,b} + \Omega_{0,cdm} + \Omega_{0,ncdm} + \Omega_{0,dcdm} - \Omega_{0,pncdm}.
+        """
+        def __get__(self):
+            return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + \
+                  self.ba.Omega0_dcdm - self.Omega0_pncdm
+
     property Neff:
+        """
+        Effective number of relativistic species, summed over ultra-relativistic
+        and ncdm species.
+        """
         def __get__(self):
             return self.ba.Neff
 
-    property age0:
+    property N_ur:
+        r"""
+        The number of ultra-relativistic species. This is equal to:
+
+        .. math::
+
+            N_{ur} = \Omega_{0,ur} / (7/8 (4/11)^{4/3} \Omega_{0,g}).
+        """
         def __get__(self):
-            return self.ba.age
+            return self.Omega0_ur / (7./8.*(4./11)**(4./3.)*self.Omega0_g)
+
+    property N_ncdm:
+        """
+        The number of distinguishable ncdm (massive neutrino) species.
+        """
+        def __get__(self):
+            return self.ba.N_ncdm
+
+    property m_ncdm:
+        """
+        The masses of the distinguishable ncdm (massive neutrino) species,
+        in units of eV.
+        """
+        def __get__(self):
+            return np.array([self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)], dtype=np.float64)
+
+    property age0:
+        """
+        The current age of the universe in gigayears.
+        """
+        def __get__(self):
+            return self.time(0.) # note that ba.age is computed as a_max, not a_today
 
     property h:
+        """
+        The dimensionless Hubble parameter.
+        """
         def __get__(self):
             return self.ba.h
 
-    property Tcmb0:
+    property T0_cmb:
         """
-        Return the CMB temperature
+        The current CMB temperature in Kelvins.
         """
         def __get__(self):
             return self.ba.T_cmb
+
+    property T0_ncdm:
+        """
+        An array holding the current ncdm temperature in Kelvins for each species.
+        """
+        def __get__(self):
+            T = np.array([self.ba.T_ncdm[i] for i in range(self.N_ncdm)], dtype=np.float64)
+            return T*self.ba.T_cmb # from units of photon temp to K
 
     def compute_for_z(self, z, int column):
         cdef double tau
         cdef int last_index #junk
 
-        z = np.float64(z)
+        z = np.array(z, dtype=np.float64)
 
         #generate a new output array of the correct shape by broadcasting input arrays together
         out = np.empty(np.broadcast(z).shape, np.float64)
@@ -442,73 +631,364 @@ cdef class Background:
 
         return out
 
-    def conformal_distance(self, z):
-        """ conformal distance, comoving distance when K = 0.0 (flat universe) """
-        return self.compute_for_z(z, self.ba.index_bg_conf_distance)
+    def Omega_pncdm(self, z, species=None):
+        r"""
+        Return :math:`\Omega_{pncdm}` as a function redshift.
+        """
+        return 3 * self.p_ncdm(z, species) / self.rho_tot(z)
 
-    def Or(self, z):
-        """ density of relative (radiation like) component, including relative part of massive neutrino and massless neutrino. """
+    def rho_g(self, z):
+        r"""
+        Density of photons :math:`\rho_g` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_rho_g) * self._RHO_
+
+    def rho_b(self, z):
+        r"""
+        Density of baryons :math:`\rho_b` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_rho_b) * self._RHO_
+
+    def rho_m(self, z):
+        r"""
+        Density of matter :math:`\rho_b` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.Omega_m(z) * self.rho_tot(z)
+
+    def rho_r(self, z):
+        r"""
+        Density of radiation :math:`\rho_r` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.Omega_r(z) * self.rho_tot(z)
+
+    def rho_cdm(self, z):
+        r"""
+        Density of cold dark matter :math:`\rho_{cdm}` as a function of redshift,
+        in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_rho_cdm) * self._RHO_
+
+    def rho_ur(self, z):
+        r"""
+        Density of ultra-relativistic radiation (massless neutrinos)
+        :math:`\rho_{ur}` as a function of redshift, in units of
+        :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_rho_ur) * self._RHO_
+
+    def rho_ncdm(self, z, species=None):
+        r"""
+        Density of non-relativistic part of massive neutrinos :math:`\rho_{ncdm}`
+        as a function of redshift, in units of
+        :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        if species is None:
+            return sum(self.rho_ncdm(z, species=i) for i in range(self.N_ncdm))
+        assert species < self.N_ncdm and species >= 0
+        return self.compute_for_z(z, self.ba.index_bg_rho_ncdm1 + species) * self._RHO_
+
+    def rho_crit(self, z):
+        r"""
+        Critical density excluding curvature :math:`\rho_cs` as a function of
+        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
+
+    def rho_k(self, z):
+        r"""
+        Density of curvature :math:`\rho_k` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        z = np.array(z, dtype=np.float64)
+        return self.ba.K * ( z+1.) ** 2 * self._RHO_
+
+    def rho_tot(self, z):
+        r"""
+        Total density :math:`\rho_\mathr{tot}` as a function of redshift, in
+        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`. It is usually
+        close to 27.76.
+        """
+        return self.rho_crit(z) + self.rho_k(z)
+
+    def rho_fld(self, z):
+        r"""
+        Density of dark energy fluid :math:`\rho_{fld}` as a function of
+        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        if self.ba.has_fld:
+            return self.compute_for_z(z, self.ba.index_bg_rho_fld) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
+    def rho_lambda(self, z):
+        r"""
+        Density of cosmological constant :math:`\rho_\Lambda` as a function of
+        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        """
+        if self.ba.has_lambda:
+            return self.compute_for_z(z, self.ba.index_bg_rho_lambda) * self._RHO_
+        else:
+            # return zeros of the right shape
+            return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
+
+    def p_ncdm(self, z, species=None):
+        """
+        Pressure of non-relative part of massive neutrino.
+        """
+        if species is None:
+            return sum(self.p_ncdm(z, i) for i in range(self.N_ncdm))
+
+        assert species < self.N_ncdm and species >= 0
+        return self.compute_for_z(z, self.ba.index_bg_p_ncdm1 + species) * self._RHO_
+
+    def Omega_r(self, z):
+        """
+        Density parameter of relativistic (radiation like) component, including
+        relativistic part of massive neutrino and massless neutrino.
+        """
         return self.compute_for_z(z, self.ba.index_bg_Omega_r)
 
-    def Onr(self, z):
-        """ density of non-relative (matter like) component, including non-relative part of massive neutrino. """
+    def Omega_m(self, z):
+        """
+        Density parameter of non-relativistic (matter like) component, including
+        non-relativistic part of massive neutrino. Unit
+        """
         return self.compute_for_z(z, self.ba.index_bg_Omega_m)
 
+    def Omega_g(self, z):
+        """
+        Density parameter of photons.
+        """
+        return self.rho_g(z) / self.rho_tot(z)
+
+    def Omega_b(self, z):
+        """
+        Density parameter of baryons.
+        """
+        return self.rho_b(z) / self.rho_tot(z)
+
+    def Omega_cdm(self, z):
+        """
+        Density parameter of cold dark matter.
+        """
+        return self.rho_cdm(z) / self.rho_tot(z)
+
+    def Omega_k(self, z):
+        """
+        Density parameter of curvature.
+        """
+        return self.rho_k(z) / self.rho_tot(z)
+
+    def Omega_ur(self, z):
+        """
+        Density parameter of ultra relativistic neutrinos.
+        """
+        return self.rho_ur(z) / self.rho_tot(z)
+
+    def Omega_ncdm(self, z, species=None):
+        """
+        Density parameter of massive neutrinos.
+        """
+        return self.rho_ncdm(z, species) / self.rho_tot(z)
+
+    def Omega_fld(self, z):
+        """
+        Density parameter of dark energy (fluid).
+        """
+        return self.rho_fld(z) / self.rho_tot(z)
+
+    def Omega_lambda(self, z):
+        """
+        Density of dark energy (cosmological constant).
+        """
+        return self.rho_lambda(z) / self.rho_tot(z)
+
     def time(self, z):
-        """ proper time (age of universe) """
-        return self.compute_for_z(z, self.ba.index_bg_time)
+        """
+        Proper time (age of universe) in gigayears.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_time) / _Gyr_over_Mpc_
+
+    def conformal_distance(self, z):
+        """
+        Conformal distance, equal to the comoving distance when K = 0.0
+        (flat universe). In units of :math:`\mathrm{Mpc}/h`.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_conf_distance) * self.ba.h
+
+    def tau(self, z):
+        """Conformal time, equal to comoving distance when K = 0.0
+        (flat universe). In units of :math:`\mathrm{Mpc}` as in CLASS.
+        """
+        return self.compute_for_z(z, self.ba.index_bg_conf_distance)
 
     def hubble_function(self, z):
+        """
+        The Hubble function in CLASS units. Users should use :func:`efunc`
+        instead.
+        """
         return self.compute_for_z(z, self.ba.index_bg_H)
 
     def hubble_function_prime(self, z):
-        """ d H / d tau ; d tau / da = 1 / (a ** 2 H) """
+        """
+        d H / d tau ; d tau / da = 1 / (a ** 2 H) in class units;
+        use :func:`efunc_prime` instead
+        """
         return self.compute_for_z(z, self.ba.index_bg_H_prime)
+
+    def efunc(self, z):
+        """
+        Function giving :math:`E(z)`, where the Hubble parameter is defined as
+        :math:`H(z) = H_0 E(z)`.
+        """
+        return self.hubble_function(z) / self.ba.H0
+
+    def efunc_prime(self, z):
+        """
+        Function giving :math:`dE(z) / da`.
+        """
+        dtau_da = (1 + z)**2 / self.hubble_function(z)
+        return self.hubble_function_prime(z) / self.ba.H0 * dtau_da
 
     def luminosity_distance(self, z):
         """
-        luminosity_distance(z)
+        Luminosity distance in :math:`\mathrm{Mpc}/h`.
         """
-        return self.compute_for_z(z, self.ba.index_bg_lum_distance)
+        return self.compute_for_z(z, self.ba.index_bg_lum_distance) * self.ba.h
 
     def angular_distance(self, z):
         """
-        angular_distance(z)
-
-        Return the angular diameter distance (exactly, the quantity defined by Class
-        as index_bg_ang_distance in the background module)
-
-        Parameters
-        ----------
-        z : float
-                Desired redshift
+        Angular diameter distance in :math:`\mathrm{Mpc}/h`.
         """
-        return self.compute_for_z(z, self.ba.index_bg_ang_distance)
+        return self.compute_for_z(z, self.ba.index_bg_ang_distance) * self.ba.h
 
     def scale_independent_growth_factor(self, z):
         """
-        Return the scale invariant growth factor D(a) for CDM perturbations
-        (exactly, the quantity defined by Class as index_bg_D in the background module)
+        Return the scale invariant growth factor :math:`D(a)` for CDM
+        perturbations.
 
-        Parameters
-        ----------
-        z : float
-                Desired redshift
+        This is the quantity defined by CLASS as ``index_bg_D`` in the
+        background module.
         """
         return self.compute_for_z(z, self.ba.index_bg_D)
 
     def scale_independent_growth_rate(self, z):
         """
+        The scale invariant growth rate :math:`d\mathrm{ln}D/d\mathrm{ln}a` for
+        CDM perturbations.
 
-        Return the scale invariant growth rate d ln D(a) / d ln a for CDM perturbations
-        (exactly, the quantity defined by Class as index_bg_f in the background module)
-
-        Parameters
-        ----------
-        z : float
-                Desired redshift
+        This is the quantity defined by CLASS as ``index_bg_f`` in the
+        background module.
         """
         return self.compute_for_z(z, self.ba.index_bg_f)
+
+cdef class Perturbs:
+    cdef ClassEngine engine
+    cdef perturbs * pt
+    cdef background * ba
+
+    def __init__(self, ClassEngine engine):
+        self.engine = engine
+        self.engine.compute("perturbs")
+        self.pt = &self.engine.pt
+        self.ba = &self.engine.ba
+
+    property k_max_for_pk:
+        r"""
+        The input parameter specifying the maximum ``k`` value to compute
+        spectra for in :math:`h \mathrm{Mpc}^{-1}`.
+        """
+        def __get__(self):
+            return self.pt.k_max_for_pk/self.ba.h
+
+    property P_z_max:
+        """
+        The input parameter specifying the maximum redshift measured for
+        power spectra.
+        """
+        def __get__(self):
+            return self.pt.z_max_pk
+
+    property gauge:
+        """
+        The gauge name as a string.
+        """
+        def __get__(self):
+            if self.pt.gauge == newtonian:
+              return 'newtonian'
+            elif self.pt.gauge == synchronous:
+              return 'synchronous'
+            else:
+              raise ValueError("gauge value not understood")
+
+cdef class Thermo:
+    cdef ClassEngine engine
+    cdef thermo * th
+    cdef background * ba
+
+    def __init__(self, ClassEngine engine):
+        self.engine = engine
+        self.engine.compute("thermodynamics")
+        self.th = &self.engine.th
+        self.ba = &self.engine.ba
+
+    property z_drag:
+        """
+        The baryon drag redshift.
+        """
+        def __get__(self):
+            return self.th.z_d
+
+    property rs_drag:
+        r"""
+        The comoving sound horizon at baryon drag, in :math:`\mathrm{Mpc}/h`.
+        """
+        def __get__(self):
+            return self.th.rs_d * self.ba.h
+
+    property tau_reio:
+        """
+        The reionization optical depth.
+        """
+        def __get__(self):
+            return self.th.tau_reio
+
+    property z_reio:
+        """
+        The reionization redshift.
+        """
+        def __get__(self):
+            return self.th.z_reio
+
+    property z_rec:
+        """
+        The redshift at which the visibility reaches its maximum; equals
+        the recombination redshift.
+        """
+        def __get__(self):
+            return self.th.z_rec
+
+    property rs_rec:
+        r"""
+        The comoving sound horizon at recombination, :math:`z=z_\mathrm{rec}`.
+        Units of :math:`\mathrm{Mpc}/h`.
+        """
+        def __get__(self):
+            return self.th.rs_rec * self.ba.h
+
+    property theta_s:
+        r"""
+        The sound horizon angle at recombination, equal to
+        :math:`r_s(z_\mathrm{rec}) / D_a(z_\mathrm{rec})`.
+        """
+        def __get__(self):
+            return self.th.rs_rec / self.th.ra_rec
+
 
 cdef class Primordial:
     cdef ClassEngine engine
@@ -524,20 +1004,23 @@ cdef class Primordial:
         self.pm = &self.engine.pm
 
     def get_pk(self, k, mode='linear'):
-        """ get primoridal spectrum at k.
+        r"""
+        The primoridal spectrum at ``k``. The units are such that:
 
-            Parameters
-            ----------
-            k : array_like,  h/Mpc units.
+        .. math ::
 
-            Results
-            -------
-            primordial_k : array_like
+            P_L = 2 \pi^2 / k^3 T^2(k) P_\mathrm{primordial}
 
-                Unit unclear. Tf_k ** 2 * primordial_k is dimensionless.
+        Parameters
+        ----------
+        k : array_like
+          wavenumbers in :math:`h \mathrm{Mpc}^{-1}` units.
 
+        Results
+        -------
+        array_like :
+          the primordial power
         """
-
         #generate a new output array of the correct shape by broadcasting input arrays together
         k = np.float64(k) * self.ba.h
         out = np.empty(np.broadcast(k).shape, np.float64)
@@ -559,9 +1042,12 @@ cdef class Primordial:
                 #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
 
-                if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
-                    <double*>(np.PyArray_MultiIter_DATA(it, 1))):
-                    raise ClassRuntimeError(self.pm.error_message.decode())
+                if aval == 0: # forcefully set k == 0 to zero.
+                    (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = 0.
+                else:
+                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
+                        <double*>(np.PyArray_MultiIter_DATA(it, 1))):
+                        raise ClassRuntimeError(self.pm.error_message.decode())
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
@@ -576,9 +1062,9 @@ cdef class Primordial:
 
         Returns
         -------
-        primordial : dictionary containing k-vector and primordial scalar and tensor P(k).
+        primordial :
+          dictionary containing k-vector and primordial scalar and tensor P(k).
         """
-
         primordial = {}
         cdef char titles[_MAXTITLESTRINGLENGTH_]
         memset(titles, 0, _MAXTITLESTRINGLENGTH_)
@@ -614,24 +1100,112 @@ cdef class Spectra:
         self.pt = &self.engine.pt
         self.pm = &self.engine.pm
 
+    property nonlinear:
+        """
+        Boolean flag specifying whether the power spectrum is nonlinear.
+        """
+        def __get__(self):
+          return self.nl.method > 0
+
+    property has_pk_matter:
+        """
+        Boolean flag specifying whether matter power spectra have been
+        requested as output.
+        """
+        def __get__(self):
+          return self.pt.has_pk_matter
+
+    property P_k_min:
+        """
+        The minimum ``k`` value for which power spectra have been computed in
+        :math:`h \mathrm{Mpc}^{-1}`.
+
+        This is computed from the ``ln_k`` array of the Spectra module.
+        """
+        def __get__(self):
+            # factor of 1.001 to avoid bounds errors due to rounding errors
+            return 1.001*np.exp(self.sp.ln_k[0])/self.ba.h;
+
+    property P_k_max:
+        """
+        The maximum ``k`` value measured for power spectra in
+        :math:`h \mathrm{Mpc}^{-1}`.
+        """
+        def __get__(self):
+            # factor of 0.999 to avoid bounds errors due to rounding errors
+            return 0.999*np.exp(self.sp.ln_k[self.sp.ln_k_size-1])/self.ba.h;
+
     property sigma8:
+        """
+        The amplitude of matter fluctuations at :math:`z=0`.
+        """
         def __get__(self):
             return self.sp.sigma8
 
     property A_s:
+        r"""
+        The scalar amplitude of the primordial power spectrum at
+        :math:`k_\mathrm{pivot}`.
+        """
         def __get__(self):
             return self.pm.A_s
 
     property ln_1e10_A_s:
+        """
+        Return :math:`\log(10^{10}A_s)`.
+        """
         def __get__(self):
             return np.log(1e10*self.A_s)
 
-    def get_transfer(self, z=0., output_format='class'):
+    property n_s:
+        """
+        The tilt of the primordial power spectrum.
+        """
+        def __get__(self):
+            return self.pm.n_s
+
+    property k_pivot:
+        r"""
+        The primordial power spectrum pivot scale, where the primordial power
+        is equal to :math:`A_s`. Units of :math:`h \mathrm{Mpc}^{-1}`.
+        """
+        def __get__(self):
+            return self.pm.k_pivot / self.ba.h
+
+    def sigma8_z(self, z):
+        """
+        Return :math:`\sigma_8(z)`.
+        """
+        #generate a new output array of the correct shape by broadcasting input arrays together
+        z = np.float64(z)
+        out = np.empty(np.broadcast(z).shape, np.float64)
+
+        #generate the iterator over the input and output arrays, does the same thing as
+        cdef np.broadcast it = np.broadcast(z,  out)
+
+        while np.PyArray_MultiIter_NOTDONE(it):
+
+                #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
+                aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+
+                if _FAILURE_ == spectra_sigma(self.ba, self.pm, self.sp, 8./self.ba.h, aval,
+                    <double*>(np.PyArray_MultiIter_DATA(it, 1))):
+                    raise ClassRuntimeError(self.sp.error_message.decode())
+
+                #PyArray_MultiIter_NEXT is used to advance the iterator
+                np.PyArray_MultiIter_NEXT(it)
+
+        return out
+
+    def get_transfer(self, z, output_format='class'):
         """
         Return the density and/or velocity transfer functions for all initial
         conditions today. You must include 'dCl' and 'vCl' in the list of
         'output'. The transfer functions can also be computed at higher redshift z
         provided that 'z_pk' has been set and that z is inside the region spanned by 'z_pk'.
+
+        This function is not vectorized; because it returns a vector when ic_size is
+        greater than 1, and I don't understand ic_size.
 
         Parameters
         ----------
@@ -641,7 +1215,11 @@ cdef class Spectra:
 
         Returns
         -------
-        tk : array_like, containing transfer functions, k
+        tk : array_like, containing transfer functions. Unlike CLASS, k here is in Mpc/h Units.
+
+        .. note::
+
+            With different cosmology the values of 'k' may be different.
         """
 
         if (not self.pt.has_density_transfers) and (not self.pt.has_velocity_transfers):

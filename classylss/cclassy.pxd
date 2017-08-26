@@ -25,8 +25,12 @@ cdef extern from "class.h":
         logarithmic
 
     cdef enum file_format:
-         class_format
-         camb_format
+        class_format
+        camb_format
+
+    cdef enum possible_gauges:
+        newtonian
+        synchronous
 
     cdef struct precision:
         FileName hyrec_Alpha_inf_file;
@@ -37,7 +41,10 @@ cdef extern from "class.h":
 
     cdef struct background:
         ErrorMsg error_message
+        short has_fld
+        short has_lambda
         int bg_size
+        int index_bg_a
         int index_bg_ang_distance
         int index_bg_lum_distance
         int index_bg_conf_distance
@@ -48,12 +55,28 @@ cdef extern from "class.h":
         int index_bg_f
         int index_bg_Omega_r
         int index_bg_Omega_m
+        int index_bg_rho_g
+        int index_bg_rho_b
+        int index_bg_rho_cdm
+        int index_bg_rho_fld
+        int index_bg_rho_lambda
+        int index_bg_w_fld
+        int index_bg_rho_ur
+        int index_bg_rho_crit
+        int index_bg_rho_ncdm1
+        int index_bg_p_ncdm1
+
         short long_info
         short inter_normal
         double T_cmb
+        double * T_ncdm
+        double H0
         double h
         double age
+        double a_today
+        double a_max
         double conformal_age
+        int N_ncdm
         double * m_ncdm_in_eV
         double Neff
         double Omega0_b
@@ -62,12 +85,14 @@ cdef extern from "class.h":
         double Omega0_dcdm
         double Omega0_ur
         double Omega0_ncdm_tot
+        double * Omega0_ncdm
         double Omega0_lambda
         double Omega0_fld
+        double Omega0_k
         double w0_fld
         double wa_fld
         double cs2_fld
-
+        double K
         int bt_size
 
     cdef struct thermo:
@@ -81,6 +106,7 @@ cdef extern from "class.h":
         double z_rec
         double tau_rec
         double rs_rec
+        double ra_rec
         double ds_rec
         double da_rec
         double z_d
@@ -102,6 +128,9 @@ cdef extern from "class.h":
         short has_velocity_transfers
         short has_metricpotential_transfers
 
+        possible_gauges gauge
+        double k_max_for_pk
+        double z_max_pk
         int has_pk_matter
         int l_lss_max
 
@@ -331,6 +360,14 @@ cdef extern from "class.h":
         int mode,
         double z,
         double * output_tot)
+
+    int spectra_sigma(
+        void * pba,
+        void * ppm,
+        void * psp,
+        double R,
+        double z,
+        double *sigma)
 
     int nonlinear_k_nl_at_z(void* pba, void* pnl, double z, double* k_nl)
 
