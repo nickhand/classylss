@@ -97,5 +97,3 @@ def load_ini(filename):
             pars[fields[0].strip()] = fields[1].strip()
 
     return pars
-
-from . import binding
