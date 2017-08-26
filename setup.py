@@ -225,7 +225,7 @@ if __name__ == '__main__':
           description="python binding of CLASS for large-scale structure calculations",
           license='GPL3',
           url="http://github.com/nickhand/classylss",
-          install_requires=['numpy', 'astropy', 'six'],
+          install_requires=['numpy', 'astropy', 'six', 'mcfit'],
           ext_modules = cythonize([
                         Extension(**classy_extension_config()),
                         Extension(**gcl_extension_config()),
