@@ -43,10 +43,22 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
                                 pba->bt_size,
                                 pba->index_bi_a,
 -                               pba->a_today,
-+                               pba->a_max,
++                               pba->a_today, // get quantites at z=0
                                 &last_index,
                                 pvecback_integration,
                                 pba->bi_size,
+@@ -1607,8 +1607,9 @@
+              pba->error_message);
+
+   /* substitute last line with quantities today */
++  /* NOTE: comment out b/c last index refers to a_max, not a_today
+   for (i=0; i<pba->bi_size; i++)
+-    pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];
++    pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];*/
+
+   /** - deduce age of the Universe */
+   /* -> age in Gyears */
+
 diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.c
 --- class_public-2.6.0.old/source/input.c	2017-08-15 20:58:02.465448381 -0700
 +++ class_public-2.6.0/source/input.c	2017-08-16 01:38:34.511524136 -0700

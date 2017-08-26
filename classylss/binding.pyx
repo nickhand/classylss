@@ -488,7 +488,7 @@ cdef class Background:
         The current age of the universe in gigayears.
         """
         def __get__(self):
-            return self.time(0.) # note that ba.age is computed as a_max, not a_today
+            return self.ba.age
 
     property h:
         """
