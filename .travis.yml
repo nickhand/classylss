@@ -37,10 +37,9 @@ install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
     - conda install --yes numpy=$NUMPY_VERSION cython
-    - pip install .
+    - pip install .[tests]
 
 script:
-    - conda install --yes -c bccp runtests
     - python run-tests.py
     - bash check_tag.sh classylss/version.py
 
