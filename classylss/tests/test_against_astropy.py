@@ -63,45 +63,59 @@ def test_against_astropy(c2):
 
     # baryon omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_b(z) / ba.rho_crit(z)
+    this1 = ba.Omega_b(z)
+    this2 = ba.rho_b(z) / ba.rho_crit(z)
     that = c2.Ob(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # lambda omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_lambda(z) / ba.rho_crit(z)
+    this1 = ba.rho_lambda(z) / ba.rho_crit(z)
+    this2 = ba.Omega_lambda(z)
     that = c2.Ode(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # cdm omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_cdm(z) / ba.rho_crit(z)
+    this1 = ba.rho_cdm(z) / ba.rho_crit(z)
+    this2 = ba.Omega_cdm(z)
     that = c2.Odm(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # photons omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_g(z) / ba.rho_crit(z)
+    this1 = ba.rho_g(z) / ba.rho_crit(z)
+    this2 = ba.Omega_g(z)
     that = c2.Ogamma(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # total radiation omega
     z = numpy.array([1.0, 0., -0.25])
-    this = (ba.rho_g(z) + ba.rho_ur(z)) / ba.rho_crit(z)
+    this1 = (ba.rho_g(z) + ba.rho_ur(z)) / ba.rho_crit(z)
+    this2 = ba.Omega_g(z) + ba.Omega_ur(z)
     that = c2.Ogamma(z) + c2.Onu(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # curvature omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_k(z) / ba.rho_crit(z)
+    this1 = ba.rho_k(z) / ba.rho_crit(z)
+    this2 = ba.Omega_k(z)
     that = c2.Ok(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # matter omega
     z = numpy.array([1.0, 0., -0.25])
-    this = ba.rho_m(z) / ba.rho_crit(z)
+    this1 = ba.rho_m(z) / ba.rho_crit(z)
+    this2 = ba.Omega_m(z)
     that = c2.Om(z)
-    assert_allclose(this, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this1, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
+    assert_allclose(this2, that, rtol=1e-3, atol=1e-3, err_msg='z = %s' %z)
 
     # T cmb
     z = numpy.array([1.0, 0., -0.25])
