@@ -628,6 +628,12 @@ cdef class Background:
         r"""
         Critical density excluding curvature :math:`\rho_cs` as a function of
         redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+
+        This is defined as:
+
+        .. math::
+
+              \rho_\c(z) = \frac{3 H(z)^2}{8 \pi G}.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
 
@@ -635,9 +641,15 @@ cdef class Background:
         r"""
         Density of curvature :math:`\rho_k` as a function of redshift, in
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+
+        Note: this is defined such that
+
+        .. math::
+
+            \rho_\mathrm{crit} = \rho_\mathrm{tot} + \rho_k
         """
         z = np.array(z, dtype=np.float64)
-        return self.ba.K * ( z+1.) ** 2 * self._RHO_
+        return -self.ba.K * ( z+1.) ** 2 * self._RHO_
 
     def rho_tot(self, z):
         r"""
@@ -645,7 +657,7 @@ cdef class Background:
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`. It is usually
         close to 27.76.
         """
-        return self.rho_crit(z) + self.rho_k(z)
+        return self.rho_crit(z) - self.rho_k(z)
 
     def rho_fld(self, z):
         r"""
@@ -715,7 +727,7 @@ cdef class Background:
         """
         Density parameter of curvature.
         """
-        return self.rho_k(z) / self.rho_tot(z)
+        return 1 - self.rho_tot(z)/self.rho_crit(z)
 
     def Omega_ur(self, z):
         """
