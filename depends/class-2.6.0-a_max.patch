@@ -12,12 +12,12 @@ diff -uNr class_public-2.6.0.old/include/background.h class_public-2.6.0/include
 diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/background.c
 --- class_public-2.6.0.old/source/background.c	2017-08-15 20:58:02.457448246 -0700
 +++ class_public-2.6.0/source/background.c	2017-08-16 01:53:20.852346459 -0700
-@@ -1528,21 +1528,21 @@
+@@ -1527,12 +1527,11 @@
+   pba->bt_size=0;
 
    /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
-
--  while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
-+  while (pvecback_integration[pba->index_bi_a] < pba->a_max) {
+-
+   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
 
      tau_start = tau_end;
 
@@ -26,38 +26,134 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
      class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
                 pba->error_message,
                 pba->error_message);
+@@ -1573,13 +1572,62 @@
 
--    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_today) {
-+    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_max) {
-       tau_end = tau_start + ppr->back_integration_stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
-       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
-     }
-     else {
--      tau_end = tau_start + (pba->a_today/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
-+      tau_end = tau_start + (pba->a_max/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
-       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
-     }
+   }
 
-@@ -1598,7 +1598,7 @@
++  /* do second loop up until a_max if a_max is greater than a_today*/
++  /* explicit second loop preserves a binning up to a_today so results will be identical for a <= a_today */
++  if (pba->a_max > pba->a_today) {
++
++    while (pvecback_integration[pba->index_bi_a] < pba->a_max) {
++
++      tau_start = tau_end;
++
++      /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_max; need not be exact, difference corrected later) */
++      class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
++                 pba->error_message,
++                 pba->error_message);
++
++      if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_max) {
++        tau_end = tau_start + ppr->back_integration_stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
++        /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
++      }
++      else {
++        tau_end = tau_start + (pba->a_max/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
++        /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
++      }
++
++      class_test((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
++                 pba->error_message,
++                 "integration step: relative change in time =%e < machine precision : leads either to numerical error or infinite loop",(tau_end-tau_start)/tau_start);
++
++      /* -> save data in growTable */
++      class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
++                 gTable.error_message,
++                 pba->error_message);
++      pba->bt_size++;
++
++      /* -> perform one step */
++      class_call(generic_integrator(background_derivs,
++                                    tau_start,
++                                    tau_end,
++                                    pvecback_integration,
++                                    &bpaw,
++                                    ppr->tol_background_integration,
++                                    ppr->smallest_allowed_variation,
++                                    &gi),
++                 gi.error_message,
++                 pba->error_message);
++
++      /* -> store value of tau */
++      pvecback_integration[pba->index_bi_tau]=tau_end;
++
++    }
++  }
++
+   /** - save last data in growTable with gt_add() */
+   class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
+              gTable.error_message,
+              pba->error_message);
+   pba->bt_size++;
+
+-
+   /* integration finished */
+
+   /** - clean up generic integrator with cleanup_generic_integrator() */
+@@ -1592,13 +1640,41 @@
+              gTable.error_message,
+              pba->error_message);
+
+-  /** - interpolate to get quantities precisely today with array_interpolate() */
++
++  /** - interpolate to get quantities precisely at a_today with array_interpolate() */
++  class_call(array_interpolate(
++                              pData,
++                              pba->bi_size,
++                              pba->bt_size,
++                              pba->index_bi_a,
++                              pba->a_today,
++                              &last_index,
++                              pvecback_integration,
++                              pba->bi_size,
++                              pba->error_message),
++            pba->error_message,
++            pba->error_message);
++
++  /** - deduce age of the Universe */
++  /* -> age in Gyears */
++  pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
++  /* -> conformal age in Mpc */
++  pba->conformal_age = pvecback_integration[pba->index_bi_tau];
++  /* -> contribution of decaying dark matter and dark radiation to the critical density today: */
++  if (pba->has_dcdm == _TRUE_){
++    pba->Omega0_dcdm = pvecback_integration[pba->index_bi_rho_dcdm]/pba->H0/pba->H0;
++  }
++  if (pba->has_dr == _TRUE_){
++    pba->Omega0_dr = pvecback_integration[pba->index_bi_rho_dr]/pba->H0/pba->H0;
++  }
++
++  /** - interpolate to get quantities precisely at a_max with array_interpolate() */
+   class_call(array_interpolate(
+                                pData,
                                 pba->bi_size,
                                 pba->bt_size,
                                 pba->index_bi_a,
 -                               pba->a_today,
-+                               pba->a_today, // get quantites at z=0
++                               pba->a_max,
                                 &last_index,
                                 pvecback_integration,
                                 pba->bi_size,
-@@ -1607,8 +1607,9 @@
-              pba->error_message);
-
-   /* substitute last line with quantities today */
-+  /* NOTE: comment out b/c last index refers to a_max, not a_today
+@@ -1610,19 +1686,6 @@
    for (i=0; i<pba->bi_size; i++)
--    pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];
-+    pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];*/
+     pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];
 
-   /** - deduce age of the Universe */
-   /* -> age in Gyears */
+-  /** - deduce age of the Universe */
+-  /* -> age in Gyears */
+-  pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
+-  /* -> conformal age in Mpc */
+-  pba->conformal_age = pvecback_integration[pba->index_bi_tau];
+-  /* -> contribution of decaying dark matter and dark radiation to the critical density today: */
+-  if (pba->has_dcdm == _TRUE_){
+-    pba->Omega0_dcdm = pvecback_integration[pba->index_bi_rho_dcdm]/pba->H0/pba->H0;
+-  }
+-  if (pba->has_dr == _TRUE_){
+-    pba->Omega0_dr = pvecback_integration[pba->index_bi_rho_dr]/pba->H0/pba->H0;
+-  }
+-
+
+   /** - allocate background tables */
+   class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
 
 diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.c
 --- class_public-2.6.0.old/source/input.c	2017-08-15 20:58:02.465448381 -0700
