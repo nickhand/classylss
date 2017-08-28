@@ -488,7 +488,7 @@ cdef class Background:
         The current age of the universe in gigayears.
         """
         def __get__(self):
-            return self.time(0.) # note that ba.age is computed as a_max, not a_today
+            return self.ba.age
 
     property h:
         """
@@ -511,6 +511,24 @@ cdef class Background:
         def __get__(self):
             T = np.array([self.ba.T_ncdm[i] for i in range(self.N_ncdm)], dtype=np.float64)
             return T*self.ba.T_cmb # from units of photon temp to K
+
+    def T_cmb(self, z):
+        """
+        The CMB temperature as a function of redshift.
+        """
+        return self.T0_cmb * (1 + z)
+
+    def T_ncdm(self, z):
+        """
+        The ncdm temperature (massive neutrinos) as a function of redshift.
+
+        Return shape is (N_ncdm,) if N_ncdm == 1 else (len(z), N_ncdm)
+        """
+        if np.isscalar(z):
+            return self.T0_ncdm * (1+z)
+        else:
+            z = np.array(z, ndmin=1, dtype=np.float64)
+        return self.T0_ncdm * (1 + z)[:,None]
 
     def compute_for_z(self, z, int column):
         cdef double tau
@@ -571,14 +589,14 @@ cdef class Background:
         Density of matter :math:`\rho_b` as a function of redshift, in
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
         """
-        return self.Omega_m(z) * self.rho_tot(z)
+        return self.compute_for_z(z, self.ba.index_bg_Omega_m) * self.rho_tot(z)
 
     def rho_r(self, z):
         r"""
         Density of radiation :math:`\rho_r` as a function of redshift, in
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
         """
-        return self.Omega_r(z) * self.rho_tot(z)
+        return self.compute_for_z(z, self.ba.index_bg_Omega_r) * self.rho_tot(z)
 
     def rho_cdm(self, z):
         r"""
@@ -610,6 +628,12 @@ cdef class Background:
         r"""
         Critical density excluding curvature :math:`\rho_cs` as a function of
         redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+
+        This is defined as:
+
+        .. math::
+
+              \rho_\c(z) = \frac{3 H(z)^2}{8 \pi G}.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
 
@@ -617,9 +641,15 @@ cdef class Background:
         r"""
         Density of curvature :math:`\rho_k` as a function of redshift, in
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+
+        Note: this is defined such that
+
+        .. math::
+
+            \rho_\mathrm{crit} = \rho_\mathrm{tot} + \rho_k
         """
         z = np.array(z, dtype=np.float64)
-        return self.ba.K * ( z+1.) ** 2 * self._RHO_
+        return -self.ba.K * ( z+1.) ** 2 * self._RHO_
 
     def rho_tot(self, z):
         r"""
@@ -627,7 +657,7 @@ cdef class Background:
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`. It is usually
         close to 27.76.
         """
-        return self.rho_crit(z) + self.rho_k(z)
+        return self.rho_crit(z) - self.rho_k(z)
 
     def rho_fld(self, z):
         r"""
@@ -666,62 +696,62 @@ cdef class Background:
         Density parameter of relativistic (radiation like) component, including
         relativistic part of massive neutrino and massless neutrino.
         """
-        return self.compute_for_z(z, self.ba.index_bg_Omega_r)
+        return self.rho_r(z) / self.rho_crit(z)
 
     def Omega_m(self, z):
         """
         Density parameter of non-relativistic (matter like) component, including
         non-relativistic part of massive neutrino. Unit
         """
-        return self.compute_for_z(z, self.ba.index_bg_Omega_m)
+        return self.rho_m(z) / self.rho_crit(z)
 
     def Omega_g(self, z):
         """
         Density parameter of photons.
         """
-        return self.rho_g(z) / self.rho_tot(z)
+        return self.rho_g(z) / self.rho_crit(z)
 
     def Omega_b(self, z):
         """
         Density parameter of baryons.
         """
-        return self.rho_b(z) / self.rho_tot(z)
+        return self.rho_b(z) / self.rho_crit(z)
 
     def Omega_cdm(self, z):
         """
         Density parameter of cold dark matter.
         """
-        return self.rho_cdm(z) / self.rho_tot(z)
+        return self.rho_cdm(z) / self.rho_crit(z)
 
     def Omega_k(self, z):
         """
         Density parameter of curvature.
         """
-        return self.rho_k(z) / self.rho_tot(z)
+        return 1 - self.rho_tot(z)/self.rho_crit(z)
 
     def Omega_ur(self, z):
         """
         Density parameter of ultra relativistic neutrinos.
         """
-        return self.rho_ur(z) / self.rho_tot(z)
+        return self.rho_ur(z) / self.rho_crit(z)
 
     def Omega_ncdm(self, z, species=None):
         """
         Density parameter of massive neutrinos.
         """
-        return self.rho_ncdm(z, species) / self.rho_tot(z)
+        return self.rho_ncdm(z, species) / self.rho_crit(z)
 
     def Omega_fld(self, z):
         """
         Density parameter of dark energy (fluid).
         """
-        return self.rho_fld(z) / self.rho_tot(z)
+        return self.rho_fld(z) / self.rho_crit(z)
 
     def Omega_lambda(self, z):
         """
         Density of dark energy (cosmological constant).
         """
-        return self.rho_lambda(z) / self.rho_tot(z)
+        return self.rho_lambda(z) / self.rho_crit(z)
 
     def time(self, z):
         """
