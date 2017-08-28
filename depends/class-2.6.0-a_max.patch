@@ -1,7 +1,17 @@
 diff -uNr class_public-2.6.0.old/include/background.h class_public-2.6.0/include/background.h
 --- class_public-2.6.0.old/include/background.h	2017-08-15 20:58:01.994440424 -0700
 +++ class_public-2.6.0/include/background.h	2017-08-16 01:29:47.705730887 -0700
-@@ -144,6 +144,7 @@
+@@ -128,7 +128,8 @@
+
+   double h; /**< reduced Hubble parameter */
+   double age; /**< age in Gyears */
+-  double conformal_age; /**< conformal age in Mpc */
++  double conformal_age; /**< conformal age at a_today in Mpc */
++  double conformal_age_amax; /**< conformal age at a_max in Mpc */
+   double K; /**< \f$ K \f$: Curvature parameter \f$ K=-\Omega0_k*a_{today}^2*H_0^2\f$; */
+   int sgnK; /**< K/|K|: -1, 0 or 1 */
+   double * m_ncdm_in_eV; /**< list of ncdm masses in eV (inferred from M_ncdm and other parameters above) */
+@@ -144,6 +145,7 @@
    //@{
 
    double a_today; /**< scale factor today (arbitrary and irrelevant for most purposes) */
@@ -113,7 +123,7 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
 +  /** - deduce age of the Universe */
 +  /* -> age in Gyears */
 +  pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-+  /* -> conformal age in Mpc */
++  /* -> conformal age at a_today in Mpc */
 +  pba->conformal_age = pvecback_integration[pba->index_bi_tau];
 +  /* -> contribution of decaying dark matter and dark radiation to the critical density today: */
 +  if (pba->has_dcdm == _TRUE_){
@@ -134,7 +144,7 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
                                 &last_index,
                                 pvecback_integration,
                                 pba->bi_size,
-@@ -1610,19 +1686,6 @@
+@@ -1610,19 +1686,8 @@
    for (i=0; i<pba->bi_size; i++)
      pData[(pba->bt_size-1)*pba->bi_size+i]=pvecback_integration[i];
 
@@ -151,9 +161,12 @@ diff -uNr class_public-2.6.0.old/source/background.c class_public-2.6.0/source/b
 -    pba->Omega0_dr = pvecback_integration[pba->index_bi_rho_dr]/pba->H0/pba->H0;
 -  }
 -
++  /* -> conformal age at a_max in Mpc */
++  pba->conformal_age_amax = pvecback_integration[pba->index_bi_tau];
 
    /** - allocate background tables */
    class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
+
 
 diff -uNr class_public-2.6.0.old/source/input.c class_public-2.6.0/source/input.c
 --- class_public-2.6.0.old/source/input.c	2017-08-15 20:58:02.465448381 -0700
@@ -277,3 +290,37 @@ diff -uNr class_public-2.6.0.old/source/thermodynamics.c class_public-2.6.0/sour
 +    class_call(thermodynamics_derivs_with_recfast(zend_fuzzy, y, dy, &tpaw,pth->error_message),
                 pth->error_message,
                 pth->error_message);
+
+diff -uNr class_public-2.6.0.old/source/perturbations.c class_public-2.6.0/source/perturbations.c
+--- class_v2.6.old/source/perturbations.c	2017-08-22 13:46:49.000000000 -0400
++++ class_v2.6/source/perturbations.c	2017-08-22 20:30:55.000000000 -0400
+@@ -1064,7 +1064,8 @@
+  last_index_thermo = first_index_thermo;
+  tau = tau_ini;
+
+-  while (tau < pba->conformal_age) {
++  /* do calculations up to a=a_max */
++  while (tau < pba->conformal_age_amax) {
+
+    class_call(background_at_tau(pba,
+                                 tau,
+@@ -1147,7 +1148,7 @@
+  last_index_thermo = first_index_thermo;
+  tau = tau_ini;
+
+-  while (tau < pba->conformal_age) {
++  while (tau < pba->conformal_age_amax) {
+
+    class_call(background_at_tau(pba,
+                                 tau,
+@@ -1205,8 +1206,8 @@
+
+  }
+
+-  /** - last sampling point = exactly today */
+-  ppt->tau_sampling[counter] = pba->conformal_age;
++  /** - last sampling point = exactly at a_max */
++  ppt->tau_sampling[counter] = pba->conformal_age_amax;
+
+  free(pvecback);
+  free(pvecthermo);

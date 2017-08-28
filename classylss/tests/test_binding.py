@@ -1,7 +1,9 @@
 from classylss.binding import *
+import pytest
 
-def test_ba():
-    cosmo = ClassEngine()
+@pytest.mark.parametrize("a_max", [1.0, 2.0])
+def test_ba(a_max):
+    cosmo = ClassEngine({'a_max':a_max})
     ba = Background(cosmo)
     assert ba.hubble_function(0.1).shape == ()
     assert ba.hubble_function([0.1]).shape == (1,)
@@ -16,8 +18,9 @@ def test_ba():
     ba.scale_independent_growth_factor([[0.2, 0.3, 0.4]])
     ba.scale_independent_growth_rate([[0.2, 0.3, 0.4]])
 
-def test_sp():
-    cosmo = ClassEngine({'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+@pytest.mark.parametrize("a_max", [1.0, 2.0])
+def test_sp(a_max):
+    cosmo = ClassEngine({'a_max':a_max, 'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
     sp = Spectra(cosmo)
     pk = sp.get_pk(0.1, 0.1)
     pk = sp.get_pk([0.1], 0.1)
@@ -25,9 +28,13 @@ def test_sp():
 
     t = sp.get_transfer(0.0)
     t = sp.get_transfer(2.0)
+    t = sp.get_transfer(1./(0.99*a_max)-1)
 
-def test_thermo():
-    cosmo = ClassEngine({'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+    s8_z = sp.sigma8_z([0., 1.0])
+
+@pytest.mark.parametrize("a_max", [1.0, 2.0])
+def test_thermo(a_max):
+    cosmo = ClassEngine({'a_max':a_max, 'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
     th = Thermo(cosmo)
 
     z_d = th.z_drag
@@ -38,9 +45,10 @@ def test_thermo():
     rs_res = th.rs_rec
     theta_s = th.theta_s
 
-def test_primordial():
+@pytest.mark.parametrize("a_max", [1.0, 2.0])
+def test_primordial(a_max):
 
-    cosmo = ClassEngine({'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+    cosmo = ClassEngine({'a_max':a_max, 'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
     pm = Primordial(cosmo)
     Pk = pm.get_pk(k=[0., 0.1, 0.2])
 
