@@ -43,7 +43,7 @@ class ClassBadValueError(ValueError):
 
 
 def val2str(val):
-    if isinstance(val, (list, tuple)):
+    if isinstance(val, (list, tuple, np.ndarray)):
         return ','.join([str(i) for i in val])
     return str(val)
 
