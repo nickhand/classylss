@@ -32,6 +32,16 @@ class ClassRuntimeError(RuntimeError):
     def __str__(self):
         return 'Class Error in Class: ' + self.message
 
+class ClassParserError(ValueError):
+    def __init__(self, message, file_content):
+        self.message = message
+        self.file_content = file_content
+
+    def __str__(self):
+        return 'Class Parser Error : ' + self.message + '\n' + self.file_content
+
+    pass
+
 class ClassBadValueError(ValueError):
     """
     Raised when Class could not compute the cosmology at this point.
@@ -224,7 +234,7 @@ cdef class ClassEngine:
             if input_init(fc, &self.pr, &self.ba, &self.th,
                           &self.pt, &self.tr, &self.pm, &self.sp,
                           &self.nl, &self.le, &self.op, errmsg) == _FAILURE_:
-                raise ClassRuntimeError(errmsg.decode())
+                raise ClassParserError(errmsg.decode(), self.parameter_file)
 
             # This part is done to list all the unread parameters, for debugging
             problem_flag = False
