@@ -1,182 +1,41 @@
-#Some Makefile for CLASS.
-#Julien Lesgourgues, 28.11.2011
-#v2.5.0, modified by Nick Hand for classylss
+CLASS_VERSION?=2.6.1
+DEST?=_inst
 
-MDIR := $(shell pwd)
-WRKDIR = $(MDIR)/build
+TARBALL=class-v$(CLASS_VERSION).tar.gz
+UNPACK=tmp-class-v$(CLASS_VERSION)
+SRC=$(UNPACK)/class_public-$(CLASS_VERSION)
 
-.base:
-	if ! [ -e $(WRKDIR) ]; then mkdir $(WRKDIR) ; mkdir $(WRKDIR)/lib; fi;
-	touch build/.base
+$(TARBALL):
+	wget https://github.com/lesgourg/class_public/archive/v$(CLASS_VERSION).tar.gz \
+		-O $(TARBALL)
 
-vpath %.c source:tools:main:test
-vpath %.o build
-vpath .base build
+$(SRC)/stamp.unzip: $(TARBALL)
+	mkdir -p $(UNPACK)
+	gzip -dc $(TARBALL) | tar xf - -C $(UNPACK)
+	touch $@
 
-########################################################
-###### LINES TO ADAPT TO YOUR PLATEFORM ################
-########################################################
+$(SRC)/stamp.patch : $(SRC)/stamp.unzip \
+	  class-2.6.0-a_max.patch \
+	  class-2.6.0-tol-ncdm.patch
+	patch -d $(SRC) -p1 < class-2.6.0-a_max.patch || exit 1 
+	patch -d $(SRC) -p1 < class-2.6.0-tol-ncdm.patch || exit 1
+	touch $@
 
-# include CLASS config file
-include $(CLASSCFG)
+$(SRC)/libclass.a: $(SRC)/stamp.patch class.cfg Makefile
+	cp Makefile.class $(SRC)/Makefile
+	cp class.cfg $(SRC)/myclass.cfg
+	cd $(SRC); make CLASSCFG=myclass.cfg libclass.a
 
+$(DEST)/lib/libclass.a: $(SRC)/libclass.a Makefile
+	echo $(DEST)/data
+	mkdir -p $(DEST)/data
+	cp -r $(SRC)/include $(DEST)
+	mkdir -p $(DEST)/lib
+	cp $(SRC)/libclass.a $(DEST)/lib
+	mkdir -p $(DEST)/data
+	./copy_data_files $(SRC) $(DEST)/data
 
-########################################################
-###### IN PRINCIPLE THE REST SHOULD BE LEFT UNCHANGED ##
-########################################################
-
-# (OPT) your python interpreter
-PYTHON = python
-
-# leave blank to compile without HyRec, or put path to HyRec directory
-# (with no slash at the end: e.g. hyrec or ../hyrec)
-HYREC = hyrec
-
-# pass current working directory to the code
-CCFLAG += -D__CLASSDIR__='"$(CLASSDIR)"'
-
-# where to find include files *.h
-INCLUDES = -I../include
-
-# automatically add external programs if needed. First, initialize to blank.
-EXTERNAL =
-
-# Try to automatically avoid an error 'error: can't combine user with ...'
-# which sometimes happens with brewed Python on OSX:
-CFGFILE=$(shell $(PYTHON) -c "from __future__ import print_function; import sys; print(sys.prefix+'/lib/'+'python'+'.'.join(['%i' % e for e in sys.version_info[0:2]])+'/distutils/distutils.cfg')")
-PYTHONPREFIX=$(shell grep -s "prefix" $(CFGFILE))
-ifeq ($(PYTHONPREFIX),)
-PYTHONFLAGS=--user
-else
-PYTHONFLAGS=
-endif
-
-# eventually update flags for including HyRec
-ifneq ($(HYREC),)
-vpath %.c $(HYREC)
-CCFLAG += -DHYREC
-#LDFLAGS += -DHYREC
-INCLUDES += -I../hyrec
-EXTERNAL += hyrectools.o helium.o hydrogen.o history.o
-endif
-
-%.o:  %.c .base
-	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../$< -o $*.o
-
-TOOLS = growTable.o dei_rkck.o sparse.o evolver_rkck.o  evolver_ndf15.o arrays.o parser.o quadrature.o hyperspherical.o common.o
-
-SOURCE = input.o background.o thermodynamics.o perturbations.o primordial.o nonlinear.o transfer.o spectra.o lensing.o
-
-INPUT = input.o
-
-PRECISION = precision.o
-
-BACKGROUND = background.o
-
-THERMO = thermodynamics.o
-
-PERTURBATIONS = perturbations.o
-
-TRANSFER = transfer.o
-
-PRIMORDIAL = primordial.o
-
-SPECTRA = spectra.o
-
-NONLINEAR = nonlinear.o
-
-LENSING = lensing.o
-
-OUTPUT = output.o
-
-CLASS = class.o
-
-TEST_LOOPS = test_loops.o
-
-TEST_LOOPS_OMP = test_loops_omp.o
-
-TEST_DEGENERACY = test_degeneracy.o
-
-TEST_TRANSFER = test_transfer.o
-
-TEST_NONLINEAR = test_nonlinear.o
-
-TEST_PERTURBATIONS = test_perturbations.o
-
-TEST_THERMODYNAMICS = test_thermodynamics.o
-
-TEST_BACKGROUND = test_background.o
-
-TEST_SIGMA = test_sigma.o
-
-TEST_HYPERSPHERICAL = test_hyperspherical.o
-
-TEST_STEPHANE = test_stephane.o
-
-C_TOOLS =  $(addprefix tools/, $(addsuffix .c,$(basename $(TOOLS))))
-C_SOURCE = $(addprefix source/, $(addsuffix .c,$(basename $(SOURCE) $(OUTPUT))))
-C_TEST = $(addprefix test/, $(addsuffix .c,$(basename $(TEST_DEGENERACY) $(TEST_LOOPS) $(TEST_TRANSFER) $(TEST_NONLINEAR) $(TEST_PERTURBATIONS) $(TEST_THERMODYNAMICS))))
-C_MAIN = $(addprefix main/, $(addsuffix .c,$(basename $(CLASS))))
-C_ALL = $(C_MAIN) $(C_TOOLS) $(C_SOURCE)
-H_ALL = $(addprefix include/, common.h svnversion.h $(addsuffix .h, $(basename $(notdir $(C_ALL)))))
-PRE_ALL = cl_ref.pre clt_permille.pre
-INI_ALL = explanatory.ini lcdm.ini
-MISC_FILES = Makefile CPU psd_FD_single.dat myselection.dat myevolution.dat README bbn/sBBN.dat external_Pk/* cpp
-PYTHON_FILES = python/classy.pyx python/setup.py python/cclassy.pxd python/test_class.py
-
-
-
-
-all: class libclass.a classy
-
-libclass.a: $(TOOLS) $(SOURCE) $(EXTERNAL)
-	$(AR)  $@ $(addprefix build/, $(TOOLS) $(SOURCE) $(EXTERNAL))
-
-class: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(CLASS)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o class $(addprefix build/,$(notdir $^)) -lm
-
-test_sigma: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_SIGMA)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o test_sigma $(addprefix build/,$(notdir $^)) -lm
-
-test_loops: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_LOOPS)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_loops_omp: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_LOOPS_OMP)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_stephane: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_STEPHANE)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_degeneracy: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_DEGENERACY)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_transfer: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_TRANSFER)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_nonlinear: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_NONLINEAR)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_perturbations: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_PERTURBATIONS)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_thermodynamics: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_THERMODYNAMICS)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_background: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_BACKGROUND)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
-
-test_hyperspherical: $(TOOLS) $(TEST_HYPERSPHERICAL)
-	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o test_hyperspherical $(addprefix build/,$(notdir $^)) -lm
-
-
-tar: $(C_ALL) $(C_TEST) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
-	tar czvf class.tar.gz $(C_ALL) $(H_ALL) $(PRE_ALL) $(INI_ALL) $(MISC_FILES) $(HYREC) $(PYTHON_FILES)
-
-classy: libclass.a python/classy.pyx python/cclassy.pxd
-	cd python; export CC=$(CC); $(PYTHON) setup.py install $(PYTHONFLAGS)
-
-clean: .base
-	rm -rf $(WRKDIR);
-	rm -f libclass.a
-	rm -f $(MDIR)/python/classy.c
-	rm -rf $(MDIR)/python/build
+unzip: $(SRC)/stamp.unzip
+patch: $(SRC)/stamp.patch
+build: $(SRC)/libclass.a
+install: $(DEST)/lib/libclass.a

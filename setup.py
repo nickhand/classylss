@@ -34,7 +34,7 @@ def build_CLASS(prefix):
     Function to dowwnload CLASS from github and and build the library
     """
     # latest class version and download link
-    args = (package_basedir, CLASS_VERSION, prefix, "/opt/class/willfail")
+    args = (package_basedir, package_basedir, CLASS_VERSION, os.path.abspath(prefix))
     command = 'sh %s/depends/install_class.sh %s %s %s' %args
 
     ret = os.system(command)
