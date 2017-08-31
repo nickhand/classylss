@@ -14,7 +14,7 @@ c_closed = ac.LambdaCDM(H0=70, Om0=0.3, Ob0=0.04, Ode0=0.85, Tcmb0=2.7255)
 def test_against_astropy(c2):
 
     # classylss
-    pars = {'h':c2.h, 'Omega_cdm':c2.Odm0, 'Omega_b':c2.Ob0, 'Omega_k':c2.Ok0, 'T_cmb':c2.Tcmb0, 'a_max':2.0}
+    pars = {'h':c2.h, 'Omega_cdm':c2.Odm0, 'Omega_b':c2.Ob0, 'Omega_k':c2.Ok0, 'T_cmb':c2.Tcmb0.value, 'a_max':2.0}
     cosmo = ClassEngine(pars)
     ba = Background(cosmo)
 
