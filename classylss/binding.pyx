@@ -310,7 +310,7 @@ cdef class Background:
     cdef background * ba
     cdef readonly dict data
 
-    cdef readonly double Omega0_pncdm
+    cdef readonly double Omega0_pncdm_tot
     cdef readonly double H0
     cdef readonly double C
     cdef readonly double G
@@ -327,7 +327,7 @@ cdef class Background:
         # convert RHO to  1e10 Msun/h
         self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
-        self.Omega0_pncdm = self.Omega_pncdm(0.0) # watchout, the convention is 0.0
+        self.Omega0_pncdm_tot = self.Omega_pncdm(0.0) # watchout, the convention is 0.0
 
     property Omega0_b:
         r"""
@@ -426,7 +426,7 @@ cdef class Background:
            \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}.
         """
         def __get__(self):
-            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm
+            return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm_tot
 
     property a_today:
         """
@@ -457,7 +457,7 @@ cdef class Background:
         """
         def __get__(self):
             return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + \
-                  self.ba.Omega0_dcdm - self.Omega0_pncdm
+                  self.ba.Omega0_dcdm - self.Omega0_pncdm_tot
 
     property Neff:
         """
