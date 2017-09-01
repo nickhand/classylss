@@ -310,6 +310,7 @@ cdef class Background:
     cdef background * ba
     cdef readonly dict data
 
+    cdef readonly np.ndarray Omega0_pncdm
     cdef readonly double Omega0_pncdm_tot
     cdef readonly double H0
     cdef readonly double C
@@ -328,6 +329,7 @@ cdef class Background:
         self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
         self.Omega0_pncdm_tot = self.Omega_pncdm(0.0) # watchout, the convention is 0.0
+        self.Omega0_pncdm = np.array([self.Omega_pncdm(0.0, i) for i in range(self.N_ncdm)], np.float64)
 
     property Omega0_b:
         r"""

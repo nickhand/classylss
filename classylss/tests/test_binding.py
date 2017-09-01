@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.parametrize("a_max", [1.0, 2.0])
 def test_ba(a_max):
-    cosmo = ClassEngine({'a_max':a_max})
+    cosmo = ClassEngine({'a_max':a_max, 'N_ncdm': 1, 'm_ncdm':[0.06]})
     ba = Background(cosmo)
     assert ba.hubble_function(0.1).shape == ()
     assert ba.hubble_function([0.1]).shape == (1,)
@@ -17,6 +17,8 @@ def test_ba(a_max):
     ba.hubble_function_prime([[0.2, 0.3, 0.4]])
     ba.scale_independent_growth_factor([[0.2, 0.3, 0.4]])
     ba.scale_independent_growth_rate([[0.2, 0.3, 0.4]])
+
+    assert ba.Omega_pncdm(0, 0) == ba.Omega0_pncdm[0]
 
 @pytest.mark.parametrize("a_max", [1.0, 2.0])
 def test_sp(a_max):
