@@ -139,8 +139,8 @@ def classy_extension_config():
     config['extra_compile_args'] = ['-fopenmp']
     # important or get a symbol not found error, because class is
     # compiled with c++?
-    config['language'] = 'c++'
-    config['libraries'] = ['class', 'gomp', 'gfortran']
+    config['language'] = 'c'
+    config['libraries'] = ['class', 'gomp', 'gfortran', 'm']
 
     # determine if swig needs to be called
     config['sources'] = ['classylss/binding.pyx']
