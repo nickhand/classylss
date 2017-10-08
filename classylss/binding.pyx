@@ -43,7 +43,7 @@ class ClassParserError(ValueError):
     pass
 
 class ClassBadValueError(ValueError):
-    """
+    r"""
     Raised when Class could not compute the cosmology at this point.
 
     This will be caught by the parameter extraction code to give an extremely
@@ -111,7 +111,7 @@ cdef np.dtype _titles_to_dtype(char * titles, int remove_units=False):
 
 
 def _build_task_dependency(tasks):
-    """
+    r"""
     Fill the tasks list with all the needed modules
 
     .. warning::
@@ -206,7 +206,7 @@ cdef class ClassEngine:
         if self.ready.ba: background_free(&self.ba)
 
     cdef compute(self, level):
-        """
+        r"""
         Main function, execute all the _init methods for all desired modules.
         This is called in MontePython, and this ensures that the Class instance
         of this class contains all the relevant quantities. Then, one can deduce
@@ -361,7 +361,7 @@ cdef class Background:
 
     property Omega0_fld:
         r"""
-        Current density parameter for dark energy (fluid), :math:`\Omega_{de,0}`.
+        Current density parameter for dark energy (fluid) :math:`\Omega_{fld, 0}`.
         """
         def __get__(self):
             return self.ba.Omega0_fld
@@ -404,7 +404,7 @@ cdef class Background:
             return np.array([self.ba.Omega0_ncdm[i] for i in range(self.N_ncdm)], np.float64)
 
     property Omega0_ncdm_tot:
-        """
+        r"""
         Current total density parameter of all distinguishable (massive)
         neutrinos.
         """
@@ -420,18 +420,19 @@ cdef class Background:
             return self.ba.Omega0_ur
 
     property Omega0_r:
-        """
+        r"""
         Current density parameter of radiation, :math:`\Omega_{0,r}`.
         This is equal to:
 
-       .. math::
-           \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}.
+        .. math::
+
+            \Omega_{0,r} = \Omega_{0,g} + \Omega_{0,\nu_r} + \Omega_{0,pncdm}.
         """
         def __get__(self):
             return self.ba.Omega0_g + self.ba.Omega0_ur + self.Omega0_pncdm_tot
 
     property a_today:
-        """
+        r"""
         An arbitrary number that sets the reference scaling factor.
         It shall be 1 usually.
         """
@@ -439,7 +440,7 @@ cdef class Background:
             return self.ba.a_today
 
     property a_max:
-        """
+        r"""
         The maximum scale factor for which results can be computed; it can be
         greater than 1.0.
         """
@@ -462,7 +463,7 @@ cdef class Background:
                   self.ba.Omega0_dcdm - self.Omega0_pncdm_tot
 
     property Neff:
-        """
+        r"""
         Effective number of relativistic species, summed over ultra-relativistic
         and ncdm species.
         """
@@ -481,14 +482,14 @@ cdef class Background:
             return self.Omega0_ur / (7./8.*(4./11)**(4./3.)*self.Omega0_g)
 
     property N_ncdm:
-        """
+        r"""
         The number of distinguishable ncdm (massive neutrino) species.
         """
         def __get__(self):
             return self.ba.N_ncdm
 
     property m_ncdm:
-        """
+        r"""
         The masses of the distinguishable ncdm (massive neutrino) species,
         in units of eV.
         """
@@ -496,28 +497,28 @@ cdef class Background:
             return np.array([self.ba.m_ncdm_in_eV[i] for i in range(self.N_ncdm)], dtype=np.float64)
 
     property age0:
-        """
+        r"""
         The current age of the universe in gigayears.
         """
         def __get__(self):
             return self.ba.age
 
     property h:
-        """
+        r"""
         The dimensionless Hubble parameter.
         """
         def __get__(self):
             return self.ba.h
 
     property T0_cmb:
-        """
+        r"""
         The current CMB temperature in Kelvins.
         """
         def __get__(self):
             return self.ba.T_cmb
 
     property T0_ncdm:
-        """
+        r"""
         An array holding the current ncdm temperature in Kelvins for each species.
         """
         def __get__(self):
@@ -525,13 +526,13 @@ cdef class Background:
             return T*self.ba.T_cmb # from units of photon temp to K
 
     def T_cmb(self, z):
-        """
+        r"""
         The CMB temperature as a function of redshift.
         """
         return self.T0_cmb * (1 + z)
 
     def T_ncdm(self, z):
-        """
+        r"""
         The ncdm temperature (massive neutrinos) as a function of redshift.
 
         Return shape is (N_ncdm,) if N_ncdm == 1 else (len(z), N_ncdm)
@@ -645,7 +646,7 @@ cdef class Background:
 
         .. math::
 
-              \rho_\c(z) = \frac{3 H(z)^2}{8 \pi G}.
+              \rho_c(z) = \frac{3 H(z)^2}{8 \pi G}.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_crit) * self._RHO_
 
@@ -665,7 +666,7 @@ cdef class Background:
 
     def rho_tot(self, z):
         r"""
-        Total density :math:`\rho_\mathr{tot}` as a function of redshift, in
+        Total density :math:`\rho_\mathrm{tot}` as a function of redshift, in
         units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`. It is usually
         close to 27.76.
         """
@@ -694,7 +695,7 @@ cdef class Background:
             return self.compute_for_z(z, self.ba.index_bg_a) * 0.0
 
     def p_ncdm(self, z, species=None):
-        """
+        r"""
         Pressure of non-relative part of massive neutrino.
         """
         if species is None:
@@ -704,75 +705,75 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_p_ncdm1 + species) * self._RHO_
 
     def Omega_r(self, z):
-        """
+        r"""
         Density parameter of relativistic (radiation like) component, including
         relativistic part of massive neutrino and massless neutrino.
         """
         return self.rho_r(z) / self.rho_crit(z)
 
     def Omega_m(self, z):
-        """
+        r"""
         Density parameter of non-relativistic (matter like) component, including
         non-relativistic part of massive neutrino. Unit
         """
         return self.rho_m(z) / self.rho_crit(z)
 
     def Omega_g(self, z):
-        """
+        r"""
         Density parameter of photons.
         """
         return self.rho_g(z) / self.rho_crit(z)
 
     def Omega_b(self, z):
-        """
+        r"""
         Density parameter of baryons.
         """
         return self.rho_b(z) / self.rho_crit(z)
 
     def Omega_cdm(self, z):
-        """
+        r"""
         Density parameter of cold dark matter.
         """
         return self.rho_cdm(z) / self.rho_crit(z)
 
     def Omega_k(self, z):
-        """
+        r"""
         Density parameter of curvature.
         """
         return 1 - self.rho_tot(z)/self.rho_crit(z)
 
     def Omega_ur(self, z):
-        """
+        r"""
         Density parameter of ultra relativistic neutrinos.
         """
         return self.rho_ur(z) / self.rho_crit(z)
 
     def Omega_ncdm(self, z, species=None):
-        """
+        r"""
         Density parameter of massive neutrinos.
         """
         return self.rho_ncdm(z, species) / self.rho_crit(z)
 
     def Omega_fld(self, z):
-        """
+        r"""
         Density parameter of dark energy (fluid).
         """
         return self.rho_fld(z) / self.rho_crit(z)
 
     def Omega_lambda(self, z):
-        """
+        r"""
         Density of dark energy (cosmological constant).
         """
         return self.rho_lambda(z) / self.rho_crit(z)
 
     def time(self, z):
-        """
+        r"""
         Proper time (age of universe) in gigayears.
         """
         return self.compute_for_z(z, self.ba.index_bg_time) / _Gyr_over_Mpc_
 
     def comoving_distance(self, z):
-        """
+        r"""
         Comoving line-of-sight distance in :math:`\mathrm{Mpc}/h` at a given
         redshift.
 
@@ -785,42 +786,42 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_conf_distance) * self.ba.h
 
     def tau(self, z):
-        """
+        r"""
         Conformal time, equal to comoving distance when K = 0.0
         (flat universe). In units of :math:`\mathrm{Mpc}` as in CLASS.
         """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance)
 
     def hubble_function(self, z):
-        """
+        r"""
         The Hubble function in CLASS units. Users should use :func:`efunc`
         instead.
         """
         return self.compute_for_z(z, self.ba.index_bg_H)
 
     def hubble_function_prime(self, z):
-        """
+        r"""
         d H / d tau ; d tau / da = 1 / (a ** 2 H) in class units;
         use :func:`efunc_prime` instead
         """
         return self.compute_for_z(z, self.ba.index_bg_H_prime)
 
     def efunc(self, z):
-        """
+        r"""
         Function giving :math:`E(z)`, where the Hubble parameter is defined as
         :math:`H(z) = H_0 E(z)`.
         """
         return self.hubble_function(z) / self.ba.H0
 
     def efunc_prime(self, z):
-        """
+        r"""
         Function giving :math:`dE(z) / da`.
         """
         dtau_da = (1 + z)**2 / self.hubble_function(z)
         return self.hubble_function_prime(z) / self.ba.H0 * dtau_da
 
     def luminosity_distance(self, z):
-        """
+        r"""
         Luminosity distance in :math:`\mathrm{Mpc}/h` at redshift ``z``.
 
         This is the distance to use when converting between the
@@ -834,7 +835,7 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_lum_distance) * self.ba.h
 
     def angular_diameter_distance(self, z):
-        """
+        r"""
         Angular diameter distance in :math:`\mathrm{Mpc}/h at a given redshift.
 
         This gives the proper (sometimes called 'physical') transverse
@@ -848,7 +849,7 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_ang_distance) * self.ba.h
 
     def comoving_transverse_distance(self, z):
-        """
+        r"""
         Comoving transverse distance in :math:`\mathrm{Mpc}/h` at a given
         redshift.
 
@@ -873,7 +874,7 @@ cdef class Background:
         return toret * self.ba.h
 
     def scale_independent_growth_factor(self, z):
-        """
+        r"""
         Return the scale invariant growth factor :math:`D(a)` for CDM
         perturbations.
 
@@ -883,7 +884,7 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_D)
 
     def scale_independent_growth_rate(self, z):
-        """
+        r"""
         The scale invariant growth rate :math:`d\mathrm{ln}D/d\mathrm{ln}a` for
         CDM perturbations.
 
@@ -912,7 +913,7 @@ cdef class Perturbs:
             return self.pt.k_max_for_pk/self.ba.h
 
     property P_z_max:
-        """
+        r"""
         The input parameter specifying the maximum redshift measured for
         power spectra.
         """
@@ -920,7 +921,7 @@ cdef class Perturbs:
             return self.pt.z_max_pk
 
     property gauge:
-        """
+        r"""
         The gauge name as a string.
         """
         def __get__(self):
@@ -943,7 +944,7 @@ cdef class Thermo:
         self.ba = &self.engine.ba
 
     property z_drag:
-        """
+        r"""
         The baryon drag redshift.
         """
         def __get__(self):
@@ -957,21 +958,21 @@ cdef class Thermo:
             return self.th.rs_d * self.ba.h
 
     property tau_reio:
-        """
+        r"""
         The reionization optical depth.
         """
         def __get__(self):
             return self.th.tau_reio
 
     property z_reio:
-        """
+        r"""
         The reionization redshift.
         """
         def __get__(self):
             return self.th.z_reio
 
     property z_rec:
-        """
+        r"""
         The redshift at which the visibility reaches its maximum; equals
         the recombination redshift.
         """
@@ -1061,7 +1062,7 @@ cdef class Primordial:
         return out
 
     def get_primordial(self):
-        """
+        r"""
         Return the primordial scalar and/or tensor spectrum depending on 'modes'.
         'output' must be set to something, e.g. 'tCl'.
 
@@ -1106,14 +1107,14 @@ cdef class Spectra:
         self.pm = &self.engine.pm
 
     property nonlinear:
-        """
+        r"""
         Boolean flag specifying whether the power spectrum is nonlinear.
         """
         def __get__(self):
           return self.nl.method > 0
 
     property has_pk_matter:
-        """
+        r"""
         Boolean flag specifying whether matter power spectra have been
         requested as output.
         """
@@ -1121,7 +1122,7 @@ cdef class Spectra:
           return self.pt.has_pk_matter
 
     property P_k_min:
-        """
+        r"""
         The minimum ``k`` value for which power spectra have been computed in
         :math:`h \mathrm{Mpc}^{-1}`.
 
@@ -1132,7 +1133,7 @@ cdef class Spectra:
             return 1.001*np.exp(self.sp.ln_k[0])/self.ba.h;
 
     property P_k_max:
-        """
+        r"""
         The maximum ``k`` value measured for power spectra in
         :math:`h \mathrm{Mpc}^{-1}`.
         """
@@ -1141,7 +1142,7 @@ cdef class Spectra:
             return 0.999*np.exp(self.sp.ln_k[self.sp.ln_k_size-1])/self.ba.h;
 
     property sigma8:
-        """
+        r"""
         The amplitude of matter fluctuations at :math:`z=0`.
         """
         def __get__(self):
@@ -1156,14 +1157,14 @@ cdef class Spectra:
             return self.pm.A_s
 
     property ln_1e10_A_s:
-        """
+        r"""
         Return :math:`\log(10^{10}A_s)`.
         """
         def __get__(self):
             return np.log(1e10*self.A_s)
 
     property n_s:
-        """
+        r"""
         The tilt of the primordial power spectrum.
         """
         def __get__(self):
@@ -1178,7 +1179,7 @@ cdef class Spectra:
             return self.pm.k_pivot / self.ba.h
 
     def sigma8_z(self, z):
-        """
+        r"""
         Return :math:`\sigma_8(z)`.
         """
         #generate a new output array of the correct shape by broadcasting input arrays together
@@ -1203,7 +1204,7 @@ cdef class Spectra:
         return out
 
     def get_transfer(self, z, output_format='class'):
-        """
+        r"""
         Return the density and/or velocity transfer functions for all initial
         conditions today. You must include 'dCl' and 'vCl' in the list of
         'output'. The transfer functions can also be computed at higher redshift z
@@ -1276,7 +1277,7 @@ cdef class Spectra:
 
     # Gives the pk for a given (k,z)
     cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk) except -1:
-        """
+        r"""
         Gives the pk for a given k and z (will be non linear if requested to Class, linear otherwise)
 
         .. note::
@@ -1294,7 +1295,7 @@ cdef class Spectra:
         return 0
 
     def get_pk(self, k, z):
-        """ Primary Power spectrum result (non-linear if enabled) on k and z array. K in h/Mpc units.
+        r""" Primary Power spectrum result (non-linear if enabled) on k and z array. K in h/Mpc units.
 
             Results
             -------
@@ -1304,7 +1305,7 @@ cdef class Spectra:
         return self._get_pk(k, z, 0)
 
     def get_pklin(self, k, z):
-        """ Linear Power spectrum result (linear even if non-linear is enabled) on k and z array. K in h/Mpc units.
+        r""" Linear Power spectrum result (linear even if non-linear is enabled) on k and z array. K in h/Mpc units.
 
             Results
             -------
