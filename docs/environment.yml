@@ -16,6 +16,7 @@ dependencies:
 - classylss
 - runtests
 - numpydoc
+- IPython
 - pip
 - pip:
   - nbsphinx
