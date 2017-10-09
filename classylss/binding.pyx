@@ -1022,7 +1022,7 @@ cdef class Primordial:
         k : array_like
           wavenumbers in :math:`h \mathrm{Mpc}^{-1}` units.
 
-        Results
+        Returns
         -------
         array_like :
           the primordial power
@@ -1297,7 +1297,7 @@ cdef class Spectra:
     def get_pk(self, k, z):
         r""" Primary Power spectrum result (non-linear if enabled) on k and z array. K in h/Mpc units.
 
-            Results
+            Returns
             -------
             Pk : array like
                 Power Spectrum in (Mpc/h)**3
@@ -1307,7 +1307,7 @@ cdef class Spectra:
     def get_pklin(self, k, z):
         r""" Linear Power spectrum result (linear even if non-linear is enabled) on k and z array. K in h/Mpc units.
 
-            Results
+            Returns
             -------
             Pk : array like
                 Power Spectrum in (Mpc/h)**3
