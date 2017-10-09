@@ -18,3 +18,14 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+.. automodule:: classylss.astropy_compat
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: classylss.binding
+    :members:
+    :undoc-members:
+    :show-inheritance:

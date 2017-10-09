@@ -18,6 +18,8 @@ dependencies:
 - astropy
 - scipy
 - six
+- gcc
+- libgcc
 - runtests
 - numpydoc
 - pip

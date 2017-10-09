@@ -1,5 +1,5 @@
-API Reference
-=============
+classylss
+=========
 
 .. toctree::
    :maxdepth: 4

@@ -1,7 +1,8 @@
-classylss\.version module
+classylss\.binding module
 =========================
 
-.. automodule:: classylss.version
+.. automodule:: classylss.binding
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
