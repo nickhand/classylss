@@ -1,31 +1,36 @@
-classylss package
-=================
+.. _api:
+
+API Reference
+=============
+
+The CLASS engine can be initialized from a dictionary of parameters using:
+
+.. autosummary::
+
+    ~classylss.binding.ClassEngine
 
 
-Submodules
-----------
+We provide wrappers for the main modules in the CLASS code:
 
-.. toctree::
+.. autosummary::
 
-   classylss.astropy_compat
-   classylss.binding
-   classylss.version
+    ~classylss.binding.Background
+    ~classylss.binding.Perturbs
+    ~classylss.binding.Primordial
+    ~classylss.binding.Spectra
+    ~classylss.binding.Thermo
 
-Module contents
----------------
+There is also a wrapper object that provides compatibility with the syntax
+used by the :mod:`astropy` cosmology objects:
 
-.. automodule:: classylss
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autosummary::
 
+    ~classylss.astropy_compat.AstropyCompat
 
-.. automodule:: classylss.astropy_compat
-    :members:
-    :undoc-members:
-    :show-inheritance:
+And we provide two functions for loading parameters from file into a dictionary
+(which can be passed to :class:`~classylss.binding.ClassEngine`):
 
-.. automodule:: classylss.binding
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autosummary::
+
+    classylss.load_ini
+    classylss.load_precision

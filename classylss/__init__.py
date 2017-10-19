@@ -1,4 +1,4 @@
-from .version import version as __version__
+from .version import version as __version__, class_version
 
 def get_data_files():
     """
@@ -83,7 +83,7 @@ def load_ini(filename):
             if not line: continue
 
             # skip any commented lines with #
-            if '#' in line: line = line[line.index('#'):]
+            if '#' in line: line = line[line.index('#')+1:]
 
             # must have an equals sign to be valid
             if "=" not in line: continue
