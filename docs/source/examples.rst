@@ -39,7 +39,7 @@ This can be done using the :class:`classylss.binding.ClassEngine` class as
 
 .. ipython:: python
 
-    engine = CLASS.ClassEngine(params) # specific parameters from concise.ini
+    engine = CLASS.ClassEngine({'H0':70, 'Omega_m':0.31})
     default_engine = CLASS.ClassEngine() # default parameters
 
 Loading parameters from file
@@ -308,7 +308,7 @@ class, and compare to the above equation:
 
     k = np.logspace(-3, 0, 100)
     plt.loglog(k, pm.get_pk(k), label='from CLASS')
-    plt.loglog(k, sp.A_s * (k / sp.k_pivot)**sp.n_s, ls='--', c='k', label='analytic')
+    plt.loglog(k, sp.A_s * (k / sp.k_pivot)**(sp.n_s-1), ls='--', c='k', label='analytic')
 
     plt.legend()
     plt.xlabel(r"$k$ $[h\mathrm{Mpc}^{-1}]$")
