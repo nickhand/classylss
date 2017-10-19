@@ -15,6 +15,7 @@ dependencies:
 - python=3.6
 - classylss
 - runtests
+- matplotlib
 - numpydoc
 - IPython
 - pip
