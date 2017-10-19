@@ -52,6 +52,6 @@ def test_primordial(a_max):
 
     cosmo = ClassEngine({'a_max':a_max, 'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
     pm = Primordial(cosmo)
-    Pk = pm.get_pk(k=[0., 0.1, 0.2])
+    Pk = pm.get_pk([0., 0.1, 0.2])
 
     pr = pm.get_primordial()

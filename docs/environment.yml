@@ -13,13 +13,11 @@ channels:
 
 dependencies:
 - python=3.6
-- numpy
-- cython
-- astropy
-- scipy
-- six
+- classylss
 - runtests
+- matplotlib
 - numpydoc
+- IPython
 - pip
 - pip:
   - nbsphinx

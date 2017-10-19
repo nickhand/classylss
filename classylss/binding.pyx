@@ -164,7 +164,15 @@ ctypedef struct ready_flags:
 
 
 cdef class ClassEngine:
+    """
+    The default CLASS engine class, which initializes CLASS from an input
+    set of parameters.
 
+    Parameters
+    ----------
+    pars : dict, optional
+      a dictionary of parameters to initialize CLASS with
+    """
     cdef precision pr
     cdef background ba
     cdef thermo th
@@ -179,6 +187,9 @@ cdef class ClassEngine:
     cdef file_content fc
 
     property parameter_file:
+        """
+        A string holding the parameter names and values as loaded by CLASS.
+        """
         def __get__(self):
             if not self.ready.fc: return ""
 
@@ -207,16 +218,13 @@ cdef class ClassEngine:
 
     cdef compute(self, level):
         r"""
-        Main function, execute all the _init methods for all desired modules.
-        This is called in MontePython, and this ensures that the Class instance
-        of this class contains all the relevant quantities. Then, one can deduce
-        Pk, Cl, etc...
+        The main function, which executes all the 'init' methods for all
+        the desired modules.
 
         Parameters
         ----------
-        level : level of modules to arrive.
-
-
+        level : str
+          level of modules to arrive.
         """
         cdef file_content * fc = &self.fc
         cdef ErrorMsg errmsg
@@ -306,15 +314,40 @@ cdef class ClassEngine:
         return
 
 cdef class Background:
+    """
+    A wrapper of the `background module <https://goo.gl/SU71dn>`_ in CLASS.
+
+    Parameters
+    ----------
+    engine : ClassEngine
+      the CLASS engine object
+    """
     cdef ClassEngine engine
     cdef background * ba
     cdef readonly dict data
 
     cdef readonly np.ndarray Omega0_pncdm
+    """
+    The pressure contribution to the current density parameter for the
+    non-relativatistic part of massive neutrinos (an array holding all species).
+    """
     cdef readonly double Omega0_pncdm_tot
+    """
+    The sum of :math:`\Omega_{0,pncdm}` for all species.
+    """
     cdef readonly double H0
+    r"""
+    Current Hubble parameter in units of :math:`\mathrm{km/s} (\mathrm{Mpc}/h)^{-1}.`
+    """
     cdef readonly double C
+    """
+    The speed of light in units of km/s.
+    """
     cdef readonly double G
+    r"""
+    The gravitational constant in units of :math:`10^{-10} \ (M_\odot/h)^{-1} (\mathrm{Mpc}/h) \mathrm{km}^2 \mathrm{s}^{-2}`.
+    """
+
     cdef readonly double _RHO_
 
     def __init__(self, ClassEngine engine):
@@ -325,6 +358,7 @@ cdef class Background:
         self.H0 = 100.  # in Mpc/h unit
         self.G = 43007.1 * 1e-3 # in 1e10 Msun/h, Mpc/h, and km/s Unit
         self.C = 2.99792458e5          #  /**< c in km/s */
+
         # convert RHO to  1e10 Msun/h
         self._RHO_ = 3.0 * (self.H0 / self.ba.H0) ** 2 / (8 * 3.1415927 * self.G)
 
@@ -450,8 +484,7 @@ cdef class Background:
     property Omega0_m:
         r"""
         The sum of density parameters for all non-relativistic components,
-        :math:`\Omega_{0,m}`. The value differ from Astropy's; the semantics is
-        identical.
+        :math:`\Omega_{0,m}`. The value differs from ``Om0`` in :mod:`astropy`.
 
         This is equal to:
 
@@ -472,7 +505,9 @@ cdef class Background:
 
     property N_ur:
         r"""
-        The number of ultra-relativistic species. This is equal to:
+        The number of ultra-relativistic species.
+
+        This is equal to:
 
         .. math::
 
@@ -544,6 +579,9 @@ cdef class Background:
         return self.T0_ncdm * (1 + z)[:,None]
 
     def compute_for_z(self, z, int column):
+        """
+        Internal function to compute the background module at a specific redshift.
+        """
         cdef double tau
         cdef int last_index #junk
 
@@ -586,35 +624,35 @@ cdef class Background:
     def rho_g(self, z):
         r"""
         Density of photons :math:`\rho_g` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_g) * self._RHO_
 
     def rho_b(self, z):
         r"""
         Density of baryons :math:`\rho_b` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_b) * self._RHO_
 
     def rho_m(self, z):
         r"""
         Density of matter :math:`\rho_b` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_Omega_m) * self.rho_tot(z)
 
     def rho_r(self, z):
         r"""
         Density of radiation :math:`\rho_r` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_Omega_r) * self.rho_tot(z)
 
     def rho_cdm(self, z):
         r"""
         Density of cold dark matter :math:`\rho_{cdm}` as a function of redshift,
-        in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        in units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_cdm) * self._RHO_
 
@@ -622,7 +660,7 @@ cdef class Background:
         r"""
         Density of ultra-relativistic radiation (massless neutrinos)
         :math:`\rho_{ur}` as a function of redshift, in units of
-        :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         return self.compute_for_z(z, self.ba.index_bg_rho_ur) * self._RHO_
 
@@ -630,7 +668,7 @@ cdef class Background:
         r"""
         Density of non-relativistic part of massive neutrinos :math:`\rho_{ncdm}`
         as a function of redshift, in units of
-        :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         if species is None:
             return sum(self.rho_ncdm(z, species=i) for i in range(self.N_ncdm))
@@ -639,8 +677,8 @@ cdef class Background:
 
     def rho_crit(self, z):
         r"""
-        Critical density excluding curvature :math:`\rho_cs` as a function of
-        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        Critical density excluding curvature :math:`\rho_c` as a function of
+        redshift, in units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
 
         This is defined as:
 
@@ -653,7 +691,7 @@ cdef class Background:
     def rho_k(self, z):
         r"""
         Density of curvature :math:`\rho_k` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
 
         Note: this is defined such that
 
@@ -667,7 +705,7 @@ cdef class Background:
     def rho_tot(self, z):
         r"""
         Total density :math:`\rho_\mathrm{tot}` as a function of redshift, in
-        units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`. It is usually
+        units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`. It is usually
         close to 27.76.
         """
         return self.rho_crit(z) - self.rho_k(z)
@@ -675,7 +713,7 @@ cdef class Background:
     def rho_fld(self, z):
         r"""
         Density of dark energy fluid :math:`\rho_{fld}` as a function of
-        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        redshift, in units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         if self.ba.has_fld:
             return self.compute_for_z(z, self.ba.index_bg_rho_fld) * self._RHO_
@@ -686,7 +724,7 @@ cdef class Background:
     def rho_lambda(self, z):
         r"""
         Density of cosmological constant :math:`\rho_\Lambda` as a function of
-        redshift, in units of :math:`10^{10} (M_\odot/h) (Mpc/h)^{-3}`.
+        redshift, in units of :math:`10^{10} (M_\odot/h) (\mathrm{Mpc}/h)^{-3}`.
         """
         if self.ba.has_lambda:
             return self.compute_for_z(z, self.ba.index_bg_rho_lambda) * self._RHO_
@@ -706,14 +744,14 @@ cdef class Background:
 
     def Omega_r(self, z):
         r"""
-        Density parameter of relativistic (radiation like) component, including
+        Density parameter of relativistic (radiation-like) component, including
         relativistic part of massive neutrino and massless neutrino.
         """
         return self.rho_r(z) / self.rho_crit(z)
 
     def Omega_m(self, z):
         r"""
-        Density parameter of non-relativistic (matter like) component, including
+        Density parameter of non-relativistic (matter-like) component, including
         non-relativistic part of massive neutrino. Unit
         """
         return self.rho_m(z) / self.rho_crit(z)
@@ -781,7 +819,8 @@ cdef class Background:
         objects remains constant with time for objects in the Hubble
         flow.
 
-        See eq. 15 of astro-ph/9905116 for :math:`D_C(z)`.
+        See eq. 15 of `astro-ph/9905116 <https://arxiv.org/abs/astro-ph/9905116>`_
+        for :math:`D_C(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_conf_distance) * self.ba.h
 
@@ -794,15 +833,18 @@ cdef class Background:
 
     def hubble_function(self, z):
         r"""
-        The Hubble function in CLASS units. Users should use :func:`efunc`
-        instead.
+        The Hubble function in CLASS units, returning ``ba.index_bg_H``.
+
+        Users should use :func:`efunc` instead.
         """
         return self.compute_for_z(z, self.ba.index_bg_H)
 
     def hubble_function_prime(self, z):
         r"""
-        d H / d tau ; d tau / da = 1 / (a ** 2 H) in class units;
-        use :func:`efunc_prime` instead
+        Derivative of Hubble function: :math:`dH/d\tau`, where
+        :math:`d\tau/da = 1 / (a^2 H)` in CLASS units.
+
+        Users should use :func:`efunc_prime` instead.
         """
         return self.compute_for_z(z, self.ba.index_bg_H_prime)
 
@@ -830,13 +872,14 @@ cdef class Background:
 
         It is equal to the comoving transverse distance times :math:`1+z`.
 
-        See eq. 21 of astro-ph/9905116 for :math:`D_L(z)`.
+        See eq. 21 of `astro-ph/9905116 <https://arxiv.org/abs/astro-ph/9905116>`_
+        for :math:`D_L(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_lum_distance) * self.ba.h
 
     def angular_diameter_distance(self, z):
         r"""
-        Angular diameter distance in :math:`\mathrm{Mpc}/h at a given redshift.
+        Angular diameter distance in :math:`\mathrm{Mpc}/h` at a given redshift.
 
         This gives the proper (sometimes called 'physical') transverse
         distance corresponding to an angle of 1 radian for an object
@@ -844,7 +887,8 @@ cdef class Background:
 
         It is equal to the comoving transverse distance divided by :math:`1+z`.
 
-        See eq. 18 of astro-ph/9905116 for :math:`D_A(z)`.
+        See eq. 18 of `astro-ph/9905116 <https://arxiv.org/abs/astro-ph/9905116>`_
+        for :math:`D_A(z)`.
         """
         return self.compute_for_z(z, self.ba.index_bg_ang_distance) * self.ba.h
 
@@ -857,7 +901,8 @@ cdef class Background:
         corresponding to an angular separation of 1 radian. This is
         the same as the comoving distance in a flat universe.
 
-        See eq. 16 of astro-ph/9905116 for :math:`D_M(z)`.
+        See eq. 16 of `astro-ph/9905116 <https://arxiv.org/abs/astro-ph/9905116>`_
+        for :math:`D_M(z)`.
         """
         # comoving distance if flat (in Mpc)
         toret = self.comoving_distance(z) / self.ba.h
@@ -894,6 +939,14 @@ cdef class Background:
         return self.compute_for_z(z, self.ba.index_bg_f)
 
 cdef class Perturbs:
+    """
+    A wrapper of the `perturbs module <https://goo.gl/VVhpcU>`_ in CLASS.
+
+    Parameters
+    ----------
+    engine : ClassEngine
+      the CLASS engine object
+    """
     cdef ClassEngine engine
     cdef perturbs * pt
     cdef background * ba
@@ -907,7 +960,7 @@ cdef class Perturbs:
     property k_max_for_pk:
         r"""
         The input parameter specifying the maximum ``k`` value to compute
-        spectra for in :math:`h \mathrm{Mpc}^{-1}`.
+        spectra for; units of :math:`h \mathrm{Mpc}^{-1}`.
         """
         def __get__(self):
             return self.pt.k_max_for_pk/self.ba.h
@@ -922,7 +975,7 @@ cdef class Perturbs:
 
     property gauge:
         r"""
-        The gauge name as a string.
+        The gauge name as a string, either 'newtonian' or 'synchronous'.
         """
         def __get__(self):
             if self.pt.gauge == newtonian:
@@ -933,6 +986,14 @@ cdef class Perturbs:
               raise ValueError("gauge value not understood")
 
 cdef class Thermo:
+    """
+    A wrapper of the `thermo module <https://goo.gl/JKGUP6>`_ in CLASS.
+
+    Parameters
+    ----------
+    engine : ClassEngine
+      the CLASS engine object
+    """
     cdef ClassEngine engine
     cdef thermo * th
     cdef background * ba
@@ -997,6 +1058,14 @@ cdef class Thermo:
 
 
 cdef class Primordial:
+    """
+    A wrapper of the `primordial module <https://goo.gl/SmxLQz>`_ in CLASS.
+
+    Parameters
+    ----------
+    engine : ClassEngine
+      the CLASS engine object
+    """
     cdef ClassEngine engine
     cdef perturbs * pt
     cdef primordial * pm
@@ -1009,39 +1078,33 @@ cdef class Primordial:
         self.ba = &self.engine.ba
         self.pm = &self.engine.pm
 
-    def get_pk(self, k, mode='linear'):
+    def get_pk(self, k):
         r"""
-        The primoridal spectrum at ``k``. The units are such that:
+        The primoridal spectrum at ``k``. This is defined as:
 
-        .. math ::
+        .. math::
 
-            P_L = 2 \pi^2 / k^3 T^2(k) P_\mathrm{primordial}
+            \mathcal{P_R}(k) = A_s \left (\frac{k}{k_0} \right )^{n_s - 1 + 0.5 \ln(k/k_0) (dn_s / d\ln k)}
+
+        See also: equation 2 of `this reference <https://arxiv.org/abs/1303.5076>`_.
 
         Parameters
         ----------
         k : array_like
           wavenumbers in :math:`h \mathrm{Mpc}^{-1}` units.
 
-        Results
+        Returns
         -------
         array_like :
           the primordial power
         """
         #generate a new output array of the correct shape by broadcasting input arrays together
-        k = np.float64(k) * self.ba.h
+        k = np.float64(k) * self.ba.h # convert to 1/Mpc
         out = np.empty(np.broadcast(k).shape, np.float64)
 
         #generate the iterator over the input and output arrays, does the same thing as
         cdef np.broadcast it = np.broadcast(k,  out)
         cdef int index_md = 0
-        cdef linear_or_logarithmic modeval
-
-        if mode.startswith('lin'):
-            modeval = linear
-        elif mode.startswith('log'):
-            modval = logarithmic
-        else:
-            raise ValueError("mode can only be log or lin")
 
         while np.PyArray_MultiIter_NOTDONE(it):
 
@@ -1051,7 +1114,7 @@ cdef class Primordial:
                 if aval == 0: # forcefully set k == 0 to zero.
                     (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = 0.
                 else:
-                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, modeval, aval,
+                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, linear, aval,
                         <double*>(np.PyArray_MultiIter_DATA(it, 1))):
                         raise ClassRuntimeError(self.pm.error_message.decode())
 
@@ -1064,12 +1127,13 @@ cdef class Primordial:
     def get_primordial(self):
         r"""
         Return the primordial scalar and/or tensor spectrum depending on 'modes'.
-        'output' must be set to something, e.g. 'tCl'.
+
+        The 'output' parameter must be set to something, e.g. 'tCl'.
 
         Returns
         -------
-        primordial :
-          dictionary containing k-vector and primordial scalar and tensor P(k).
+        array_like :
+          structured array containing k-vector and primordial scalar and tensor :math:`P(k)`.
         """
         primordial = {}
         cdef char titles[_MAXTITLESTRINGLENGTH_]
@@ -1088,6 +1152,14 @@ cdef class Primordial:
         return data
 
 cdef class Spectra:
+    """
+    A wrapper of the `spectra module <https://goo.gl/EMti1s>`_ in CLASS.
+
+    Parameters
+    ----------
+    engine : ClassEngine
+      the CLASS engine object
+    """
     cdef ClassEngine engine
     cdef spectra * sp
     cdef background * ba
@@ -1207,27 +1279,27 @@ cdef class Spectra:
         r"""
         Return the density and/or velocity transfer functions for all initial
         conditions today. You must include 'dCl' and 'vCl' in the list of
-        'output'. The transfer functions can also be computed at higher redshift z
-        provided that 'z_pk' has been set and that z is inside the region spanned by 'z_pk'.
+        'output'. The transfer functions can also be computed at higher
+        redshift ``z`` provided that 'z_pk' has been set and that ``z`` is
+        inside the region spanned by 'z_pk'.
 
-        This function is not vectorized; because it returns a vector when ic_size is
-        greater than 1, and I don't understand ic_size.
+        This function is not vectorized because it returns a vector when
+        'ic_size' is greater than 1, and we don't understand 'ic_size'.
 
         Parameters
         ----------
-        z  : redshift (default = 0)
-        output_format  : ('class' or 'camb') Format transfer functions according to
-                         CLASS convention (default) or CAMB convention.
+        z  : float
+          redshift (default = 0)
+        output_format  : ('class' or 'camb')
+          Format transfer functions according to CLASS convention (default)
+          or CAMB convention.
 
         Returns
         -------
-        tk : array_like, containing transfer functions. Unlike CLASS, k here is in Mpc/h Units.
-
-        .. note::
-
-            With different cosmology the values of 'k' may be different.
+        tk : array_like
+          array containing transfer functions. ``k`` here is in units of
+          :math:`h \mathrm{Mpc}^{-1}`.
         """
-
         if (not self.pt.has_density_transfers) and (not self.pt.has_velocity_transfers):
             raise RuntimeError("Perturbation is not computed")
 
@@ -1278,11 +1350,12 @@ cdef class Spectra:
     # Gives the pk for a given (k,z)
     cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk) except -1:
         r"""
-        Gives the pk for a given k and z (will be non linear if requested to Class, linear otherwise)
+        Gives the pk for a given ``k`` and ``z`` (will be nonlinear if requested
+        by the user, linear otherwise).
 
         .. note::
 
-            there is an additional check to verify if output contains `mPk`,
+            There is an additional check to verify if output contains `mPk`,
             because otherwise a segfault will occur
 
         """
@@ -1295,22 +1368,40 @@ cdef class Spectra:
         return 0
 
     def get_pk(self, k, z):
-        r""" Primary Power spectrum result (non-linear if enabled) on k and z array. K in h/Mpc units.
+        r"""
+        The primary power spectrum result (nonlinear if enabled) on ``k`` and
+        ``z`` array.
 
-            Results
-            -------
-            Pk : array like
-                Power Spectrum in (Mpc/h)**3
+        Parameters
+        ----------
+        k : float, array_like
+          the wavenumber in units of :math:`h \mathrm{Mpc}^{-1}`
+        z : float, array_like
+          the redshift values
+
+        Returns
+        -------
+        array like :
+            the power spectrum in units of :math:`(\mathrm{Mpc}/h)^3`
         """
         return self._get_pk(k, z, 0)
 
     def get_pklin(self, k, z):
-        r""" Linear Power spectrum result (linear even if non-linear is enabled) on k and z array. K in h/Mpc units.
+        r"""
+        Linear power spectrum result (linear even if nonlinear is enabled)
+        on ``k`` and ``z`` array.
 
-            Results
-            -------
-            Pk : array like
-                Power Spectrum in (Mpc/h)**3
+        Parameters
+        ----------
+        k : float, array_like
+          the wavenumber in units of :math:`h \mathrm{Mpc}^{-1}`
+        z : float, array_like
+          the redshift values
+
+        Returns
+        -------
+        array like :
+            the power spectrum in units of :math:`(\mathrm{Mpc}/h)^3`
         """
         return self._get_pk(k, z, 1)
 

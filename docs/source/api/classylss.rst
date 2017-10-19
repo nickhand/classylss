@@ -1,7 +1,6 @@
 classylss package
 =================
 
-
 Submodules
 ----------
 
@@ -17,4 +16,5 @@ Module contents
 .. automodule:: classylss
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
