@@ -1078,7 +1078,7 @@ cdef class Primordial:
         self.ba = &self.engine.ba
         self.pm = &self.engine.pm
 
-    def get_pk(self, k):
+    def get_pkprim(self, k):
         r"""
         The primoridal spectrum at ``k``. This is defined as:
 
