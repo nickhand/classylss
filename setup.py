@@ -136,11 +136,11 @@ def classy_extension_config():
     config = {}
     config['name'] = 'classylss.binding'
     config['extra_link_args'] = ['-g', '-fPIC']
-    config['extra_compile_args'] = ['-fopenmp']
+    config['extra_compile_args'] = []
     # important or get a symbol not found error, because class is
     # compiled with c++?
     config['language'] = 'c'
-    config['libraries'] = ['class', 'gomp', 'gfortran', 'm']
+    config['libraries'] = ['class', 'gfortran', 'm']
 
     # determine if swig needs to be called
     config['sources'] = ['classylss/binding.pyx']
