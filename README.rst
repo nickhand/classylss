@@ -9,10 +9,19 @@ classylss
     :alt: Build Status
     :target: https://travis-ci.org/nickhand/classylss/
 
+.. image:: https://zenodo.org/badge/61589760.svg
+   :target: https://zenodo.org/badge/latestdoi/61589760
+
+|
+
 A lightweight Python binding of the CMB Boltzmann code `CLASS`, with an emphasis on the routines that are important for large-scale structure calculations. The main modules of the CLASS code are exposed to the user via a Cython wrapper.
 
 .. _`CLASS` : http://class-code.net
 
+Documentation
+-------------
+
+Installation instructions, examples, and API reference are availabe on ReadTheDocs: http://classylss.readthedocs.io/.
 
 Dependencies
 ------------
