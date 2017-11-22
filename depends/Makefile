@@ -19,6 +19,7 @@ $(SRC)/stamp.patch : $(SRC)/stamp.unzip \
 	  class-2.6.0-tol-ncdm.patch
 	patch -d $(SRC) -p1 < class-2.6.0-a_max.patch || exit 1 
 	patch -d $(SRC) -p1 < class-2.6.0-tol-ncdm.patch || exit 1
+	patch -d $(SRC) -p1 < class-2.6.1-pathsize.patch || exit 1
 	touch $@
 
 $(SRC)/libclass.a: $(SRC)/stamp.patch class.cfg Makefile
