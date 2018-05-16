@@ -196,6 +196,18 @@ cdef class ClassEngine:
             lines = ["%s : %s" %(self.fc.name[i].decode(), self.fc.value[i].decode())
                for i in range(self.fc.size)]
             return "\n".join(lines)
+    property parameter_dict:
+        """
+        A dict holding the parameter names and values as loaded by CLASS.
+
+        This dictionary can be furthter modified to initialize classy.
+        """
+        def __get__(self):
+            if not self.ready.fc: return {}
+
+            lines = [(self.fc.name[i].decode(), self.fc.value[i].decode())
+               for i in range(self.fc.size)]
+            return dict(lines)
 
     def __cinit__(self, *args, **kwargs):
         memset(&self.ready, 0, sizeof(self.ready))
