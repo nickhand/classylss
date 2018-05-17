@@ -60,6 +60,12 @@ def test_parameter_dict():
     cosmo = ClassEngine({'N_ncdm': 1, 'm_ncdm':[0.06]})
     d = cosmo.parameter_dict
 
+    import sys
+    if sys.version_info[0] >= 3:
+        basestring = str
+    else:
+        basestring = basestring
+
     for key, value in d.items():
-        assert isinstance(key, str)
-        assert isinstance(value, str)
+        assert isinstance(key, basestring)
+        assert isinstance(value, basestring)
