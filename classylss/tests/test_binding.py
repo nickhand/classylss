@@ -56,15 +56,16 @@ def test_primordial(a_max):
 
     pr = pm.get_primordial()
 
+import sys
+if sys.version_info[0] >= 3:
+    basestring = str
+else:
+    pass
+
 def test_parameter_dict():
     cosmo = ClassEngine({'N_ncdm': 1, 'm_ncdm':[0.06]})
     d = cosmo.parameter_dict
 
-    import sys
-    if sys.version_info[0] >= 3:
-        basestring = str
-    else:
-        pass
 
     for key, value in d.items():
         assert isinstance(key, basestring)
