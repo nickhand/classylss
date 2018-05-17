@@ -64,7 +64,7 @@ def test_parameter_dict():
     if sys.version_info[0] >= 3:
         basestring = str
     else:
-        basestring = basestring
+        pass
 
     for key, value in d.items():
         assert isinstance(key, basestring)
