@@ -56,6 +56,12 @@ def test_primordial(a_max):
 
     pr = pm.get_primordial()
 
+def test_sigma8():
+
+    cosmo = ClassEngine({'sigma8': 0.8, 'output': 'dTk vTk mPk', 'P_k_max_h/Mpc' : 20., "z_max_pk" : 100.0})
+    sp = Spectra(cosmo)
+    assert abs(sp.sigma8 - 0.8) < 1e-4
+
 import sys
 if sys.version_info[0] >= 3:
     basestring = str
