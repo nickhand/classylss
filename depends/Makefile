@@ -1,4 +1,4 @@
-CLASS_VERSION?=2.6.1
+CLASS_VERSION?=2.6.3
 DEST?=_inst
 
 TARBALL=class-v$(CLASS_VERSION).tar.gz
@@ -16,9 +16,11 @@ $(SRC)/stamp.unzip: $(TARBALL)
 
 $(SRC)/stamp.patch : $(SRC)/stamp.unzip \
 	  class-2.6.0-a_max.patch \
-	  class-2.6.0-tol-ncdm.patch
+	  class-2.6.0-tol-ncdm.patch \
+	  class-2.6.1-pathsize.patch
 	patch -d $(SRC) -p1 < class-2.6.0-a_max.patch || exit 1 
-	patch -d $(SRC) -p1 < class-2.6.0-tol-ncdm.patch || exit 1
+#	No longer needed after 2.6.3
+#	patch -d $(SRC) -p1 < class-2.6.0-tol-ncdm.patch || exit 1
 	patch -d $(SRC) -p1 < class-2.6.1-pathsize.patch || exit 1
 	touch $@
 
