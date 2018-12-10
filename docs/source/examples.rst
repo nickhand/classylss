@@ -63,7 +63,7 @@ Loading precision parameters from file
 
 We can also pass in precision parameters that have been loaded from file
 using the :func:`classylss.load_precision` function. For example, we can load
-the `pk_ref.pre <https://cdn.rawgit.com/lesgourg/class_public/master/pk_ref.pre>`_
+the `pk_ref.pre <https://cdn.jsdelivr.net/gh/lesgourg/class_public@master/pk_ref.pre>`_
 parameter file from the CLASS GitHub:
 
 .. ipython:: python
