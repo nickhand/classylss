@@ -301,34 +301,34 @@ cdef extern from "class.h":
     cdef int _TRUE_
 
     int input_init(void*, void*, void*, void*, void*, void*, void*, void*, void*,
-        void*, void*, char*)
-    int background_init(void*,void*)
-    int thermodynamics_init(void*,void*,void*)
-    int perturb_init(void*,void*,void*,void*)
-    int primordial_init(void*,void*,void*)
-    int nonlinear_init(void*,void*,void*,void*,void*,void*)
-    int transfer_init(void*,void*,void*,void*,void*,void*)
-    int spectra_init(void*,void*,void*,void*,void*,void*,void*)
-    int lensing_init(void*,void*,void*,void*,void*)
+        void*, void*, char*) nogil
+    int background_init(void*,void*) nogil
+    int thermodynamics_init(void*,void*,void*) nogil
+    int perturb_init(void*,void*,void*,void*) nogil
+    int primordial_init(void*,void*,void*) nogil
+    int nonlinear_init(void*,void*,void*,void*,void*,void*) nogil
+    int transfer_init(void*,void*,void*,void*,void*,void*) nogil
+    int spectra_init(void*,void*,void*,void*,void*,void*,void*) nogil
+    int lensing_init(void*,void*,void*,void*,void*) nogil
 
-    int background_tau_of_z(void* pba, double z,double* tau)
-    int background_at_tau(void* pba, double tau, short return_format, short inter_mode, int * last_index, double *pvecback)
-    int background_output_titles(void * pba, char titles[_MAXTITLESTRINGLENGTH_])
-    int background_output_data(void *pba, int number_of_titles, double *data)
+    int background_tau_of_z(void* pba, double z,double* tau) nogil
+    int background_at_tau(void* pba, double tau, short return_format, short inter_mode, int * last_index, double *pvecback) nogil
+    int background_output_titles(void * pba, char titles[_MAXTITLESTRINGLENGTH_]) nogil
+    int background_output_data(void *pba, int number_of_titles, double *data) nogil
 
-    int thermodynamics_at_z(void * pba, void * pth, double z, short inter_mode, int * last_index, double *pvecback, double *pvecthermo)
-    int thermodynamics_output_titles(void * pba, void *pth, char titles[_MAXTITLESTRINGLENGTH_])
-    int thermodynamics_output_data(void *pba, void *pth, int number_of_titles, double *data)
+    int thermodynamics_at_z(void * pba, void * pth, double z, short inter_mode, int * last_index, double *pvecback, double *pvecthermo) nogil
+    int thermodynamics_output_titles(void * pba, void *pth, char titles[_MAXTITLESTRINGLENGTH_]) nogil
+    int thermodynamics_output_data(void *pba, void *pth, int number_of_titles, double *data) nogil
 
-    int primordial_output_titles(void * ppt, void *ppm, char titles[_MAXTITLESTRINGLENGTH_])
-    int primordial_output_data(void *ppt, void *ppm, int number_of_titles, double *data)
-    int primordial_spectrum_at_k(void * ppm, int index_md, linear_or_logarithmic mode, double k, double * pk)
+    int primordial_output_titles(void * ppt, void *ppm, char titles[_MAXTITLESTRINGLENGTH_]) nogil
+    int primordial_output_data(void *ppt, void *ppm, int number_of_titles, double *data) nogil
+    int primordial_spectrum_at_k(void * ppm, int index_md, linear_or_logarithmic mode, double k, double * pk) nogil
 
-    int spectra_output_tk_titles(void *pba, void *ppt,  file_format output_format, char titles[_MAXTITLESTRINGLENGTH_])
-    int spectra_output_tk_data(void *pba,void *ppt,void *psp,  file_format output_format, double z, int number_of_titles, double *data)
+    int spectra_output_tk_titles(void *pba, void *ppt,  file_format output_format, char titles[_MAXTITLESTRINGLENGTH_]) nogil
+    int spectra_output_tk_data(void *pba,void *ppt,void *psp,  file_format output_format, double z, int number_of_titles, double *data) nogil
 
-    int spectra_cl_at_l(void* psp,double l,double * cl,double * * cl_md,double * * cl_md_ic)
-    int lensing_cl_at_l(void * ple,int l,double * cl_lensed)
+    int spectra_cl_at_l(void* psp,double l,double * cl,double * * cl_md,double * * cl_md_ic) nogil
+    int lensing_cl_at_l(void * ple,int l,double * cl_lensed) nogil
     int spectra_pk_at_z(
         void * pba,
         void * psp,
@@ -336,7 +336,7 @@ cdef extern from "class.h":
         double z,
         double * output_tot,
         double * output_ic
-        )
+        ) nogil
 
     int spectra_pk_at_k_and_z(
         void* pba,
@@ -345,7 +345,7 @@ cdef extern from "class.h":
         double k,
         double z,
         double * pk,
-        double * pk_ic)
+        double * pk_ic) nogil
 
     int spectra_pk_nl_at_k_and_z(
         void* pba,
@@ -353,14 +353,14 @@ cdef extern from "class.h":
         void * psp,
         double k,
         double z,
-        double * pk)
+        double * pk) nogil
 
     int spectra_pk_nl_at_z(
         void * pba,
         void * psp,
         int mode,
         double z,
-        double * output_tot)
+        double * output_tot) nogil
 
     int spectra_sigma(
         void * pba,
@@ -368,8 +368,8 @@ cdef extern from "class.h":
         void * psp,
         double R,
         double z,
-        double *sigma)
+        double *sigma) nogil
 
-    int nonlinear_k_nl_at_z(void* pba, void* pnl, double z, double* k_nl)
+    int nonlinear_k_nl_at_z(void* pba, void* pnl, double z, double* k_nl) nogil
 
-    int spectra_firstline_and_ic_suffix(void *ppt, int index_ic, char first_line[_LINE_LENGTH_MAX_], FileName ic_suffix)
+    int spectra_firstline_and_ic_suffix(void *ppt, int index_ic, char first_line[_LINE_LENGTH_MAX_], FileName ic_suffix) nogil

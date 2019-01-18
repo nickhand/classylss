@@ -25,6 +25,9 @@ DEF _h_P_ = 6.62606896e-34
 
 DEF _MAXTITLESTRINGLENGTH_ = 8000
 
+cdef float NAN
+NAN = float("NaN") 
+
 class ClassRuntimeError(RuntimeError):
     def __init__(self, message=""):
         self.message = message
@@ -609,21 +612,20 @@ cdef class Background:
 
         cdef double [::1] pvecback = np.zeros(self.ba.bg_size, dtype='f8')
 
-        while np.PyArray_MultiIter_NOTDONE(it):
+        with nogil:
+            while np.PyArray_MultiIter_NOTDONE(it):
 
-            #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
-            aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
-
-            if background_tau_of_z(self.ba,aval, &tau)==_FAILURE_:
-                raise ClassRuntimeError(self.ba.error_message.decode())
-
-            if background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
-                raise ClassRuntimeError(self.ba.error_message.decode())
-
-            (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = pvecback[column]
-
-            #PyArray_MultiIter_NEXT is used to advance the iterator
-            np.PyArray_MultiIter_NEXT(it)
+                #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
+                aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+                bval = (<double*>(np.PyArray_MultiIter_DATA(it, 1)))
+                if background_tau_of_z(self.ba, aval, &tau)==_FAILURE_:
+                    bval[0] = NAN
+                elif background_at_tau(self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index, &pvecback[0])==_FAILURE_:
+                    bval[0] = NAN
+                else:
+                    bval[0] = pvecback[column]
+                #PyArray_MultiIter_NEXT is used to advance the iterator
+                np.PyArray_MultiIter_NEXT(it)
 
         return out
 
@@ -1119,17 +1121,18 @@ cdef class Primordial:
         cdef np.broadcast it = np.broadcast(k,  out)
         cdef int index_md = 0
 
-        while np.PyArray_MultiIter_NOTDONE(it):
+        with nogil:
+            while np.PyArray_MultiIter_NOTDONE(it):
 
                 #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
 
+                bval = (<double*>(np.PyArray_MultiIter_DATA(it, 1)))
                 if aval == 0: # forcefully set k == 0 to zero.
-                    (<double*>(np.PyArray_MultiIter_DATA(it, 1)))[0] = 0.
+                    bval[0] = 0.
                 else:
-                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, linear, aval,
-                        <double*>(np.PyArray_MultiIter_DATA(it, 1))):
-                        raise ClassRuntimeError(self.pm.error_message.decode())
+                    if _FAILURE_ == primordial_spectrum_at_k(self.pm, index_md, linear, aval, bval):
+                        bval[0] = NAN
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
@@ -1274,14 +1277,15 @@ cdef class Spectra:
         #generate the iterator over the input and output arrays, does the same thing as
         cdef np.broadcast it = np.broadcast(z,  out)
 
-        while np.PyArray_MultiIter_NOTDONE(it):
+        with nogil:
+            while np.PyArray_MultiIter_NOTDONE(it):
 
                 #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
+                bval = (<double*>np.PyArray_MultiIter_DATA(it, 1))
 
-                if _FAILURE_ == spectra_sigma(self.ba, self.pm, self.sp, 8./self.ba.h, aval,
-                    <double*>(np.PyArray_MultiIter_DATA(it, 1))):
-                    raise ClassRuntimeError(self.sp.error_message.decode())
+                if _FAILURE_ == spectra_sigma(self.ba, self.pm, self.sp, 8./self.ba.h, aval, bval):
+                    bval[0] = NAN
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
@@ -1361,7 +1365,7 @@ cdef class Spectra:
 
 
     # Gives the pk for a given (k,z)
-    cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk) except -1:
+    cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk_) nogil:
         r"""
         Gives the pk for a given ``k`` and ``z`` (will be nonlinear if requested
         by the user, linear otherwise).
@@ -1373,11 +1377,11 @@ cdef class Spectra:
 
         """
         if lin or self.nl.method == 0:
-            if spectra_pk_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk,pk_ic) == _FAILURE_:
-                 raise ClassRuntimeError(self.sp.error_message.decode())
+            if spectra_pk_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_, pk_ic) == _FAILURE_:
+                return -1
         else:
-            if spectra_pk_nl_at_k_and_z(self.ba,self.pm,self.sp,k,z,pk) ==_FAILURE_:
-                 raise ClassRuntimeError(self.sp.error_message.decode())
+            if spectra_pk_nl_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_) ==_FAILURE_:
+                return -1
         return 0
 
     def get_pk(self, k, z):
@@ -1439,14 +1443,15 @@ cdef class Spectra:
         # PyArray_MultiIterNew
 
         cdef np.broadcast it = np.broadcast(k, z, out)
-
-        while np.PyArray_MultiIter_NOTDONE(it):
+        with nogil:
+            while np.PyArray_MultiIter_NOTDONE(it):
 
                 #PyArray_MultiIter_DATA is used to access the pointers the iterator points to
                 aval = (<double*>np.PyArray_MultiIter_DATA(it, 0))[0]
                 bval = (<double*>np.PyArray_MultiIter_DATA(it, 1))[0]
-
-                self.pk(aval, bval, <double*> pk_ic.data, linear, <double*>(np.PyArray_MultiIter_DATA(it, 2)))
+                cval = <double*>(np.PyArray_MultiIter_DATA(it, 2))
+                if -1 == self.pk(aval, bval, <double*> pk_ic.data, linear, cval):
+                    cval[0] = NAN
 
                 #PyArray_MultiIter_NEXT is used to advance the iterator
                 np.PyArray_MultiIter_NEXT(it)
