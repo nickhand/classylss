@@ -2,15 +2,15 @@ Examples
 ========
 
 .. contents::
-   :depth: 3
-   :local:
-   :backlinks: none
+    :depth: 3
+    :local:
+    :backlinks: none
 
 .. ipython:: python
-  :suppress:
+    :suppress:
 
-  import matplotlib.pyplot import plt
-  plt.style.use('notebook.mplstyle')
+    import matplotlib.pyplot as plt
+    plt.style.use('notebook.mplstyle')
 
 .. note::
 
