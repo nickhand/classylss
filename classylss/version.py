@@ -1,2 +1,2 @@
-version = '0.2.9.dev0'
+version = '0.2.9'
 class_version = '2.6.3'
