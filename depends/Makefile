@@ -6,8 +6,8 @@ UNPACK=tmp-class-v$(CLASS_VERSION)
 SRC=$(UNPACK)/class_public-$(CLASS_VERSION)
 
 $(TARBALL):
-	wget https://github.com/lesgourg/class_public/archive/v$(CLASS_VERSION).tar.gz \
-		-O $(TARBALL)
+	curl -fsSL https://github.com/lesgourg/class_public/archive/v$(CLASS_VERSION).tar.gz \
+		> $(TARBALL)
 
 $(SRC)/stamp.unzip: $(TARBALL)
 	mkdir -p $(UNPACK)
