@@ -19,7 +19,7 @@ $(SRC)/stamp.patch : $(SRC)/stamp.unzip \
 	  0002-class-2.6.1-pathsize.patch \
 	  0003-Add-FLT_EPSILON-to-array_interpolate_spline.patch
 	for i in $^; do echo $$i; \
-	if [[ $$i == *.patch ]]; then \
+	if [ "$${i%%.patch}" != $$i ]]; then \
 		patch -d $(SRC) -p1 < $$i || exit 1; \
 	fi; \
 	done; \
