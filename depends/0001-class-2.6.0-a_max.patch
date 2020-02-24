@@ -1,21 +1,21 @@
-From 3b23e255e5cac2000b1b43c0f1aca7d75ee1b5c5 Mon Sep 17 00:00:00 2001
+From 721d3966be76562bfefffbf1845adade53550ac9 Mon Sep 17 00:00:00 2001
 From: Yu Feng <rainwoodman@gmail.com>
 Date: Sun, 23 Feb 2020 19:00:26 -0800
 Subject: [PATCH 1/3] class-2.6.0-a_max
 
 ---
  include/background.h    |  4 +++-
- source/background.c     | 38 ++++++++++++++++++++++++++++++--------
+ source/background.c     | 37 +++++++++++++++++++++++++++++--------
  source/input.c          | 11 +++++++++++
  source/perturbations.c  |  9 +++++----
  source/thermodynamics.c | 26 +++++++++++++++++---------
- 5 files changed, 66 insertions(+), 22 deletions(-)
+ 5 files changed, 65 insertions(+), 22 deletions(-)
 
 diff --git a/include/background.h b/include/background.h
-index 0db7ccd5..b483e05a 100755
+index adba97d7..da5c6666 100755
 --- a/include/background.h
 +++ b/include/background.h
-@@ -142,7 +142,8 @@ struct background
+@@ -138,7 +138,8 @@ struct background
  
    double h; /**< reduced Hubble parameter */
    double age; /**< age in Gyears */
@@ -25,7 +25,7 @@ index 0db7ccd5..b483e05a 100755
    double K; /**< \f$ K \f$: Curvature parameter \f$ K=-\Omega0_k*a_{today}^2*H_0^2\f$; */
    int sgnK; /**< K/|K|: -1, 0 or 1 */
    double * m_ncdm_in_eV; /**< list of ncdm masses in eV (inferred from M_ncdm and other parameters above) */
-@@ -164,6 +165,7 @@ struct background
+@@ -157,6 +158,7 @@ struct background
    //@{
  
    double a_today; /**< scale factor today (arbitrary and irrelevant for most purposes) */
@@ -34,10 +34,10 @@ index 0db7ccd5..b483e05a 100755
    //@}
  
 diff --git a/source/background.c b/source/background.c
-index 588c1258..8cca9e8e 100755
+index bd57e303..7ae69b49 100755
 --- a/source/background.c
 +++ b/source/background.c
-@@ -1663,8 +1663,9 @@ int background_solve(
+@@ -1631,8 +1631,9 @@ int background_solve(
  
    /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
  
@@ -49,7 +49,7 @@ index 588c1258..8cca9e8e 100755
      tau_start = tau_end;
  
      /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
-@@ -1672,12 +1673,12 @@ int background_solve(
+@@ -1640,12 +1641,12 @@ int background_solve(
                 pba->error_message,
                 pba->error_message);
  
@@ -64,7 +64,7 @@ index 588c1258..8cca9e8e 100755
        /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
      }
  
-@@ -1706,6 +1707,10 @@ int background_solve(
+@@ -1674,6 +1675,10 @@ int background_solve(
      /* -> store value of tau */
      pvecback_integration[pba->index_bi_tau]=tau_end;
  
@@ -75,7 +75,7 @@ index 588c1258..8cca9e8e 100755
    }
  
    /** - save last data in growTable with gt_add() */
-@@ -1741,10 +1746,6 @@ int background_solve(
+@@ -1709,10 +1714,6 @@ int background_solve(
               pba->error_message,
               pba->error_message);
  
@@ -86,7 +86,7 @@ index 588c1258..8cca9e8e 100755
    /** - deduce age of the Universe */
    /* -> age in Gyears */
    pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-@@ -1758,6 +1759,27 @@ int background_solve(
+@@ -1726,6 +1727,26 @@ int background_solve(
      pba->Omega0_dr = pvecback_integration[pba->index_bi_rho_dr]/pba->H0/pba->H0;
    }
  
@@ -110,15 +110,14 @@ index 588c1258..8cca9e8e 100755
 +
 +  /* -> conformal age at a_max in Mpc */
 +  pba->conformal_age_amax = pvecback_integration[pba->index_bi_tau];
-+
+ 
    /** - allocate background tables */
    class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
- 
 diff --git a/source/input.c b/source/input.c
-index 0a60564a..44033910 100644
+index 2bd250a7..2c089fd2 100644
 --- a/source/input.c
 +++ b/source/input.c
-@@ -699,6 +699,17 @@ int input_read_parameters(
+@@ -602,6 +602,17 @@ int input_read_parameters(
    /** - scale factor today (arbitrary) */
    class_read_double("a_today",pba->a_today);
  
@@ -137,10 +136,10 @@ index 0a60564a..44033910 100644
    class_call(parser_read_double(pfc,"H0",&param1,&flag1,errmsg),
               errmsg,
 diff --git a/source/perturbations.c b/source/perturbations.c
-index e57799d5..551c7e55 100755
+index 71738fa5..acbaf927 100755
 --- a/source/perturbations.c
 +++ b/source/perturbations.c
-@@ -1548,7 +1548,8 @@ int perturb_timesampling_for_sources(
+@@ -1083,7 +1083,8 @@ int perturb_timesampling_for_sources(
    last_index_thermo = first_index_thermo;
    tau = tau_ini;
  
@@ -150,7 +149,7 @@ index e57799d5..551c7e55 100755
  
      class_call(background_at_tau(pba,
                                   tau,
-@@ -1631,7 +1632,7 @@ int perturb_timesampling_for_sources(
+@@ -1166,7 +1167,7 @@ int perturb_timesampling_for_sources(
    last_index_thermo = first_index_thermo;
    tau = tau_ini;
  
@@ -159,7 +158,7 @@ index e57799d5..551c7e55 100755
  
      class_call(background_at_tau(pba,
                                   tau,
-@@ -1689,8 +1690,8 @@ int perturb_timesampling_for_sources(
+@@ -1224,8 +1225,8 @@ int perturb_timesampling_for_sources(
  
    }
  
@@ -171,10 +170,10 @@ index e57799d5..551c7e55 100755
    free(pvecback);
    free(pvecthermo);
 diff --git a/source/thermodynamics.c b/source/thermodynamics.c
-index cb297107..8fa905f0 100755
+index 426402f7..248bbe18 100755
 --- a/source/thermodynamics.c
 +++ b/source/thermodynamics.c
-@@ -2360,6 +2360,7 @@ int thermodynamics_reionization_sample(
+@@ -2296,6 +2296,7 @@ int thermodynamics_reionization_sample(
    double chi_heat;
    int last_index_back;
    double relative_variation;
@@ -182,7 +181,7 @@ index cb297107..8fa905f0 100755
  
    Yp = pth->YHe;
  
-@@ -2451,7 +2452,7 @@ int thermodynamics_reionization_sample(
+@@ -2384,7 +2385,7 @@ int thermodynamics_reionization_sample(
    /* initial step */
    dz = dz_max;
  
@@ -191,7 +190,7 @@ index cb297107..8fa905f0 100755
  
      class_test(dz < ppr->smallest_allowed_variation,
                 pth->error_message,
-@@ -2459,7 +2460,7 @@ int thermodynamics_reionization_sample(
+@@ -2392,7 +2393,7 @@ int thermodynamics_reionization_sample(
  
      /* - try next step */
      z_next=z-dz;
@@ -200,7 +199,7 @@ index cb297107..8fa905f0 100755
  
      class_call(thermodynamics_reionization_function(z_next,pth,preio,&xe_next),
                 pth->error_message,
-@@ -2750,7 +2751,7 @@ int thermodynamics_recombination_with_hyrec(
+@@ -2677,7 +2678,7 @@ int thermodynamics_recombination_with_hyrec(
    param.nH0 = 11.223846333047*param.obh2*(1.-param.Y);  /* number density of hydrogen today in m-3 */
    param.fHe = param.Y/(1-param.Y)/3.97153;              /* abundance of helium by number */
    param.zstart = ppr->recfast_z_initial; /* Redshift range */
@@ -209,7 +208,7 @@ index cb297107..8fa905f0 100755
    param.dlna = 8.49e-5;
    param.nz = (long) floor(2+log((1.+param.zstart)/(1.+param.zend))/param.dlna);
    param.annihilation = pth->annihilation;
-@@ -2889,7 +2890,7 @@ int thermodynamics_recombination_with_hyrec(
+@@ -2816,7 +2817,7 @@ int thermodynamics_recombination_with_hyrec(
  
      /** - --> get redshift, corresponding results from hyrec, and background quantities */
  
@@ -218,7 +217,7 @@ index cb297107..8fa905f0 100755
  
      /* get (xe,Tm) by interpolating in pre-computed tables */
  
-@@ -3040,7 +3041,7 @@ int thermodynamics_recombination_with_recfast(
+@@ -2962,7 +2963,7 @@ int thermodynamics_recombination_with_recfast(
    double y[3],dy[3];
  
    /* other recfast variables */
@@ -227,7 +226,7 @@ index cb297107..8fa905f0 100755
    double x_H0=0.;
    double z,mu_H,Lalpha,Lalpha_He,DeltaB,DeltaB_He;
    double zstart,zend,rhs;
-@@ -3084,6 +3085,9 @@ int thermodynamics_recombination_with_recfast(
+@@ -3006,6 +3007,9 @@ int thermodynamics_recombination_with_recfast(
    /* z_initial */
    zinitial=ppr->recfast_z_initial;
  
@@ -237,7 +236,7 @@ index cb297107..8fa905f0 100755
    /* H_frac */
    preco->H_frac = ppr->recfast_H_frac;
  
-@@ -3163,8 +3167,8 @@ int thermodynamics_recombination_with_recfast(
+@@ -3085,8 +3089,8 @@ int thermodynamics_recombination_with_recfast(
  
    for(i=0; i <Nz; i++) {
  
@@ -248,7 +247,7 @@ index cb297107..8fa905f0 100755
  
      z = zend;
  
-@@ -3319,9 +3323,11 @@ int thermodynamics_recombination_with_recfast(
+@@ -3241,9 +3245,11 @@ int thermodynamics_recombination_with_recfast(
          x_H0 = 0.5*(sqrt(pow(rhs,2)+4.*rhs) - rhs);
        }
  
@@ -261,7 +260,7 @@ index cb297107..8fa905f0 100755
                                      y,
                                      &tpaw,
                                      ppr->tol_thermo_integration,
-@@ -3359,7 +3365,9 @@ int thermodynamics_recombination_with_recfast(
+@@ -3281,7 +3287,9 @@ int thermodynamics_recombination_with_recfast(
      *(preco->recombination_table+(Nz-i-1)*preco->re_size+preco->index_re_Tb)=y[2];
  
      /* get dTb/dz=dy[2] */

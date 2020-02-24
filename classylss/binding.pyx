@@ -1365,7 +1365,7 @@ cdef class Spectra:
 
 
     # Gives the pk for a given (k,z)
-    cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk_) nogil:
+    cdef int pk(self, double k, double z, double * pk_ic, int lin, double * pk_ ) nogil:
         r"""
         Gives the pk for a given ``k`` and ``z`` (will be nonlinear if requested
         by the user, linear otherwise).
@@ -1376,11 +1376,13 @@ cdef class Spectra:
             because otherwise a segfault will occur
 
         """
+        cdef double pk_cb_ic[1]
+        cdef double pk_cb[1]
         if lin or self.nl.method == 0:
-            if spectra_pk_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_, pk_ic) == _FAILURE_:
+            if spectra_pk_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_, pk_ic, pk_cb, pk_cb_ic) == _FAILURE_:
                 return -1
         else:
-            if spectra_pk_nl_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_) ==_FAILURE_:
+            if spectra_pk_nl_at_k_and_z(self.ba, self.pm, self.sp, k, z, pk_, pk_cb) ==_FAILURE_:
                 return -1
         return 0
 

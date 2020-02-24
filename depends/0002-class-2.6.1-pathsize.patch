@@ -1,4 +1,4 @@
-From a26a389b8e53e39e1be50a613db49688ece4759a Mon Sep 17 00:00:00 2001
+From f4d494ff1c89cc1ebad304823ccf806d872226c0 Mon Sep 17 00:00:00 2001
 From: Yu Feng <rainwoodman@gmail.com>
 Date: Sun, 23 Feb 2020 13:33:37 -0800
 Subject: [PATCH 2/3] class-2.6.1-pathsize
@@ -8,7 +8,7 @@ Subject: [PATCH 2/3] class-2.6.1-pathsize
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/common.h b/include/common.h
-index 8a54626a..f74c0f0d 100755
+index 06a97566..5157e4a7 100755
 --- a/include/common.h
 +++ b/include/common.h
 @@ -27,7 +27,7 @@

@@ -1,4 +1,4 @@
-From 7c9d664a8bf1e8adf42af8c2e1244a4aa0adb891 Mon Sep 17 00:00:00 2001
+From f98cdf48114a05e4bda15946239b2b4d50fba057 Mon Sep 17 00:00:00 2001
 From: Yu Feng <rainwoodman@gmail.com>
 Date: Wed, 12 Feb 2020 09:25:38 -0800
 Subject: [PATCH 3/3] Add FLT_EPSILON to array_interpolate_spline.
@@ -12,7 +12,7 @@ can add it too all variants.
  1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/tools/arrays.c b/tools/arrays.c
-index 9acd80bf..3c2a1eab 100755
+index 7c4213a5..2e288214 100755
 --- a/tools/arrays.c
 +++ b/tools/arrays.c
 @@ -3,6 +3,7 @@
@@ -23,7 +23,7 @@ index 9acd80bf..3c2a1eab 100755
  #include "arrays.h"
  
  /**
-@@ -1702,12 +1703,12 @@ int array_interpolate_spline(
+@@ -1704,12 +1705,12 @@ int array_interpolate_spline(
  
    if (x_array[inf] < x_array[sup]){
  
@@ -38,7 +38,7 @@ index 9acd80bf..3c2a1eab 100755
        sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[sup]);
        return _FAILURE_;
      }
-@@ -1724,12 +1725,12 @@ int array_interpolate_spline(
+@@ -1726,12 +1727,12 @@ int array_interpolate_spline(
  
    else {
  
