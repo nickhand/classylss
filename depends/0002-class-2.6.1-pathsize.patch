@@ -1,5 +1,16 @@
---- class_public-2.6.1.old/include/common.h	2017-11-22 00:49:28.000000000 -0800
-+++ class_public-2.6.1/include/common.h	2017-11-22 00:49:40.000000000 -0800
+From a26a389b8e53e39e1be50a613db49688ece4759a Mon Sep 17 00:00:00 2001
+From: Yu Feng <rainwoodman@gmail.com>
+Date: Sun, 23 Feb 2020 13:33:37 -0800
+Subject: [PATCH 2/2] class-2.6.1-pathsize
+
+---
+ include/common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/common.h b/include/common.h
+index 8a54626a..f74c0f0d 100755
+--- a/include/common.h
++++ b/include/common.h
 @@ -27,7 +27,7 @@
  #define _ERRORMSGSIZE_ 2048 /**< generic error messages are cut beyond this number of characters */
  typedef char ErrorMsg[_ERRORMSGSIZE_]; /**< Generic error messages (there is such a field in each structure) */
@@ -9,3 +20,6 @@
  typedef char FileName[_FILENAMESIZE_];
  
  #define _PI_ 3.1415926535897932384626433832795e0 /**< The number pi */
+-- 
+2.20.1
+
