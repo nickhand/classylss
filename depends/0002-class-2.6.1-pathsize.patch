@@ -1,7 +1,7 @@
 From a26a389b8e53e39e1be50a613db49688ece4759a Mon Sep 17 00:00:00 2001
 From: Yu Feng <rainwoodman@gmail.com>
 Date: Sun, 23 Feb 2020 13:33:37 -0800
-Subject: [PATCH 2/2] class-2.6.1-pathsize
+Subject: [PATCH 2/3] class-2.6.1-pathsize
 
 ---
  include/common.h | 2 +-

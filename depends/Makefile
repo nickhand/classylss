@@ -16,11 +16,11 @@ $(SRC)/stamp.unzip: $(TARBALL)
 
 $(SRC)/stamp.patch : $(SRC)/stamp.unzip \
 	  0001-class-2.6.0-a_max.patch \
-	  0002-class-2.6.1-pathsize.patch
-	patch -d $(SRC) -p1 < 0001-class-2.6.0-a_max.patch || exit 1 
-#	No longer needed after 2.6.3
-#	patch -d $(SRC) -p1 < class-2.6.0-tol-ncdm.patch || exit 1
-	patch -d $(SRC) -p1 < 0002-class-2.6.1-pathsize.patch || exit 1
+	  0002-class-2.6.1-pathsize.patch \
+	  0003-Add-FLT_EPSILON-to-array_interpolate_spline.patch
+	for i in $^; do if $$i ~= *.patch; then \
+	patch -d $(SRC) -p1 < $$i || exit 1; fi; \
+	done;
 	touch $@
 
 $(SRC)/libclass.a: $(SRC)/stamp.patch class.cfg Makefile

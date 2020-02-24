@@ -1,0 +1,58 @@
+From 7c9d664a8bf1e8adf42af8c2e1244a4aa0adb891 Mon Sep 17 00:00:00 2001
+From: Yu Feng <rainwoodman@gmail.com>
+Date: Wed, 12 Feb 2020 09:25:38 -0800
+Subject: [PATCH 3/3] Add FLT_EPSILON to array_interpolate_spline.
+
+This presumably fixes #204.
+
+Would some test this? If it indeed fixes the issue, then we
+can add it too all variants.
+---
+ tools/arrays.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/tools/arrays.c b/tools/arrays.c
+index 9acd80bf..3c2a1eab 100755
+--- a/tools/arrays.c
++++ b/tools/arrays.c
+@@ -3,6 +3,7 @@
+  * Julien Lesgourgues, 18.04.2010
+  */
+ 
++#include <float.h>
+ #include "arrays.h"
+ 
+ /**
+@@ -1702,12 +1703,12 @@ int array_interpolate_spline(
+ 
+   if (x_array[inf] < x_array[sup]){
+ 
+-    if (x < x_array[inf]) {
++    if (x < x_array[inf] - FLT_EPSILON) {
+       sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[inf]);
+       return _FAILURE_;
+     }
+ 
+-    if (x > x_array[sup]) {
++    if (x > x_array[sup] + FLT_EPSILON) {
+       sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[sup]);
+       return _FAILURE_;
+     }
+@@ -1724,12 +1725,12 @@ int array_interpolate_spline(
+ 
+   else {
+ 
+-    if (x < x_array[sup]) {
++    if (x < x_array[sup] - FLT_EPSILON) {
+       sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[sup]);
+       return _FAILURE_;
+     }
+ 
+-    if (x > x_array[inf]) {
++    if (x > x_array[inf] + FLT_EPSILON) {
+       sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[inf]);
+       return _FAILURE_;
+     }
+-- 
+2.20.1
+
